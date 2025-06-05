@@ -9,106 +9,144 @@ from scipy.stats.distributions import chi2
 from math import log
 import pandas as pd
 import matplotlib.pyplot as plt
-from twisstntern.core import (cartizian, return_triangle_coord, dump_data,
-                            n, D_LR, log_likelihood_ratio_test, fundemental_asymmetry)
-from twisstntern.visualization import (plot, plot_results, plotting_triangle_index, plot_fundemental_asymmetry)
+from twisstntern.utils import (cartizian, return_triangle_coord, dump_data,
+                            n, D_LR, log_likelihood_ratio_test, number_triangles)
 
-def number_triangles(alpha):
-    """Calculate number of triangles for given granularity"""
-    if int(1/alpha) % 2:
-        raise ValueError("1/alpha must be even")
-    
-    a = int((1-2*alpha)/(2*alpha))
-    n = int(1/(2*alpha))
-    for i in range(1, a+1):
-        n = n + 4*int((1/(2*alpha))-i)
-    
-    return n
 
-def triangles_analysis(data, granularity, file_name):
-    """Perform triangle analysis"""
-    alpha = granularity
+def fundamental_asymmetry(data):
+    """
+    Perform basic symmetry analysis between the two main subtriangles (left vs. right of the y-axis).
+
+    Assumes:
+        - Data has columns 'T1', 'T2', 'T3' (ternary coordinates).
+        - Points on the y-axis (x == 0) have been removed during preprocessing.
+
+    Returns:
+        tuple: (
+            main_n_r       - number of points in the right subtriangle (x > 0),
+            main_n_l       - number of points in the left subtriangle (x < 0),
+            main_d_lr      - directional asymmetry statistic D_LR,
+            main_g_test    - G-statistic from likelihood ratio test,
+            main_p_value   - corresponding p-value
+        )
+    """
+    # Convert ternary coordinates to Cartesian x-coordinates
+    data["x-axis"] = cartizian(data["T1"], data["T2"], data["T3"])[0]
+
+    # Boolean masks for each side
+    right_mask = data["x-axis"] > 0
+    left_mask = data["x-axis"] < 0
+
+    # Count points on each side
+    main_n_r = right_mask.sum()
+    main_n_l = left_mask.sum()
+
+    # Compute asymmetry statistics
+    main_d_lr = D_LR(main_n_r, main_n_l)
+    main_g_test, main_p_value = log_likelihood_ratio_test(main_n_r, main_n_l)
+
+    return (
+        int(main_n_r),
+        int(main_n_l),
+        float(main_d_lr),
+        float(main_g_test),
+        float(main_p_value),
+    )
+
+
+def triangles_analysis(data, granularity):
+    """
+    Analyze symmetry across subtriangles of a ternary diagram by computing, for each triangle:
+      - the number of data points in left and right reflected triangle pairs,
+      - the D_LR asymmetry score,
+      - the log-likelihood ratio test statistic and p-value.
+
+    Args:
+        data (DataFrame): Ternary-coordinated data with columns T1, T2, T3.
+        granularity (str or float): Grid resolution (e.g., 'fine', '0.1').
+        file_name (str): Prefix used for saving any outputs (currently unused).
+
+    Returns:
+        DataFrame: Table of triangles and their statistics.
+    """
+
+    # Map granularity names to alpha values, or parse user-provided float
     if granularity == "superfine":
         alpha = 0.05
     elif granularity == "fine":
         alpha = 0.1
     elif granularity == "coarse":
         alpha = 0.25
-    
-    n_triangles = number_triangles(alpha)
-    
-    results = {
-        "D-LR": np.zeros(n_triangles),
-        "p-value(g-test)": np.zeros(n_triangles),
-        "coord. (T1, T2, T3)": [],
-        "index": np.arange(n_triangles)
-    }
-    
-    triangle_index = 0
-    
-    # Analyze each triangle
-    for i in range(int(1/(2*alpha))):
-        for j in range(int(1/(2*alpha))-i):
-            # Up triangle
-            a1 = i*alpha
-            b1 = (i+1)*alpha
-            a2 = j*alpha
-            b2 = (j+1)*alpha
-            a3 = (j+1)*alpha
-            b3 = (j+2)*alpha
-            
-            n_r = n(a1, b1, a2, b2, a3, b3, data)
-            n_l = n(a1, b1, -b3, -a3, -b2, -a2, data)
-            
-            d_lr = D_LR(n_r, n_l)
-            g_test, p_value = log_likelihood_ratio_test(n_r, n_l)
-            
-            results["D-LR"][triangle_index] = d_lr
-            results["p-value(g-test)"][triangle_index] = p_value
-            results["coord. (T1, T2, T3)"].append([(a1, b1), (a2, b2), (a3, b3)])
-            
-            triangle_index += 1
-            
-            # Down triangle
-            if i < int(1/(2*alpha))-1:
-                a1 = (i+1)*alpha
-                b1 = (i+2)*alpha
-                a2 = j*alpha
-                b2 = (j+1)*alpha
-                a3 = (j+1)*alpha
-                b3 = (j+2)*alpha
-                
-                n_r = n(a1, b1, a2, b2, a3, b3, data)
-                n_l = n(a1, b1, -b3, -a3, -b2, -a2, data)
-                
-                d_lr = D_LR(n_r, n_l)
-                g_test, p_value = log_likelihood_ratio_test(n_r, n_l)
-                
-                results["D-LR"][triangle_index] = d_lr
-                results["p-value(g-test)"][triangle_index] = p_value
-                results["coord. (T1, T2, T3)"].append([(a1, b1), (a2, b2), (a3, b3)])
-                
-                triangle_index += 1
-    
-    return results
+    else:
+        alpha = float(granularity) # if the user provides a float value for granularity    
 
-def run_analysis(file, granularity):
-    """Run full analysis pipeline"""
-    # Create Results directory
-    results_dir = Path("Results")
-    results_dir.mkdir(exist_ok=True)
-    
-    # Load and process data
-    data = dump_data(file)
-    
-    # Run analyses
-    results = triangles_analysis(data, granularity, file)
-    fundamental_results = fundemental_asymmetry(data)
-    
-    # Generate all plots
-    plot_fundemental_asymmetry(data, file)
-    plot(data, granularity, file)
-    plot_results(results, file)
-    plotting_triangle_index(results, granularity)
-    
-    return results, fundamental_results 
+    all_results = []
+
+    # Loop over rows of triangles along T1 axis
+    for row_index in range(int(1 / alpha)):
+        a1 = row_index * alpha
+        b1 = (row_index + 1) * alpha
+
+        k_T2 = 0
+        k_T3 = row_index
+
+        while True:
+            # Process up triangle
+            a2_up = k_T2 * alpha
+            b2_up = (k_T2 + 1) * alpha
+            a3_up = 1 - (k_T3 + 1) * alpha
+            b3_up = 1 - k_T3 * alpha
+
+            triangle_x, _, _ = return_triangle_coord(a1, b1, a2_up, b2_up, a3_up, b3_up)
+            if round(triangle_x[0], 4) < 0:
+                break  # Exit if triangle crosses outside the valid domain
+
+            n_r, n_l = n(a1, b1, a2_up, b2_up, a3_up, b3_up, data)
+            d_lr = D_LR(n_r, n_l)
+            g_stat, p_val = log_likelihood_ratio_test(n_r, n_l)
+
+            coords = [
+                (round(a1, 4), round(b1, 4)),
+                (round(a2_up, 4), round(b2_up, 4)),
+                (round(a3_up, 4), round(b3_up, 4)),
+            ]
+
+            all_results.append([coords, n_r, n_l, d_lr, g_stat, p_val])
+
+            # Process down triangle (sharing base with the up triangle)
+            k_T3 += 1
+
+            a2_down = k_T2 * alpha
+            b2_down = (k_T2 + 1) * alpha
+            a3_down = 1 - (k_T3 + 1) * alpha
+            b3_down = 1 - k_T3 * alpha
+
+            triangle_x, _, _ = return_triangle_coord(a1, b1, a2_down, b2_down, a3_down, b3_down)
+            if round(triangle_x[0], 4) < 0:
+                break
+
+            n_r, n_l = n(a1, b1, a2_down, b2_down, a3_down, b3_down, data)
+            d_lr = D_LR(n_r, n_l)
+            g_stat, p_val = log_likelihood_ratio_test(n_r, n_l)
+
+            coords = [
+                (round(a1, 4), round(b1, 4)),
+                (round(a2_down, 4), round(b2_down, 4)),
+                (round(a3_down, 4), round(b3_down, 4)),
+            ]
+
+            all_results.append([coords, n_r, n_l, d_lr, g_stat, p_val])
+
+            k_T2 += 1  # Advance to the next pair of up/down triangles
+
+    # Create DataFrame of results
+    triangles = pd.DataFrame(
+        all_results,
+        columns=["coord. (T1, T2, T3)", "n_right", "n_left", "D-LR", "g-test", "p-value(g-test)"]
+    )
+
+    # Assign descending index for plotting (bottom-up row indexing)
+    triangles["index"] = list(range(number_triangles(alpha), 0, -1))
+
+    return triangles
+

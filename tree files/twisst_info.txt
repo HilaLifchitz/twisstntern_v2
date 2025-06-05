@@ -1,0 +1,12 @@
+TWISST USAGE INFORMATION
+========================
+
+Taxon names: ['O', 'P1', 'P2', 'P3']
+Outgroup: 0
+
+Generated files for twisst:
+  - ts_pop_plain.newick: Single TreeSequence with population labels
+  - simple_replicates_for_twisst.newick: Multiple replicates
+
+Example usage in tree_processing.py:
+  newick_to_twisst_weights(trees, taxon_names=['O', 'P1', 'P2', 'P3'], outgroup='0')

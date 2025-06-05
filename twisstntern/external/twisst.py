@@ -417,7 +417,7 @@ def weightTree(tree, taxa, taxonDict=None, pairs=None, topoDict=None, nIts=None,
         
         if i == nIts: break
     
-    meanDists = dists/counts if getDists else np.NaN
+    meanDists = dists/counts if getDists else np.nan
     return {"topos":topoDict["topos"], "weights":counts, "dists":meanDists}
 
 
