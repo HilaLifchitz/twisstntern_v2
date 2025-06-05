@@ -17,24 +17,25 @@ import tskit
 import ete3
 import msprime
 
+####################### ts on the spot##########################
 
 # KEEP THIS CONSTANT -- SHOULD BE KEPT SMALL FOR TESTING
-nP1 = 10 # number of samples in population 1
-nP2 = 10 # number of samples in population 2
-nP3 = 10 # number of samples in population 3
-n0 = 10 # number of samples in the outgroup
+nP1 = 10  # number of samples in population 1
+nP2 = 10  # number of samples in population 2
+nP3 = 10  # number of samples in population 3
+n0 = 10  # number of samples in the outgroup
 
 # Provide divergence times
 # WE KEEP CONSTANT FOR THIS RUN
-t1 = 100 # time of split between population 1 and population 2
-t2 = 200 # time of split between population (1,2) and population 3
-t3 = 300 # time of split between population (1,2,3) and the outgroup 0
+t1 = 100  # time of split between population 1 and population 2
+t2 = 200  # time of split between population (1,2) and population 3
+t3 = 300  # time of split between population (1,2,3) and the outgroup 0
 
 # Provide migration rate
-m = 0.0001 # migration rate between population 2 and population 3
+m = 0.0001  # migration rate between population 2 and population 3
 mig_rate = m
 
-Ne = 1000 # population size we keep constant for all populations for simplicity
+Ne = 1000  # population size we keep constant for all populations for simplicity
 # Provide population sizes
 NeP1 = Ne
 NeP2 = Ne
@@ -66,13 +67,13 @@ demography.add_population_split(time=t3, derived=["P123", "O"], ancestral="ANC")
 # setting up gene flow
 demography.set_migration_rate("P2", "P3", mig_rate)
 
-#from collections import defaultdict
-num_replicates=20
+# from collections import defaultdict
+num_replicates = 20
 # For the locus usage -- ts1 is a tskit.generator object !!
 ts1 = msprime.sim_ancestry(
-    samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},   
+    samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
     demography=demography,
-    num_replicates=num_replicates
+    num_replicates=num_replicates,
 )
 # For the Chromosome usage -- ts is a tskit.TreeSequence object
 ts = msprime.sim_ancestry(
@@ -84,13 +85,13 @@ ts = msprime.sim_ancestry(
 )
 
 
-
+# Such Naive Newick dont have taxon information coded to the nodes--> do not work
 # Convert all marginal trees to Newick format, stored in a list
 newick_trees = [tree.as_newick() for tree in ts.trees()]
 
 # (Optional) Join them into one string if you want a single variable:
 newick_string = "\n".join(newick_trees)
-######################################################################
+########################################################################################
 
 # Add the external directory to the Python path
 EXTERNAL_DIR = Path(__file__).parent / "external"
@@ -103,6 +104,7 @@ except ImportError:
     # This will be handled by the pipeline calling download_twisst
     weightTrees = None
     summary = None
+
 
 def detect_and_read_trees(
     file_path: str,
@@ -171,11 +173,9 @@ def detect_and_read_trees(
         raise ValueError(f"Failed to read Newick trees: {e}")
 
 
-
-
 # This function that takes the output of twisst and returns a list of simplified Newick strings which corresponds to the toplogies it weights
 # it removes branch lengths and internal node names
-# it is used to simplify the topologies for the twisst analysis, so that we can use print them in verbose mode 
+# it is used to simplify the topologies for the twisst analysis, so that we can use print them in verbose mode
 # and also to save them in the output file
 def simplify_topologies(weightsData):
     """
@@ -204,8 +204,9 @@ def simplify_topologies(weightsData):
 
     return simplified_topos
 
+
 # excepts a tskit.TreeSequence object (with recombination--> many trees inside) [not a path or a generator!]
-# and returns a pd.DataFrame with the weights it also prints the corresponding topologies 
+# and returns a pd.DataFrame with the weights it also prints the corresponding topologies
 # prints results to a csv file if output_file is provided
 def ts_chromosome_to_twisst_weights(
     ts, outgroup=None, output_file=None, verbose=False, twisst_verbose=False
@@ -222,7 +223,7 @@ def ts_chromosome_to_twisst_weights(
     Returns:
         pd.DataFrame: Normalized weights ready for dump_data function, first row is the simplified topologies, the rest are the weights
     """
-    
+
     # Check if twisst is available
     if weightTrees is None:
         raise ImportError(
@@ -285,11 +286,10 @@ def ts_chromosome_to_twisst_weights(
     )
     # explicatly printing the topologies
     if verbose:
-        topos=weightsData["topos"]
-        for i,topo in enumerate(topos):
+        topos = weightsData["topos"]
+        for i, topo in enumerate(topos):
             print(f"Topology {i+1}")
             print(topo)
-           
 
     # Extract normalized weights
     if "weights_norm" in weightsData:
@@ -330,8 +330,10 @@ def ts_chromosome_to_twisst_weights(
     # Save to file if requested
     if output_file:
         # Get simplified topologies
-        simplified_topos = simplify_topologies(weightsData)  # e.g. ['(0,(1,(2,3)))', '(0,(2,(1,3)))', '(0,(3,(1,2)))']
-        
+        simplified_topos = simplify_topologies(
+            weightsData
+        )  # e.g. ['(0,(1,(2,3)))', '(0,(2,(1,3)))', '(0,(3,(1,2)))']
+
         # Create a new DataFrame with that single row
         header_row = pd.DataFrame([simplified_topos], columns=columns)
 
@@ -342,7 +344,6 @@ def ts_chromosome_to_twisst_weights(
         full_df.to_csv(output_file, index=False)
 
     return df
-
 
 
 # taking in a ts object- not in generator or Newick format- and returning the populations with samples
@@ -394,7 +395,7 @@ def debug_ts_populations(ts):
     return populations_with_samples
 
 
-# THE FUNCTION TO CALL FOR THE TWISSTNTER_SIMULATOR!!!!!!!!!! 
+# THE FUNCTION TO CALL FOR THE TWISSTNTER_SIMULATOR!!!!!!!!!!
 # A function that can handle both TreeSequence objects and generators that yield multiple TreeSequence objects.
 def ts_to_twisst_weights(
     input_data, outgroup=None, output_file=None, verbose=False, twisst_verbose=False
@@ -413,35 +414,40 @@ def ts_to_twisst_weights(
     Returns:
         pd.DataFrame: Normalized weights ready for analysis, with consistent topology ordering
     """
-    
+
     # Check if input is a generator or single TreeSequence
-    is_generator = hasattr(input_data, '__iter__') and not isinstance(input_data, tskit.TreeSequence)
-    
+    is_generator = hasattr(input_data, "__iter__") and not isinstance(
+        input_data, tskit.TreeSequence
+    )
+
     if not is_generator:
         # Single TreeSequence - use original function
         if verbose:
             print("Processing single TreeSequence...")
         return ts_chromosome_to_twisst_weights(
-            input_data, outgroup=outgroup, output_file=output_file, 
-            verbose=verbose, twisst_verbose=twisst_verbose
+            input_data,
+            outgroup=outgroup,
+            output_file=output_file,
+            verbose=verbose,
+            twisst_verbose=twisst_verbose,
         )
     #########################################################
     # Generator case - process multiple TreeSequences
-    input_data=list(input_data)
+    input_data = list(input_data)
     if verbose:
         print("Processing generator of TreeSequences...")
-    
+
     all_weights = []
     canonical_topologies = None
     canonical_simplified_topos = None
     columns = None
     total_processed = 0
-    
+
     for i in range(len(input_data)):
-        ts=input_data[i]
+        ts = input_data[i]
         if verbose:
             print(f"\nProcessing TreeSequence {i+1}...")
-            
+
         # Debug info about the TreeSequence
         if verbose:
             print(f"  Number of populations: {ts.num_populations}")
@@ -457,7 +463,9 @@ def ts_to_twisst_weights(
 
         if len(populations_with_samples) < 3:
             if verbose:
-                print(f"  Skipping: only {len(populations_with_samples)} populations with samples")
+                print(
+                    f"  Skipping: only {len(populations_with_samples)} populations with samples"
+                )
             continue
 
         # Set default outgroup to first population if not specified
@@ -468,11 +476,15 @@ def ts_to_twisst_weights(
         # Validate outgroup
         if current_outgroup not in populations_with_samples:
             if verbose:
-                print(f"  Skipping: outgroup {current_outgroup} not in populations with samples")
+                print(
+                    f"  Skipping: outgroup {current_outgroup} not in populations with samples"
+                )
             continue
 
         if verbose:
-            print(f"  Analyzing {len(populations_with_samples)} populations: {populations_with_samples}")
+            print(
+                f"  Analyzing {len(populations_with_samples)} populations: {populations_with_samples}"
+            )
             print(f"  Using outgroup: {current_outgroup}")
 
         # Run twisst analysis
@@ -483,27 +495,27 @@ def ts_to_twisst_weights(
             outgroup=current_outgroup,
             verbose=twisst_verbose,
         )
-        
+
         # Extract simplified topologies for consistency checking
         current_simplified_topos = simplify_topologies(weightsData)
-        
+
         # On first iteration, establish canonical topology order
         if canonical_topologies is None:
             canonical_topologies = weightsData["topos"]
             canonical_simplified_topos = current_simplified_topos
             n_topos = len(canonical_topologies)
-            
+
             # Create column names
             if n_topos == 3:
                 columns = ["T1", "T2", "T3"]
             else:
                 columns = [f"Topo{i+1}" for i in range(n_topos)]
-                
+
             if verbose:
                 print(f"  Established canonical topology order:")
                 for j, topo in enumerate(canonical_simplified_topos):
                     print(f"    {columns[j]}: {topo}")
-        
+
         # Map current topologies to canonical order
         topo_mapping = []
         for canonical_topo in canonical_simplified_topos:
@@ -515,7 +527,7 @@ def ts_to_twisst_weights(
                     f"TreeSequence {i+1} has different topologies than expected. "
                     f"Expected: {canonical_simplified_topos}, Got: {current_simplified_topos}"
                 )
-        
+
         if verbose and len(topo_mapping) != len(canonical_simplified_topos):
             print(f"  Warning: topology mapping incomplete: {topo_mapping}")
 
@@ -533,15 +545,15 @@ def ts_to_twisst_weights(
 
         # Reorder weights to match canonical topology order
         reordered_weights = weights_norm[:, topo_mapping]
-        
+
         # Create DataFrame and remove NaN rows
         df_current = pd.DataFrame(reordered_weights, columns=columns)
         df_current = df_current.dropna()
-        
+
         if len(df_current) > 0:
             all_weights.append(df_current)
             total_processed += len(df_current)
-            
+
             if verbose:
                 print(f"  Extracted {len(df_current)} valid trees")
         else:
@@ -551,9 +563,9 @@ def ts_to_twisst_weights(
     # Combine all weights into single DataFrame
     if not all_weights:
         raise ValueError("No valid topology weights found across all TreeSequences")
-    
+
     combined_df = pd.concat(all_weights, ignore_index=True)
-    
+
     if verbose:
         print(f"\nCombined Results:")
         print(f"  Total TreeSequences processed: {len(all_weights)}")
@@ -566,28 +578,26 @@ def ts_to_twisst_weights(
     if output_file:
         # Create header row with canonical simplified topologies
         header_row = pd.DataFrame([canonical_simplified_topos], columns=columns)
-        
+
         # Concatenate header and weights
         full_df = pd.concat([header_row, combined_df], ignore_index=True)
-        
+
         # Save to CSV
         full_df.to_csv(output_file, index=False)
-        
+
         if verbose:
             print(f"  Saved results to: {output_file}")
 
     return combined_df
 
-# in the final function- if the user gives a path and not an object directly- we need to load the trees from the path
-# and then run the twisst analysis
-def load_trees_from_path(path):
-    """
-    Loads trees from a path and returns a list of tskit.TreeSequence objects
-    """
-    return tskit.load(path)
 
 def newick_to_twisst_weights(
-    newick_trees, taxon_names=None, outgroup=None, output_file=None, verbose=False, twisst_verbose=False
+    newick_trees,
+    taxon_names=None,
+    outgroup=None,
+    output_file=None,
+    verbose=False,
+    twisst_verbose=False,
 ):
     """
     Extract topology weights from Newick tree strings using twisst.
@@ -603,7 +613,7 @@ def newick_to_twisst_weights(
     Returns:
         pd.DataFrame: Normalized weights ready for analysis
     """
-    
+
     # Check if twisst is available
     if weightTrees is None:
         raise ImportError(
@@ -611,18 +621,18 @@ def newick_to_twisst_weights(
             "twisstntern/external directory. You can download it from: "
             "https://github.com/simonhmartin/twisst"
         )
-    
+
     # Handle single tree string
     if isinstance(newick_trees, str):
         newick_trees = [newick_trees]
-    
+
     if len(newick_trees) == 0:
         raise ValueError("No Newick trees provided")
-    
+
     if verbose:
         print("=== Newick Trees Info ===")
         print(f"Number of trees: {len(newick_trees)}")
-    
+
     # Extract taxon names from first tree if not provided
     if taxon_names is None:
         try:
@@ -631,36 +641,38 @@ def newick_to_twisst_weights(
             if verbose:
                 print(f"Inferred taxon names from first tree: {taxon_names}")
         except Exception as e:
-            raise ValueError(f"Failed to parse first Newick tree to extract taxon names: {e}")
-    
+            raise ValueError(
+                f"Failed to parse first Newick tree to extract taxon names: {e}"
+            )
+
     if len(taxon_names) < 3:
         raise ValueError(
             f"Need at least 3 taxa for topology analysis. Found {len(taxon_names)}: {taxon_names}"
         )
-    
+
     # Set default outgroup if not specified
     if outgroup is None:
         outgroup = taxon_names[0]
         if verbose:
             print(f"Using {outgroup} as outgroup")
-    
+
     # Validate outgroup
     if outgroup not in taxon_names:
         raise ValueError(
             f"Outgroup '{outgroup}' not found in taxon names: {taxon_names}"
         )
-    
+
     if verbose:
         print(f"Analyzing {len(taxon_names)} taxa: {taxon_names}")
         print(f"Using outgroup: {outgroup}")
-    
+
     # Validate all trees have the same taxon set
     for i, newick in enumerate(newick_trees):
         try:
             tree = ete3.Tree(newick)
             tree_taxa = set(leaf.name for leaf in tree.get_leaves())
             expected_taxa = set(taxon_names)
-            
+
             if tree_taxa != expected_taxa:
                 raise ValueError(
                     f"Tree {i+1} has different taxa than expected. "
@@ -668,7 +680,7 @@ def newick_to_twisst_weights(
                 )
         except Exception as e:
             raise ValueError(f"Invalid Newick tree at position {i+1}: {e}")
-    
+
     # Convert Newick strings to ETE3 tree objects
     try:
         ete_trees = [ete3.Tree(newick) for newick in newick_trees]
@@ -676,16 +688,16 @@ def newick_to_twisst_weights(
             print(f"Successfully parsed {len(ete_trees)} Newick trees to ETE3 objects")
     except Exception as e:
         raise ValueError(f"Failed to parse Newick trees to ETE3 objects: {e}")
-    
+
     # For Newick format, twisst expects taxa as a list of lists
     # Each taxon name becomes a group containing just that taxon
     taxa = [[taxon] for taxon in taxon_names]
-    
+
     # Run twisst analysis
     if verbose:
         print("Running twisst analysis on Newick trees...")
         print(f"Taxa structure for twisst: {taxa}")
-    
+
     weightsData = weightTrees(
         ete_trees,  # Pass ETE3 tree objects instead of Newick strings
         treeFormat="ete3",  # Use ete3 format instead of newick
@@ -694,14 +706,14 @@ def newick_to_twisst_weights(
         outgroup=outgroup,
         verbose=twisst_verbose,
     )
-    
+
     # Print topologies if verbose
     if verbose:
         topos = weightsData["topos"]
         for i, topo in enumerate(topos):
             print(f"Topology {i+1}")
             print(topo)
-    
+
     # Extract normalized weights
     if "weights_norm" in weightsData:
         weights_norm = weightsData["weights_norm"]
@@ -715,21 +727,21 @@ def newick_to_twisst_weights(
                 "All topology weights are zero - this suggests a problem with the analysis"
             )
         weights_norm = weights / row_sums[:, np.newaxis]
-    
+
     # Create DataFrame
     n_topos = weights_norm.shape[1]
-    
+
     # Create column names based on number of topologies
     if n_topos == 3:
         columns = ["T1", "T2", "T3"]  # Standard 3-topology case (4 taxa)
     else:
         columns = [f"Topo{i+1}" for i in range(n_topos)]
-    
+
     df = pd.DataFrame(weights_norm, columns=columns)
-    
+
     # Remove any rows with NaN values (trees where no valid topology was found)
     df = df.dropna()
-    
+
     if verbose:
         print(f"\nExtracted {len(df)} valid trees with {n_topos} topologies")
         if len(df) > 0:
@@ -737,29 +749,34 @@ def newick_to_twisst_weights(
             print(df.describe())
         else:
             print("WARNING: No valid topology weights found!")
-    
+
     # Save to file if requested
     if output_file:
         # Get simplified topologies
         simplified_topos = simplify_topologies(weightsData)
-        
+
         # Create a new DataFrame with that single row
         header_row = pd.DataFrame([simplified_topos], columns=columns)
-        
+
         # Concatenate the header and the weights
         full_df = pd.concat([header_row, df], ignore_index=True)
-        
+
         # Save
         full_df.to_csv(output_file, index=False)
-        
+
         if verbose:
             print(f"Saved results to: {output_file}")
-    
+
     return df
 
 
 def trees_to_twisst_weights_unified(
-    file_path, taxon_names=None, outgroup=None, output_file=None, verbose=False, twisst_verbose=False
+    file_path,
+    taxon_names=None,
+    outgroup=None,
+    output_file=None,
+    verbose=False,
+    twisst_verbose=False,
 ):
     """
     Unified function to extract topology weights from any tree file format.
@@ -767,7 +784,7 @@ def trees_to_twisst_weights_unified(
 
     Args:
         file_path (str): Path to the tree file
-        taxon_names (List[str], optional): For Newick/Nexus files, list of taxon names. 
+        taxon_names (List[str], optional): For Newick/Nexus files, list of taxon names.
                                           For TreeSequence, this is ignored (populations used instead).
         outgroup (str, optional): Taxon/population name to use as outgroup. If None, uses the first.
         output_file (str, optional): Path to save CSV file. If None, returns DataFrame.
@@ -777,47 +794,47 @@ def trees_to_twisst_weights_unified(
     Returns:
         pd.DataFrame: Normalized topology weights ready for analysis
     """
-    
+
     if verbose:
         print(f"Processing tree file: {file_path}")
-    
+
     # Detect format and load trees
     try:
         tree_data, format_type = detect_and_read_trees(file_path)
     except Exception as e:
         raise ValueError(f"Failed to read tree file '{file_path}': {e}")
-    
+
     if verbose:
         print(f"Detected format: {format_type}")
-    
+
     # Route to appropriate processing function based on detected format
     if format_type == "ts":
         # TreeSequence format
         if verbose:
             print("Routing to TreeSequence processing function...")
-        
+
         return ts_to_twisst_weights(
             tree_data,
             outgroup=outgroup,
             output_file=output_file,
             verbose=verbose,
-            twisst_verbose=twisst_verbose
+            twisst_verbose=twisst_verbose,
         )
-    
+
     elif format_type == "newick":
         # Newick format (including converted Nexus)
         if verbose:
             print("Routing to Newick processing function...")
-        
+
         return newick_to_twisst_weights(
             tree_data,
             taxon_names=taxon_names,
             outgroup=outgroup,
             output_file=output_file,
             verbose=verbose,
-            twisst_verbose=twisst_verbose
+            twisst_verbose=twisst_verbose,
         )
-    
+
     else:
         raise ValueError(f"Unsupported tree format: {format_type}")
 

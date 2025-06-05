@@ -18,22 +18,22 @@ import ete3
 
 
 # KEEP THIS CONSTANT -- SHOULD BE KEPT SMALL FOR TESTING
-nP1 = 10 # number of samples in population 1
-nP2 = 10 # number of samples in population 2
-nP3 = 10 # number of samples in population 3
-n0 = 10 # number of samples in the outgroup
+nP1 = 10  # number of samples in population 1
+nP2 = 10  # number of samples in population 2
+nP3 = 10  # number of samples in population 3
+n0 = 10  # number of samples in the outgroup
 
 # Provide divergence times
 # WE KEEP CONSTANT FOR THIS RUN
-t1 = 100 # time of split between population 1 and population 2
-t2 = 200 # time of split between population (1,2) and population 3
-t3 = 300 # time of split between population (1,2,3) and the outgroup 0
+t1 = 100  # time of split between population 1 and population 2
+t2 = 200  # time of split between population (1,2) and population 3
+t3 = 300  # time of split between population (1,2,3) and the outgroup 0
 
 # Provide migration rate
-m = 0.0001 # migration rate between population 2 and population 3
+m = 0.00001  # migration rate between population 2 and population 3
 mig_rate = m
 
-Ne = 1000 # population size we keep constant for all populations for simplicity
+Ne = 1000  # population size we keep constant for all populations for simplicity
 # Provide population sizes
 NeP1 = Ne
 NeP2 = Ne
@@ -65,8 +65,8 @@ demography.add_population_split(time=t3, derived=["P123", "O"], ancestral="ANC")
 # setting up gene flow
 demography.set_migration_rate("P2", "P3", mig_rate)
 
-#Plot the demographic model
-ml.rcParams['figure.figsize'] = (8.0, 5.0)
+# Plot the demographic model
+ml.rcParams["figure.figsize"] = (8.0, 5.0)
 graph = msprime.Demography.to_demes(demography)
 fig, ax = plt.subplots()  # use plt.rcParams["figure.figsize"]
 demesdraw.tubes(graph, ax=ax, seed=1)
@@ -77,47 +77,50 @@ plt.show()
 # FUNCTIONS FOR POPULATION-LABELED NEWICK TREES
 ######################################################################################
 
+
 def get_population_map(ts):
     """
     Create a mapping from sample ID to population name for a TreeSequence.
-    
+
     Args:
         ts: msprime TreeSequence object
-        
+
     Returns:
         dict: Mapping from sample_id (int) to population_name (str)
     """
     pop_map = {}
-    
+
     # Create mapping from population ID to population name
     pop_id_to_name = {}
     for pop_id in range(ts.num_populations):
         pop = ts.population(pop_id)
-        if pop.metadata and 'name' in pop.metadata:
-            pop_name = pop.metadata['name']
+        if pop.metadata and "name" in pop.metadata:
+            pop_name = pop.metadata["name"]
         else:
             pop_name = str(pop_id)  # fallback to ID if no name
         pop_id_to_name[pop_id] = pop_name
-    
+
     # Map each sample to its population name
     for sample_id in ts.samples():
         node = ts.node(sample_id)
         pop_name = pop_id_to_name[node.population]
         pop_map[sample_id] = pop_name
-    
+
     return pop_map
+
 
 def create_newick_with_sample_labels(tree, pop_map):
     """
     Create a Newick string from a tskit tree with proper sample labels.
-    
+
     Args:
         tree: tskit Tree object
         pop_map: dict mapping sample_id to population_name
-        
+
     Returns:
         str: Newick string with population labels for samples
     """
+
     def _get_newick_recursive(node):
         """Recursively build Newick string"""
         if tree.is_sample(node):
@@ -129,7 +132,7 @@ def create_newick_with_sample_labels(tree, pop_map):
             children = tree.children(node)
             if len(children) == 0:
                 return ""
-            
+
             child_strings = []
             for child in children:
                 child_str = _get_newick_recursive(child)
@@ -139,49 +142,50 @@ def create_newick_with_sample_labels(tree, pop_map):
                     if branch_length > 0:
                         child_str += f":{branch_length}"
                     child_strings.append(child_str)
-            
+
             if len(child_strings) == 1:
                 return child_strings[0]
             else:
                 return f"({','.join(child_strings)})"
-    
+
     # Start from root
     root = tree.root
     newick = _get_newick_recursive(root)
-    
+
     # Add semicolon at the end
-    if not newick.endswith(';'):
-        newick += ';'
-    
+    if not newick.endswith(";"):
+        newick += ";"
+
     return newick
+
 
 def relabel_newick_with_populations(newick_string, pop_map):
     """
     Relabel a Newick tree string to use population names instead of sample IDs.
     This version handles both sample IDs and node names properly.
-    
+
     Args:
         newick_string (str): Original Newick tree with sample IDs
         pop_map (dict): Mapping from sample_id to population_name
-        
+
     Returns:
         str: Newick tree with population labels
     """
     try:
         # Parse the tree
         tree = ete3.Tree(newick_string)
-        
+
         # Relabel only leaf nodes
         for leaf in tree.get_leaves():
             leaf_name = leaf.name
-            
-            # Try to extract node ID from 'nXX' format  
-            if leaf_name.startswith('n') and leaf_name[1:].isdigit():
+
+            # Try to extract node ID from 'nXX' format
+            if leaf_name.startswith("n") and leaf_name[1:].isdigit():
                 node_id = int(leaf_name[1:])
                 if node_id in pop_map:
                     leaf.name = pop_map[node_id]
                     continue
-            
+
             # Try direct sample ID mapping
             try:
                 sample_id = int(leaf_name)
@@ -190,35 +194,37 @@ def relabel_newick_with_populations(newick_string, pop_map):
                     continue
             except ValueError:
                 pass
-                
+
             # If we can't map it, leave it as is
-        
+
         # Return the relabeled tree in Newick format
         return tree.write(format=1)  # format=1 includes branch lengths
-        
+
     except Exception as e:
         print(f"Error relabeling tree: {e}")
         return newick_string  # Return original if there's an error
 
+
 def get_taxon_names_and_outgroup(ts):
     """
     Extract taxon names and determine outgroup for twisst analysis.
-    
+
     Args:
         ts: msprime TreeSequence object
-        
+
     Returns:
         tuple: (taxon_names_list, outgroup_name)
     """
     pop_map = get_population_map(ts)
-    
+
     # Get unique population names
     taxon_names = sorted(list(set(pop_map.values())))
-    
+
     # Use the first population as outgroup (which should be "0" for population O)
     outgroup = "0"  # This corresponds to population "O"
-    
+
     return taxon_names, outgroup
+
 
 ######################################################################################
 # GENERATING THE TREE SEQUENCES
@@ -232,14 +238,14 @@ ts = msprime.sim_ancestry(
     recombination_rate=0.00000001,
     ploidy=1,
 )
- 
-num_replicates=20
+
+num_replicates = 20
 # For the locus usage its impossible to save the trees as a tskit.TreeSequence object!
 # but we can save this as a Newick/nexus files
 ts1 = msprime.sim_ancestry(
-    samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},   
+    samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
     demography=demography,
-    num_replicates=num_replicates
+    num_replicates=num_replicates,
 )
 
 
@@ -253,7 +259,8 @@ os.makedirs(output_dir, exist_ok=True)
 
 
 # 1. Save as tskit.TreeSequence object
-ts.dump(os.path.join(output_dir, "ts.trees"))
+ts.dump(os.path.join(output_dir, "tss.trees"))
+
 
 # 2a. Saving marginal trees as Newick with population labels (one tree per line)
 def save_ts_as_population_labeled_newick(ts, output_path):
@@ -265,7 +272,7 @@ def save_ts_as_population_labeled_newick(ts, output_path):
     - output_path: full path to the output .newick file
     """
     pop_map = get_population_map(ts)
-    
+
     with open(output_path, "w") as f:
         for i, tree in enumerate(ts.trees()):
             # Create Newick with proper sample labels
@@ -273,7 +280,11 @@ def save_ts_as_population_labeled_newick(ts, output_path):
             f.write(f"[Tree {i} @ interval {tree.interval}]\n")
             f.write(labeled_newick + "\n\n")
 
-save_ts_as_population_labeled_newick(ts, os.path.join(output_dir, "ts_pop_labeled.newick"))
+
+save_ts_as_population_labeled_newick(
+    ts, os.path.join(output_dir, "ts_pop_labeled.newick")
+)
+
 
 # 2b. Save Newick trees without metadata headers but with population labels
 def save_ts_as_plain_population_newick(ts, output_path):
@@ -282,13 +293,15 @@ def save_ts_as_plain_population_newick(ts, output_path):
     This format is ideal for twisst.
     """
     pop_map = get_population_map(ts)
-    
+
     with open(output_path, "w") as f:
         for tree in ts.trees():
             labeled_newick = create_newick_with_sample_labels(tree, pop_map)
             f.write(labeled_newick + "\n")
 
+
 save_ts_as_plain_population_newick(ts, os.path.join(output_dir, "ts_pop_plain.newick"))
+
 
 # 2c. Save the OLD versions for comparison
 def save_ts_as_newick(ts, output_path):
@@ -304,7 +317,9 @@ def save_ts_as_newick(ts, output_path):
             f.write(f"[Tree {i} @ interval {tree.interval}]\n")
             f.write(tree.as_newick() + "\n\n")
 
+
 save_ts_as_newick(ts, os.path.join(output_dir, "ts_old.newick"))
+
 
 def save_ts_as_plain_newick(ts, output_path):
     """
@@ -314,7 +329,9 @@ def save_ts_as_plain_newick(ts, output_path):
         for tree in ts.trees():
             f.write(tree.as_newick() + "\n")
 
+
 save_ts_as_plain_newick(ts, os.path.join(output_dir, "ts_old_plain.newick"))
+
 
 # 3. Save as Nexus format with population labels
 def save_ts_as_population_nexus(ts, output_path):
@@ -323,7 +340,7 @@ def save_ts_as_population_nexus(ts, output_path):
     Each tree includes interval metadata in its label.
     """
     pop_map = get_population_map(ts)
-    
+
     with open(output_path, "w") as f:
         f.write("#NEXUS\n\n")
         f.write("Begin trees;\n")
@@ -333,7 +350,9 @@ def save_ts_as_population_nexus(ts, output_path):
             f.write(f"  Tree TREE{i+1} {interval} = {labeled_newick};\n")
         f.write("End;\n")
 
+
 save_ts_as_population_nexus(ts, os.path.join(output_dir, "ts_pop.nexus"))
+
 
 # Old nexus for comparison
 def save_ts_as_nexus(ts, output_path):
@@ -349,6 +368,7 @@ def save_ts_as_nexus(ts, output_path):
             f.write(f"  Tree TREE{i+1} {interval} = {tree.as_newick()};\n")
         f.write("End;\n")
 
+
 save_ts_as_nexus(ts, os.path.join(output_dir, "ts_old.nexus"))
 
 
@@ -357,20 +377,20 @@ save_ts_as_nexus(ts, os.path.join(output_dir, "ts_old.nexus"))
 # Subdirectory to store each replicate's files
 rep_dir = os.path.join(output_dir, "replicates")
 os.makedirs(rep_dir, exist_ok=True)
-ts1=list(ts1)
+ts1 = list(ts1)
 for i in range(len(ts1)):
     base_name = f"rep{i}"
-    
-    #4a. Save in .trees format
+
+    # 4a. Save in .trees format
     ts_path = os.path.join(rep_dir, f"{base_name}.trees")
     ts_rep = ts1[i]
     ts_rep.dump(ts_path)
 
-    #4b. Save in .newick format with population labels
+    # 4b. Save in .newick format with population labels
     newick_path = os.path.join(rep_dir, f"{base_name}_pop.newick")
     save_ts_as_population_labeled_newick(ts_rep, newick_path)
 
-    #4c. Save in .nexus format with population labels
+    # 4c. Save in .nexus format with population labels
     nexus_path = os.path.join(rep_dir, f"{base_name}_pop.nexus")
     save_ts_as_population_nexus(ts_rep, nexus_path)
 
@@ -401,9 +421,9 @@ with open(simple_combined_path, "w") as f:
 # Get the taxon names and outgroup for the first tree sequence
 taxon_names, outgroup = get_taxon_names_and_outgroup(ts)
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("TWISST USAGE INFORMATION")
-print("="*60)
+print("=" * 60)
 print(f"Taxon names to use with twisst: {taxon_names}")
 print(f"Suggested outgroup: '{outgroup}'")
 print("\nGenerated files:")
@@ -412,7 +432,7 @@ print("  - simple_replicates_for_twisst.newick: Multiple replicates for twisst")
 print(f"\nExample twisst usage:")
 print(f"  taxon_names = {taxon_names}")
 print(f"  outgroup = '{outgroup}'")
-print("="*60)
+print("=" * 60)
 
 # Also save this info to a file
 info_path = os.path.join(output_dir, "twisst_info.txt")
@@ -425,4 +445,6 @@ with open(info_path, "w") as f:
     f.write("  - ts_pop_plain.newick: Single TreeSequence with population labels\n")
     f.write("  - simple_replicates_for_twisst.newick: Multiple replicates\n\n")
     f.write("Example usage in tree_processing.py:\n")
-    f.write(f"  newick_to_twisst_weights(trees, taxon_names={taxon_names}, outgroup='{outgroup}')\n")
+    f.write(
+        f"  newick_to_twisst_weights(trees, taxon_names={taxon_names}, outgroup='{outgroup}')\n"
+    )

@@ -227,7 +227,9 @@ def mid_point_triangle(a1, b1, a2, b2, a3, b3):
 
     return apex_x, round(mid_y, 4)
 
+
 ###########################################
+
 
 def dump_data(file):
     """Load and process data from CSV file.
@@ -261,39 +263,45 @@ def dump_data(file):
 
     for delimiter in [",", "\t", ";", " "]:
         print(f"\nTrying delimiter: '{delimiter}'")
-        
+
         # Try different numbers of rows to skip
         for skiprows in range(10):  # Try skipping 0-9 rows
             try:
                 # Read just the first 10 rows to check
-                test_data = pd.read_csv(file, sep=delimiter, skiprows=skiprows, nrows=10)
-                
+                test_data = pd.read_csv(
+                    file, sep=delimiter, skiprows=skiprows, nrows=10
+                )
+
                 # Convert all columns to numeric, coercing errors to NaN
                 for col in test_data.columns:
-                    test_data[col] = pd.to_numeric(test_data[col], errors='coerce')
-                
+                    test_data[col] = pd.to_numeric(test_data[col], errors="coerce")
+
                 # Drop completely empty columns
-                test_data = test_data.dropna(axis=1, how='all')
-                
+                test_data = test_data.dropna(axis=1, how="all")
+
                 # Count how many columns have numeric data
                 numeric_cols = []
                 for col in test_data.columns:
                     if test_data[col].notna().any():
                         numeric_cols.append(col)
-                
-                print(f"  Skip {skiprows} rows: Found {len(numeric_cols)} numeric columns")
-                
+
+                print(
+                    f"  Skip {skiprows} rows: Found {len(numeric_cols)} numeric columns"
+                )
+
                 # If we found exactly 3 numeric columns, this is our best match so far
                 if len(numeric_cols) == 3:
                     best_delimiter = delimiter
                     best_skiprows = skiprows
                     best_data = test_data[numeric_cols]
-                    print(f"  Found 3 numeric columns with delimiter '{delimiter}' skipping {skiprows} rows")
+                    print(
+                        f"  Found 3 numeric columns with delimiter '{delimiter}' skipping {skiprows} rows"
+                    )
                     break
-                
+
             except Exception as e:
                 continue
-        
+
         if best_data is not None:
             break
 
@@ -347,12 +355,15 @@ def dump_data(file):
         data.iloc[i, :] = (data.iloc[i, :]) / s
 
     data = data.loc[data.iloc[:, 1] != data.iloc[:, 2]]
-    print(f"\nData loaded and normalized. Points with T2 == T3 removed. Remaining rows: {len(data)}")
-
-
+    print(
+        f"\nData loaded and normalized. Points with T2 == T3 removed. Remaining rows: {len(data)}"
+    )
 
     return data
+
+
 ###################################################
+
 
 def dump_data1(file):
     """Load and process data from CSV file.
@@ -414,7 +425,9 @@ def dump_data1(file):
             if alt_delim != delimiter:
                 try:
                     data = pd.read_csv(file, sep=alt_delim, skiprows=skiprows)
-                    print(f"Successfully read with alternative delimiter: '{alt_delim}'")
+                    print(
+                        f"Successfully read with alternative delimiter: '{alt_delim}'"
+                    )
                     print(f"Columns found: {list(data.columns)}")
                     break
                 except Exception:
@@ -424,8 +437,10 @@ def dump_data1(file):
 
     # If we have more than 3 columns, try to identify the relevant columns
     if len(data.columns) > 3:
-        print(f"\nFound {len(data.columns)} columns. Attempting to identify relevant columns...")
-        
+        print(
+            f"\nFound {len(data.columns)} columns. Attempting to identify relevant columns..."
+        )
+
         # First try to find columns with names containing T1, T2, T3
         t_cols = []
         for col in data.columns:
@@ -441,12 +456,12 @@ def dump_data1(file):
             # If we can't find named columns, try to find numeric columns
             # First convert all columns to numeric, coercing errors to NaN
             for col in data.columns:
-                data[col] = pd.to_numeric(data[col], errors='coerce')
-            
+                data[col] = pd.to_numeric(data[col], errors="coerce")
+
             # Drop any completely empty columns
-            data = data.dropna(axis=1, how='all')
+            data = data.dropna(axis=1, how="all")
             print(f"Columns after dropping empty: {list(data.columns)}")
-            
+
             # Get the first 3 columns that have at least one non-NaN value
             numeric_cols = []
             for col in data.columns:
@@ -455,7 +470,7 @@ def dump_data1(file):
                     print(f"Found numeric column: {col}")
                     if len(numeric_cols) == 3:
                         break
-            
+
             if len(numeric_cols) == 3:
                 print("Using first three numeric columns")
                 data = data[numeric_cols]
@@ -466,12 +481,12 @@ def dump_data1(file):
                 numeric_cols = []
                 for col in data.columns:
                     # Check if any of the first 10 values are numeric
-                    if any(pd.to_numeric(data[col].iloc[:10], errors='coerce').notna()):
+                    if any(pd.to_numeric(data[col].iloc[:10], errors="coerce").notna()):
                         numeric_cols.append(col)
                         print(f"Found column with numeric data in first 10 rows: {col}")
                         if len(numeric_cols) == 3:
                             break
-                
+
                 if len(numeric_cols) == 3:
                     print("Using columns with numeric data in first 10 rows")
                     data = data[numeric_cols]
@@ -674,7 +689,7 @@ def right_triangle_coordinates_list(alpha):
     Generate a list of coordinate tuples for all admissible right-hand-side subtriangles
     in a ternary triangle grid (divided along T1 axis) with granularity alpha.
 
-    A triangle is included only if its leftmost x-coordinate is non-negative 
+    A triangle is included only if its leftmost x-coordinate is non-negative
     (i.e., fully lies on the right side of the ternary diagram).
 
     Parameters:
@@ -711,11 +726,13 @@ def right_triangle_coordinates_list(alpha):
                 break
 
             # Store the triangle's T1-T2-T3 coordinates
-            coords_list.append([
-                (round(a1, 4), round(b1, 4)),
-                (round(a2_up, 4), round(b2_up, 4)),
-                (round(a3_up, 4), round(b3_up, 4)),
-            ])
+            coords_list.append(
+                [
+                    (round(a1, 4), round(b1, 4)),
+                    (round(a2_up, 4), round(b2_up, 4)),
+                    (round(a3_up, 4), round(b3_up, 4)),
+                ]
+            )
 
             # --- DOWN TRIANGLE ---
             k_T3 += 1  # Shift the base right to the next diamond-pair
@@ -726,23 +743,27 @@ def right_triangle_coordinates_list(alpha):
             a3_down = 1 - (k_T3 + 1) * alpha
             b3_down = 1 - k_T3 * alpha
 
-            triangle_x, _, _ = return_triangle_coord(a1, b1, a2_down, b2_down, a3_down, b3_down)
+            triangle_x, _, _ = return_triangle_coord(
+                a1, b1, a2_down, b2_down, a3_down, b3_down
+            )
 
             # Stop again if this triangle crosses over the y-axis
             if round(triangle_x[0], 4) < 0:
                 break
 
-            coords_list.append([
-                (round(a1, 4), round(b1, 4)),
-                (round(a2_down, 4), round(b2_down, 4)),
-                (round(a3_down, 4), round(b3_down, 4)),
-            ])
+            coords_list.append(
+                [
+                    (round(a1, 4), round(b1, 4)),
+                    (round(a2_down, 4), round(b2_down, 4)),
+                    (round(a3_down, 4), round(b3_down, 4)),
+                ]
+            )
 
             k_T2 += 1  # Prepare next pair of up/down triangles along the current row
 
     coords_list = pd.DataFrame(coords_list)
     # Assign descending index for plotting (bottom-up row indexing)
-    coords_list["index"] = list(range(number_triangles(alpha), 0, -1))        
+    coords_list["index"] = list(range(number_triangles(alpha), 0, -1))
 
     return coords_list
 
@@ -798,6 +819,3 @@ def log_likelihood_ratio_test(n_r, n_l):
     # degress of freedom = 1, according to https://stats.libretexts.org/Bookshelves/Applied_Statistics/Biological_Statistics_(McDonald)/02%3A_Tests_for_Nominal_Variables/2.04%3A_GTest_of_Goodness-of-Fit
     p_value = 1 - chi2.cdf(test_stat, df=1)
     return float(test_stat), float(p_value)
-
-
-

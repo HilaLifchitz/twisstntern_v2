@@ -9,8 +9,15 @@ from scipy.stats.distributions import chi2
 from math import log
 import pandas as pd
 import matplotlib.pyplot as plt
-from twisstntern.utils import (cartizian, return_triangle_coord, dump_data,
-                            n, D_LR, log_likelihood_ratio_test, number_triangles)
+from twisstntern.utils import (
+    cartizian,
+    return_triangle_coord,
+    dump_data,
+    n,
+    D_LR,
+    log_likelihood_ratio_test,
+    number_triangles,
+)
 
 
 def fundamental_asymmetry(data):
@@ -78,7 +85,7 @@ def triangles_analysis(data, granularity):
     elif granularity == "coarse":
         alpha = 0.25
     else:
-        alpha = float(granularity) # if the user provides a float value for granularity    
+        alpha = float(granularity)  # if the user provides a float value for granularity
 
     all_results = []
 
@@ -121,7 +128,9 @@ def triangles_analysis(data, granularity):
             a3_down = 1 - (k_T3 + 1) * alpha
             b3_down = 1 - k_T3 * alpha
 
-            triangle_x, _, _ = return_triangle_coord(a1, b1, a2_down, b2_down, a3_down, b3_down)
+            triangle_x, _, _ = return_triangle_coord(
+                a1, b1, a2_down, b2_down, a3_down, b3_down
+            )
             if round(triangle_x[0], 4) < 0:
                 break
 
@@ -142,11 +151,17 @@ def triangles_analysis(data, granularity):
     # Create DataFrame of results
     triangles = pd.DataFrame(
         all_results,
-        columns=["coord. (T1, T2, T3)", "n_right", "n_left", "D-LR", "g-test", "p-value(g-test)"]
+        columns=[
+            "coord. (T1, T2, T3)",
+            "n_right",
+            "n_left",
+            "D-LR",
+            "g-test",
+            "p-value(g-test)",
+        ],
     )
 
     # Assign descending index for plotting (bottom-up row indexing)
     triangles["index"] = list(range(number_triangles(alpha), 0, -1))
 
     return triangles
-
