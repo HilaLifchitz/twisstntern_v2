@@ -15,9 +15,10 @@ def main():
         help="Path to the input file (tree file: .trees/.ts/.newick/.nexus or CSV file: .csv).",
     )
     parser.add_argument(
-        "granularity",
+        "--granularity",
         type=str,
-        help="Granularity level: 'superfine', 'fine', 'coarse', or a float (e.g., 0.1).",
+        default="0.1",
+        help="Granularity level: 'superfine', 'fine', 'coarse', or a float (e.g., 0.1). Default: 0.1",
     )
     parser.add_argument(
         "--taxon-names",

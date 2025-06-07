@@ -157,3 +157,70 @@ def main():
 if __name__ == "__main__":
     success = main()
     sys.exit(0 if success else 1) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # taking in a ts object- not in generator or Newick format- and returning the populations with samples
+def debug_ts_populations(ts):
+    """
+    Debug function to inspect TreeSequence population structure.
+    Useful for understanding what populations are available.
+    """
+    print("=== TreeSequence Population Debug ===")
+    print(f"Total populations: {ts.num_populations}")
+    print(f"Total samples: {ts.num_samples}")
+    print(f"Total trees: {ts.num_trees}")
+    print()
+
+    # Show population details
+    print("Population details:")
+    for i in range(ts.num_populations):
+        pop = ts.population(i)
+        metadata = pop.metadata if pop.metadata else {}
+        name = metadata.get("name", f"Pop{i}") if metadata else f"Pop{i}"
+
+        # Count samples in this population
+        samples = [int(s) for s in ts.samples() if ts.node(s).population == i]
+
+        print(f"  Population {i}: name='{name}', {len(samples)} samples")
+        if len(samples) > 0:
+            print(f"    Sample IDs: {samples[:5]}{'...' if len(samples) > 5 else ''}")
+
+    print()
+
+    # Show what twisst would extract
+    populations_with_samples = []
+    for pop_id in range(ts.num_populations):
+        samples = [s for s in ts.samples() if ts.node(s).population == pop_id]
+        if len(samples) > 0:
+            populations_with_samples.append(str(pop_id))
+
+    print(f"Populations with samples (for twisst): {populations_with_samples}")
+
+    if len(populations_with_samples) >= 3:
+        print(
+            f"✓ Ready for topology analysis ({len(populations_with_samples)} populations)"
+        )
+    else:
+        print(
+            f"✗ Need at least 3 populations with samples (found {len(populations_with_samples)})"
+        )
+
+    return populations_with_samples

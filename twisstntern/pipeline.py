@@ -10,7 +10,10 @@ from twisstntern.visualization import (
     plotting_triangle_index,
     plot_fundamental_asymmetry,
 )
-from twisstntern.tree_processing import detect_and_read_trees
+from twisstntern.tree_processing import (
+    detect_and_read_trees,
+    trees_to_twisst_weights_unified,
+)
 
 
 def detect_file_type(file_path):
@@ -108,9 +111,6 @@ def process_tree_file(tree_file, taxon_names=None, outgroup=None, output_dir="Re
             "Please install it manually or check your internet connection."
         )
 
-    # Import tree processing functions after ensuring twisst is available
-    from twisstntern.tree_processing import trees_to_twisst_weights_unified
-
     # Generate output filename
     input_name = Path(tree_file).stem
     csv_output = output_dir / f"{input_name}_topology_weights.csv"
@@ -118,21 +118,11 @@ def process_tree_file(tree_file, taxon_names=None, outgroup=None, output_dir="Re
     print(f"Processing tree file: {tree_file}")
     print(f"Output CSV will be saved to: {csv_output}")
 
-    # if the tree is in Newick format, the users had to provide taxon names
-    # detect the file type
-    _, file_type = detect_and_read_trees(tree_file)
-    if file_type == "newick":
-        if taxon_names is None:
-            raise ValueError("Taxon names are required for Newick files")
-        if outgroup is None:
-            raise ValueError("Outgroup is required for Newick files")
-
-    # Process trees using the unified function, automatically save csv topology weights in csv_output
+    # Process trees using the unified function, which automatically saves csv topology weights
     topology_weights_df = trees_to_twisst_weights_unified(
         file_path=tree_file,
         taxon_names=taxon_names,
         outgroup=outgroup,
-        output_file=str(csv_output),
         verbose=True,
     )
 
@@ -173,6 +163,14 @@ def run_analysis(file, granularity=0.1, taxon_names=None, outgroup=None):
         print(
             "Detected tree file format. Processing trees to generate topology weights..."
         )
+
+        # if the tree is in Newick format, the users had to provide taxon names
+        _, tree_type = detect_and_read_trees(file)
+        if tree_type == "newick":
+            if taxon_names is None:
+                raise ValueError("Taxon names are required for Newick files")
+            if outgroup is None:
+                raise ValueError("Outgroup is required for Newick files")
 
         # Process tree file to generate CSV (this will handle twisst installation)
         csv_file = process_tree_file(

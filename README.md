@@ -1,113 +1,70 @@
-# Twisstntern v2
+# TWISSTNTERN
 
-A Python package for ternary coordinate analysis and visualization.
-
-## Recent Updates
-
-### Code Refactoring
-- **Modular Structure:** The codebase is now organized into several main modules:
-  - `core.py`: Core mathematical and helper functions
-  - `analysis.py`: Statistical and triangle-based analysis functions
-  - `visualization.py`: All plotting and visualization functions
-  - `tree_processing.py`: Tree sequence processing and twisst integration
-  - `simulation.py`: Demographic simulation and tree sequence generation
-  - `__init__.py`: Exposes all main functions at the package level
-
-### Enhanced Features
-- **Flexible Data Loading:** The `dump_data` function now:
-  - Automatically detects CSV file format and delimiter
-  - Handles various CSV formats (comma, tab, semicolon, space-separated)
-  - Provides detailed feedback about file reading process
-  - Skips empty lines and invalid data
-  - Normalizes data automatically
-
-- **Tree Sequence Processing:**
-  - Direct integration with twisst for topology analysis
-  - Support for newick format tree sequences
-  - Automatic conversion of topology weights to ternary coordinates
-  - Efficient processing of large tree sequences
-
-- **Demographic Simulation:**
-  - Support for neutral demographic simulations
-  - Configurable population sizes and migration rates
-  - Flexible recombination and mutation rate settings
-  - Output in both tree sequence and CSV formats
-
-- **Improved User Interface:**
-  - Interactive CSV file selection
-  - Excludes system files and checkpoints
-  - Clear granularity selection options
-  - Detailed error reporting
+A package for analyzing ternary data from topology weights.
 
 ## Installation
 
-Required dependencies:
+1. Install the package and its dependencies:
+
 ```bash
-pip install numpy pandas matplotlib scipy sympy ete3 msprime requests
+pip install -r requirements.txt
+pip install -e .
+```
+
+2. Or install directly with all dependencies:
+
+```bash
+pip install -e .[dev]
 ```
 
 ## Usage
 
-### Basic CSV Input
-```python
-import twisstntern
+### Command line interface:
 
-# Load and process data
-data = twisstntern.dump_data("myfile.csv")
+```bash
+# Analyze a tree file with custom granuality (0.25)
+python -m twisstntern tree_file.trees 0.25
 
-# Run analysis
-results = twisstntern.triangles_analysis(data, "fine", "myfile")
+# granualities can be specified by words:
 
-# Visualize results
-twisstntern.plot(data, 0.1, "myfile")
+#                   coarse = 0.25
+#                     fine = 0.1
+#                superfine = 0.05
+
+# default granuality is 0.1 
+python -m twisstntern tree_file.trees 
+
+
+# Analyze a CSV file  
+python -m twisstntern weights.csv fine
+
+# Analyze Newick trees with specific taxa
+python -m twisstntern trees.newick 0.05 --taxon-names A B C D --outgroup A
 ```
 
-### Tree Sequence Processing
+
+### Python interface:
+
 ```python
-import twisstntern
+from twisstntern import run_analysis
 
-# Define taxon groups
-groups = {
-    "pop1": ["sample1", "sample2"],
-    "pop2": ["sample3", "sample4"],
-    "pop3": ["sample5", "sample6"]
-}
-
-# Process tree sequence
-ternary_data = twisstntern.process_tree_sequence(
-    "trees.trees",
-    groups,
-    window_size=1000
+# Analyze any supported file
+results, fundamental_results, csv_file = run_analysis(
+    file="your_file.trees",
+    granularity=0.1
 )
 ```
 
-### Demographic Simulation
-```python
-import twisstntern
+## Dependencies
 
-# Create demographic model
-model = twisstntern.DemographicModel("config.yaml")
-
-# Simulate a single locus
-ts = twisstntern.simulate_locus(
-    model,
-    n_ind=10,
-    rec_rate=1e-8,
-    mutation_rate=1e-8
-)
-
-# Simulate a chromosome
-ts = twisstntern.simulate_chromosome(
-    model,
-    n_ind=10,
-    n_loci=100,
-    rec_rate=1e-8,
-    mutation_rate=1e-8
-)
-
-# Save tree sequences
-twisstntern.save_tree_sequences(ts, "output_dir")
-```
+- numpy>=1.21.0
+- pandas>=1.3.0  
+- scipy>=1.7.0
+- matplotlib>=3.4.0
+- tskit>=0.4.0
+- msprime>=1.0.0
+- ete3>=3.1.0
+- requests>=2.25.0
 
 ## Features
 
@@ -122,3 +79,23 @@ twisstntern.save_tree_sequences(ts, "output_dir")
 ## Contributing
 
 Feel free to submit issues and enhancement requests! 
+
+## Installation Instructions
+
+1. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+2. Install the package in development mode
+
+```bash
+pip install -e .
+```
+
+3. Test it works
+
+```bash
+python -m twisstntern --help
+``` 

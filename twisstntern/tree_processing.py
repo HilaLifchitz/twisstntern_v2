@@ -17,7 +17,7 @@ import tskit
 import ete3
 import msprime
 
-####################### ts on the spot##########################
+####################### ts on the spot ##########################
 
 # KEEP THIS CONSTANT -- SHOULD BE KEPT SMALL FOR TESTING
 nP1 = 10  # number of samples in population 1
@@ -84,13 +84,6 @@ ts = msprime.sim_ancestry(
     ploidy=1,
 )
 
-
-# Such Naive Newick dont have taxon information coded to the nodes--> do not work
-# Convert all marginal trees to Newick format, stored in a list
-newick_trees = [tree.as_newick() for tree in ts.trees()]
-
-# (Optional) Join them into one string if you want a single variable:
-newick_string = "\n".join(newick_trees)
 ########################################################################################
 
 # Add the external directory to the Python path
@@ -173,10 +166,6 @@ def detect_and_read_trees(
         raise ValueError(f"Failed to read Newick trees: {e}")
 
 
-# This function that takes the output of twisst and returns a list of simplified Newick strings which corresponds to the toplogies it weights
-# it removes branch lengths and internal node names
-# it is used to simplify the topologies for the twisst analysis, so that we can use print them in verbose mode
-# and also to save them in the output file
 def simplify_topologies(weightsData):
     """
     Takes a twisst weightsData dictionary and returns simplified Newick strings
@@ -205,9 +194,6 @@ def simplify_topologies(weightsData):
     return simplified_topos
 
 
-# excepts a tskit.TreeSequence object (with recombination--> many trees inside) [not a path or a generator!]
-# and returns a pd.DataFrame with the weights it also prints the corresponding topologies
-# prints results to a csv file if output_file is provided
 def ts_chromosome_to_twisst_weights(
     ts, outgroup=None, output_file=None, verbose=False, twisst_verbose=False
 ):
@@ -346,57 +332,6 @@ def ts_chromosome_to_twisst_weights(
     return df
 
 
-# taking in a ts object- not in generator or Newick format- and returning the populations with samples
-def debug_ts_populations(ts):
-    """
-    Debug function to inspect TreeSequence population structure.
-    Useful for understanding what populations are available.
-    """
-    print("=== TreeSequence Population Debug ===")
-    print(f"Total populations: {ts.num_populations}")
-    print(f"Total samples: {ts.num_samples}")
-    print(f"Total trees: {ts.num_trees}")
-    print()
-
-    # Show population details
-    print("Population details:")
-    for i in range(ts.num_populations):
-        pop = ts.population(i)
-        metadata = pop.metadata if pop.metadata else {}
-        name = metadata.get("name", f"Pop{i}") if metadata else f"Pop{i}"
-
-        # Count samples in this population
-        samples = [int(s) for s in ts.samples() if ts.node(s).population == i]
-
-        print(f"  Population {i}: name='{name}', {len(samples)} samples")
-        if len(samples) > 0:
-            print(f"    Sample IDs: {samples[:5]}{'...' if len(samples) > 5 else ''}")
-
-    print()
-
-    # Show what twisst would extract
-    populations_with_samples = []
-    for pop_id in range(ts.num_populations):
-        samples = [s for s in ts.samples() if ts.node(s).population == pop_id]
-        if len(samples) > 0:
-            populations_with_samples.append(str(pop_id))
-
-    print(f"Populations with samples (for twisst): {populations_with_samples}")
-
-    if len(populations_with_samples) >= 3:
-        print(
-            f"✓ Ready for topology analysis ({len(populations_with_samples)} populations)"
-        )
-    else:
-        print(
-            f"✗ Need at least 3 populations with samples (found {len(populations_with_samples)})"
-        )
-
-    return populations_with_samples
-
-
-# THE FUNCTION TO CALL FOR THE TWISSTNTER_SIMULATOR!!!!!!!!!!
-# A function that can handle both TreeSequence objects and generators that yield multiple TreeSequence objects.
 def ts_to_twisst_weights(
     input_data, outgroup=None, output_file=None, verbose=False, twisst_verbose=False
 ):
@@ -604,8 +539,8 @@ def newick_to_twisst_weights(
 
     Args:
         newick_trees (List[str] or str): List of Newick tree strings or single Newick string
-        taxon_names (List[str], optional): List of taxon names. If None, will be inferred from first tree.
-        outgroup (str, optional): Taxon name to use as outgroup. If None, uses the first taxon.
+        taxon_names (List[str], optional): List of population names. If None, will be inferred from sample names.
+        outgroup (str, optional): Population name to use as outgroup. If None, uses the first population.
         output_file (str, optional): Path to save CSV file. If None, returns DataFrame.
         verbose (bool): Whether to print verbose output
         twisst_verbose (bool): Whether to print verbose twisst output
@@ -633,50 +568,86 @@ def newick_to_twisst_weights(
         print("=== Newick Trees Info ===")
         print(f"Number of trees: {len(newick_trees)}")
 
-    # Extract taxon names from first tree if not provided
-    if taxon_names is None:
-        try:
-            first_tree = ete3.Tree(newick_trees[0])
-            taxon_names = [leaf.name for leaf in first_tree.get_leaves()]
-            if verbose:
-                print(f"Inferred taxon names from first tree: {taxon_names}")
-        except Exception as e:
-            raise ValueError(
-                f"Failed to parse first Newick tree to extract taxon names: {e}"
+    # Extract all sample names from first tree
+    try:
+        first_tree = ete3.Tree(newick_trees[0])
+        all_sample_names = [leaf.name for leaf in first_tree.get_leaves()]
+        if verbose:
+            print(f"Found {len(all_sample_names)} samples in first tree")
+            print(
+                f"Sample names: {all_sample_names[:10]}{'...' if len(all_sample_names) > 10 else ''}"
             )
+    except Exception as e:
+        raise ValueError(f"Failed to parse first Newick tree: {e}")
 
-    if len(taxon_names) < 3:
+    # Group samples by population (infer from sample names like 'P1_1', 'P2_5', etc.)
+    population_samples = {}
+    population_names = []
+
+    for sample in all_sample_names:
+        # Extract population name (part before underscore)
+        if "_" in sample:
+            pop_name = sample.split("_")[0]
+        else:
+            # If no underscore, treat each sample as its own population
+            pop_name = sample
+
+        if pop_name not in population_samples:
+            population_samples[pop_name] = []
+            population_names.append(pop_name)
+
+        population_samples[pop_name].append(sample)
+
+    if verbose:
+        print(f"Detected {len(population_names)} populations: {population_names}")
+        for pop_name in population_names:
+            sample_count = len(population_samples[pop_name])
+            print(f"  {pop_name}: {sample_count} samples")
+
+    # Override with user-provided taxon_names if provided
+    if taxon_names is not None:
+        # Validate that user-provided taxon_names match detected populations
+        if set(taxon_names) != set(population_names):
+            if verbose:
+                print(
+                    f"Warning: User-provided taxon_names {taxon_names} don't match detected populations {population_names}"
+                )
+                print("Using detected populations...")
+        else:
+            population_names = taxon_names
+
+    if len(population_names) < 3:
         raise ValueError(
-            f"Need at least 3 taxa for topology analysis. Found {len(taxon_names)}: {taxon_names}"
+            f"Need at least 3 populations for topology analysis. Found {len(population_names)}: {population_names}"
         )
 
     # Set default outgroup if not specified
     if outgroup is None:
-        outgroup = taxon_names[0]
+        outgroup = population_names[0]
         if verbose:
             print(f"Using {outgroup} as outgroup")
 
     # Validate outgroup
-    if outgroup not in taxon_names:
+    if outgroup not in population_names:
         raise ValueError(
-            f"Outgroup '{outgroup}' not found in taxon names: {taxon_names}"
+            f"Outgroup '{outgroup}' not found in populations: {population_names}"
         )
 
     if verbose:
-        print(f"Analyzing {len(taxon_names)} taxa: {taxon_names}")
+        print(f"Analyzing {len(population_names)} populations: {population_names}")
         print(f"Using outgroup: {outgroup}")
 
-    # Validate all trees have the same taxon set
+    # Validate all trees have the same sample set
+    expected_samples = set(all_sample_names)
     for i, newick in enumerate(newick_trees):
         try:
             tree = ete3.Tree(newick)
-            tree_taxa = set(leaf.name for leaf in tree.get_leaves())
-            expected_taxa = set(taxon_names)
+            tree_samples = set(leaf.name for leaf in tree.get_leaves())
 
-            if tree_taxa != expected_taxa:
+            if tree_samples != expected_samples:
                 raise ValueError(
-                    f"Tree {i+1} has different taxa than expected. "
-                    f"Expected: {expected_taxa}, Got: {tree_taxa}"
+                    f"Tree {i+1} has different samples than expected. "
+                    f"Expected {len(expected_samples)} samples, got {len(tree_samples)} samples"
                 )
         except Exception as e:
             raise ValueError(f"Invalid Newick tree at position {i+1}: {e}")
@@ -689,20 +660,23 @@ def newick_to_twisst_weights(
     except Exception as e:
         raise ValueError(f"Failed to parse Newick trees to ETE3 objects: {e}")
 
-    # For Newick format, twisst expects taxa as a list of lists
-    # Each taxon name becomes a group containing just that taxon
-    taxa = [[taxon] for taxon in taxon_names]
+    # Create taxa structure for twisst (list of lists, one per population)
+    taxa = []
+    for pop_name in population_names:
+        taxa.append(population_samples[pop_name])
 
     # Run twisst analysis
     if verbose:
         print("Running twisst analysis on Newick trees...")
-        print(f"Taxa structure for twisst: {taxa}")
+        print(f"Taxa structure for twisst:")
+        for i, (pop_name, samples) in enumerate(zip(population_names, taxa)):
+            print(f"  {pop_name}: {len(samples)} samples")
 
     weightsData = weightTrees(
-        ete_trees,  # Pass ETE3 tree objects instead of Newick strings
-        treeFormat="ete3",  # Use ete3 format instead of newick
-        taxa=taxa,  # Provide taxa parameter instead of taxonNames
-        taxonNames=taxon_names,
+        ete_trees,  # Pass ETE3 tree objects
+        treeFormat="ete3",  # Use ete3 format
+        taxa=taxa,  # Dynamic taxa structure
+        taxonNames=population_names,  # Dynamic population names
         outgroup=outgroup,
         verbose=twisst_verbose,
     )
@@ -733,7 +707,7 @@ def newick_to_twisst_weights(
 
     # Create column names based on number of topologies
     if n_topos == 3:
-        columns = ["T1", "T2", "T3"]  # Standard 3-topology case (4 taxa)
+        columns = ["T1", "T2", "T3"]  # Standard 3-topology case (4 populations)
     else:
         columns = [f"Topo{i+1}" for i in range(n_topos)]
 
@@ -774,20 +748,19 @@ def trees_to_twisst_weights_unified(
     file_path,
     taxon_names=None,
     outgroup=None,
-    output_file=None,
     verbose=False,
     twisst_verbose=False,
 ):
     """
     Unified function to extract topology weights from any tree file format.
     Automatically detects format (TreeSequence, Newick, or Nexus) and processes accordingly.
+    Automatically saves results to Results/{filename}_topology_weights.csv
 
     Args:
         file_path (str): Path to the tree file
         taxon_names (List[str], optional): For Newick/Nexus files, list of taxon names.
                                           For TreeSequence, this is ignored (populations used instead).
         outgroup (str, optional): Taxon/population name to use as outgroup. If None, uses the first.
-        output_file (str, optional): Path to save CSV file. If None, returns DataFrame.
         verbose (bool): Whether to print verbose output
         twisst_verbose (bool): Whether to print verbose twisst output
 
@@ -797,6 +770,17 @@ def trees_to_twisst_weights_unified(
 
     if verbose:
         print(f"Processing tree file: {file_path}")
+
+    # Create Results directory if it doesn't exist
+    results_dir = Path("Results")
+    results_dir.mkdir(exist_ok=True)
+
+    # Generate output filename
+    input_filename = Path(file_path).stem  # filename without extension
+    output_file = results_dir / f"{input_filename}_topology_weights.csv"
+
+    if verbose:
+        print(f"Will save results to: {output_file}")
 
     # Detect format and load trees
     try:
@@ -816,7 +800,7 @@ def trees_to_twisst_weights_unified(
         return ts_to_twisst_weights(
             tree_data,
             outgroup=outgroup,
-            output_file=output_file,
+            output_file=str(output_file),
             verbose=verbose,
             twisst_verbose=twisst_verbose,
         )
@@ -830,7 +814,7 @@ def trees_to_twisst_weights_unified(
             tree_data,
             taxon_names=taxon_names,
             outgroup=outgroup,
-            output_file=output_file,
+            output_file=str(output_file),
             verbose=verbose,
             twisst_verbose=twisst_verbose,
         )
@@ -839,7 +823,57 @@ def trees_to_twisst_weights_unified(
         raise ValueError(f"Unsupported tree format: {format_type}")
 
 
-# Convenience function for backward compatibility
+# Not ised directly, but still good to have:
+# taking in a ts object- not in generator or Newick format- and returning the populations with samples
+def debug_ts_populations(ts):
+    """
+    Debug function to inspect TreeSequence population structure.
+    Useful for understanding what populations are available.
+    """
+    print("=== TreeSequence Population Debug ===")
+    print(f"Total populations: {ts.num_populations}")
+    print(f"Total samples: {ts.num_samples}")
+    print(f"Total trees: {ts.num_trees}")
+    print()
+
+    # Show population details
+    print("Population details:")
+    for i in range(ts.num_populations):
+        pop = ts.population(i)
+        metadata = pop.metadata if pop.metadata else {}
+        name = metadata.get("name", f"Pop{i}") if metadata else f"Pop{i}"
+
+        # Count samples in this population
+        samples = [int(s) for s in ts.samples() if ts.node(s).population == i]
+
+        print(f"  Population {i}: name='{name}', {len(samples)} samples")
+        if len(samples) > 0:
+            print(f"    Sample IDs: {samples[:5]}{'...' if len(samples) > 5 else ''}")
+
+    print()
+
+    # Show what twisst would extract
+    populations_with_samples = []
+    for pop_id in range(ts.num_populations):
+        samples = [s for s in ts.samples() if ts.node(s).population == pop_id]
+        if len(samples) > 0:
+            populations_with_samples.append(str(pop_id))
+
+    print(f"Populations with samples (for twisst): {populations_with_samples}")
+
+    if len(populations_with_samples) >= 3:
+        print(
+            f"✓ Ready for topology analysis ({len(populations_with_samples)} populations)"
+        )
+    else:
+        print(
+            f"✗ Need at least 3 populations with samples (found {len(populations_with_samples)})"
+        )
+
+    return populations_with_samples
+
+
+# A thin wrapper
 def process_trees_from_file(file_path, **kwargs):
     """
     Convenience wrapper for trees_to_twisst_weights_unified.
