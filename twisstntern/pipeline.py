@@ -27,7 +27,7 @@ def detect_file_type(file_path):
         str: "tree" for tree files, "csv" for CSV files
     """
     file_path = Path(file_path)
-    tree_extensions = {".trees", ".ts", ".newick", ".nwk", ".nexus"}
+    tree_extensions = {".trees", ".ts", ".newick", ".nwk", ".tree", ".nexus"}
     csv_extensions = {".csv"}
 
     if file_path.suffix.lower() in tree_extensions:

@@ -108,6 +108,11 @@ def detect_and_read_trees(
       - if the file is a Newick or Nexus file, it returns a list of Newick strings
       - a string indicating the format: 'ts' or 'newick'
 
+    Supported formats:
+      - TreeSequence (.trees, .ts): TSKit tree sequence files
+      - Newick (.newick, .nwk, .tree): Single or multiple Newick format trees
+      - Nexus (.nexus): Nexus format files
+
     Args:
         file_path (str): Path to the tree file.
 
@@ -125,7 +130,17 @@ def detect_and_read_trees(
         except Exception as e:
             raise RuntimeError(f"Failed to load TreeSequence: {e}")
 
-    # Case 2: Try reading first line to detect Nexus or Newick
+    # Case 2: Check for Newick files by extension first
+    if path.suffix in [".newick", ".nwk", ".tree"]:
+        try:
+            with open(file_path, "r") as f:
+                newicks = [line.strip() for line in f if line.strip()]
+                print(f"✅ Detected format: Newick ({path.suffix})")
+                return newicks, "newick"
+        except Exception as e:
+            raise ValueError(f"Failed to read Newick trees from {path.suffix} file: {e}")
+
+    # Case 3: Try reading first line to detect Nexus or other formats
     try:
         with open(file_path, "r") as f:
             first_line = f.readline().strip()
@@ -133,7 +148,7 @@ def detect_and_read_trees(
     except Exception as e:
         raise IOError(f"Could not read file: {e}")
 
-    # Case 2a: Nexus format
+    # Case 3a: Nexus format
     if first_line.upper().startswith("#NEXUS"):
         try:
             with open(file_path, "r") as f:
@@ -156,11 +171,11 @@ def detect_and_read_trees(
         except Exception as e:
             raise ValueError(f"Failed to parse Nexus file: {e}")
 
-    # Case 2b: Default to Newick (one tree per line)
+    # Case 3b: Default to Newick (one tree per line) for unknown extensions
     try:
         with open(file_path, "r") as f:
             newicks = [line.strip() for line in f if line.strip()]
-            print("✅ Detected format: Newick (one tree per line)")
+            print("✅ Detected format: Newick (unknown extension, treating as Newick)")
             return newicks, "newick"
     except Exception as e:
         raise ValueError(f"Failed to read Newick trees: {e}")

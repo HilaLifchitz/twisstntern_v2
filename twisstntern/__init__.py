@@ -11,7 +11,7 @@ This package supports:
 
 Tree file formats supported:
 - TreeSequence (.trees, .ts)
-- Newick (.newick, .nwk)
+- Newick (.newick, .nwk, .tree)
 - Nexus (.nexus)
 
 The package automatically detects file format and processes accordingly.

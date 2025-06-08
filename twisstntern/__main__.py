@@ -12,7 +12,7 @@ def main():
     parser.add_argument(
         "file",
         type=str,
-        help="Path to the input file (tree file: .trees/.ts/.newick/.nexus or CSV file: .csv).",
+        help="Path to the input file (tree file: .trees/.ts/.newick/.tree/.nexus or CSV file: .csv).",
     )
     parser.add_argument(
         "--granularity",

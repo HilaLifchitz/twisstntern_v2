@@ -2,11 +2,22 @@
 
 A package for analyzing ternary data from topology weights.
 
+## Supported File Formats
+
+**Tree Files:**
+- TreeSequence (.trees, .ts): TSKit tree sequence files
+- Newick (.newick, .nwk, .tree): Single or multiple Newick format trees  
+- Nexus (.nexus): Nexus format files
+
+**Data Files:**
+- CSV (.csv): Pre-computed topology weights (normalization not required)
+
 ## Installation
 
 1. Install the package and its dependencies:
 
 ```bash
+pip install git+https://github.com/HilaLifchitz/twisstntern_v2
 pip install -r requirements.txt
 pip install -e .
 ```
@@ -19,28 +30,30 @@ pip install -e .[dev]
 
 ## Usage
 
-### Command line interface:
+### Command-Line Interface
+
+granularities can be specified with the following keywords:
+
+                   coarse = 0.25
+                     fine = 0.1
+                superfine = 0.05
 
 ```bash
-# Analyze a tree file with custom granuality (0.25)
+# Analyze a .trees file with custom granularity (0.25)
+# Taxon names and outgroup are automatically detected
 python -m twisstntern tree_file.trees 0.25
 
-# granualities can be specified by words:
-
-#                   coarse = 0.25
-#                     fine = 0.1
-#                superfine = 0.05
-
-# default granuality is 0.1 
+# default granularity is 0.1 
 python -m twisstntern tree_file.trees 
 
+# Analyze Newick files — requires --taxon-names and --outgroup
+# Also explicitly provide --granularity
+python -m twisstntern phylogeny.tree --granularity 0.1 --taxon-names O P1 P2 P3 --outgroup O
+python -m twisstntern trees.newick --granularity superfine --taxon-names O P1 P2 P3 --outgroup O
 
 # Analyze a CSV file  
 python -m twisstntern weights.csv fine
 
-# Analyze Newick trees with specific taxa
-python -m twisstntern trees.newick 0.05 --taxon-names A B C D --outgroup A
-```
 
 
 ### Python interface:
@@ -78,7 +91,7 @@ results, fundamental_results, csv_file = run_analysis(
 
 ## Contributing
 
-Feel free to submit issues and enhancement requests! 
+Feel free to submit issues or enhancement requests! 
 
 ## Installation Instructions
 
