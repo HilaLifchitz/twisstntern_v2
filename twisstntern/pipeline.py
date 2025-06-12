@@ -87,7 +87,7 @@ def ensure_twisst_available():
             return False
 
 
-def process_tree_file(tree_file, taxon_names=None, outgroup=None, output_dir="Results"):
+def process_tree_file(tree_file, taxon_names=None, outgroup=None, output_dir="Results", verbose=True):
     """
     Process a tree file to generate topology weights CSV file.
 
@@ -96,6 +96,7 @@ def process_tree_file(tree_file, taxon_names=None, outgroup=None, output_dir="Re
         taxon_names (list, optional): List of taxon names for Newick files
         outgroup (str, optional): Outgroup taxon name
         output_dir (str): Directory to save the output CSV file
+        verbose (bool): Whether to print verbose output
 
     Returns:
         str: Path to the generated CSV file with topology weights
@@ -115,7 +116,7 @@ def process_tree_file(tree_file, taxon_names=None, outgroup=None, output_dir="Re
     input_name = Path(tree_file).stem
     csv_output = output_dir / f"{input_name}_topology_weights.csv"
 
-    print(f"Processing tree file: {tree_file}")
+    #print(f"Processing tree file: {tree_file}")
     print(f"Output CSV will be saved to: {csv_output}")
 
     # Process trees using the unified function, which automatically saves csv topology weights
@@ -123,7 +124,8 @@ def process_tree_file(tree_file, taxon_names=None, outgroup=None, output_dir="Re
         file_path=tree_file,
         taxon_names=taxon_names,
         outgroup=outgroup,
-        verbose=True,
+        output_file=str(csv_output),
+        verbose=verbose,
     )
 
     print(f"✓ Successfully generated topology weights CSV: {csv_output}")
@@ -134,7 +136,7 @@ def process_tree_file(tree_file, taxon_names=None, outgroup=None, output_dir="Re
 
 
 # default granularity is 0.1
-def run_analysis(file, granularity=0.1, taxon_names=None, outgroup=None):
+def run_analysis(file, granularity=0.1, taxon_names=None, outgroup=None, output_dir="Results"):
     """
     Orchestrates the full analysis and visualization pipeline for both tree files and CSV files.
 
@@ -145,6 +147,7 @@ def run_analysis(file, granularity=0.1, taxon_names=None, outgroup=None):
                                      Ignored for TreeSequence files and CSV files.
         outgroup (str, optional): Outgroup taxon name for tree files.
                                  Ignored for CSV files.
+        output_dir (str): Path to the output directory where the results should be saved
 
     Returns:
         tuple: (results, fundamental_results, csv_file_used)
@@ -153,7 +156,7 @@ def run_analysis(file, granularity=0.1, taxon_names=None, outgroup=None):
             - csv_file_used: Path to the CSV file that was analyzed (original or generated)
     """
     # Ensure Results directory exists
-    results_dir = Path("Results")
+    results_dir = Path(output_dir)
     results_dir.mkdir(exist_ok=True)
 
     # Detect file type and process accordingly
@@ -165,12 +168,18 @@ def run_analysis(file, granularity=0.1, taxon_names=None, outgroup=None):
         )
 
         # if the tree is in Newick format, the users had to provide taxon names
-        _, tree_type = detect_and_read_trees(file)
+        tree_data, tree_type = detect_and_read_trees(file)
+        
+        # Add ploidy detection here
         if tree_type == "newick":
             if taxon_names is None:
                 raise ValueError("Taxon names are required for Newick files")
             if outgroup is None:
                 raise ValueError("Outgroup is required for Newick files")
+            
+            # Infer ploidy from sample names
+            # ploidy = infer_ploidy_from_samples(tree_data[0])  # Pass first tree
+            # print(f"Detected ploidy: {ploidy}x")
 
         # Process tree file to generate CSV (this will handle twisst installation)
         csv_file = process_tree_file(
@@ -178,9 +187,11 @@ def run_analysis(file, granularity=0.1, taxon_names=None, outgroup=None):
             taxon_names=taxon_names,
             outgroup=outgroup,
             output_dir=results_dir,
+            verbose=False  # Disable verbose output here since we handle it in run_analysis
         )
 
-        print(f"Tree processing complete. Using generated CSV: {csv_file}")
+        print("Tree processing complete.")
+        #print(f"Using generated CSV: {csv_file}")
 
     elif file_type == "csv":
         print("Detected CSV file format. Using file directly for analysis...")
@@ -212,7 +223,7 @@ def run_analysis(file, granularity=0.1, taxon_names=None, outgroup=None):
 
     # Save results as CSV
     results_csv = results_dir / f"{Path(file).stem}_triangle_analysis.csv"
-    results.to_csv(results_csv, index=False)
+    results.to_csv(results_csv, index=False, float_format="%.3f")
     print(f"Saved triangle analysis results to: {results_csv}")
 
     print("Analysis pipeline completed successfully!")

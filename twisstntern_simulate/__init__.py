@@ -5,41 +5,50 @@ This package provides tools for:
 - Loading and validating demographic configurations
 - Running msprime simulations
 - Generating tree sequences
-- Saving simulation results
+- Processing tree sequences with twisst
+- Running complete twisstntern analysis pipelines
 
 Dependencies:
 - msprime
 - numpy
 - pandas
 - yaml
+- tskit
+- ete3
 """
 
-__version__ = '1.0.0'
-__author__ = 'Hila Lifchitz'
+__version__ = "1.0.0"
+__author__ = "Hila Lifchitz"
+
+# Configure logging once for the entire package
+import logging
+logging.basicConfig(level=logging.INFO)
+
+# Suppress msprime INFO messages
+logging.getLogger("msprime").setLevel(logging.WARNING)
+logging.getLogger("msprime.ancestry").setLevel(logging.WARNING)
 
 from .config import Config
-from .simulation import (
-    run_simulation,
-    simulate_locus,
-    simulate_chromosome,
-    save_tree_sequences
-)
+from .pipeline import run_pipeline
+from .simulation import run_simulation, simulate_locus, simulate_chromosome
 
 # Define what gets imported with "from twisstntern_simulate import *"
 __all__ = [
-    'Config',
-    'run_simulation',
-    'simulate_locus',
-    'simulate_chromosome',
-    'save_tree_sequences'
+    "run_pipeline",
+    "Config",
+    "run_simulation",
+    "simulate_locus", 
+    "simulate_chromosome",
 ]
 
 # Check for required dependencies
 required_packages = {
-    'msprime': 'msprime',
-    'numpy': 'numpy',
-    'pandas': 'pandas',
-    'yaml': 'pyyaml'
+    "msprime": "msprime",
+    "numpy": "numpy",
+    "pandas": "pandas",
+    "yaml": "pyyaml",
+    "tskit": "tskit",
+    "ete3": "ete3",
 }
 
 missing_packages = []
@@ -54,4 +63,4 @@ if missing_packages:
     for package in missing_packages:
         print(f"  - {package}")
     print("\nTo install missing packages, run:")
-    print(f"pip install {' '.join(missing_packages)}") 
+    print(f"pip install {' '.join(missing_packages)}")

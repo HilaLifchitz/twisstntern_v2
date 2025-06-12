@@ -19,70 +19,73 @@ import msprime
 
 ####################### ts on the spot ##########################
 
-# KEEP THIS CONSTANT -- SHOULD BE KEPT SMALL FOR TESTING
-nP1 = 10  # number of samples in population 1
-nP2 = 10  # number of samples in population 2
-nP3 = 10  # number of samples in population 3
-n0 = 10  # number of samples in the outgroup
+# # KEEP THIS CONSTANT -- SHOULD BE KEPT SMALL FOR TESTING
+# nP1 = 10  # number of samples in population 1
+# nP2 = 10  # number of samples in population 2
+# nP3 = 10  # number of samples in population 3
+# n0 = 10  # number of samples in the outgroup
 
-# Provide divergence times
-# WE KEEP CONSTANT FOR THIS RUN
-t1 = 100  # time of split between population 1 and population 2
-t2 = 200  # time of split between population (1,2) and population 3
-t3 = 300  # time of split between population (1,2,3) and the outgroup 0
+# # Provide divergence times
+# # WE KEEP CONSTANT FOR THIS RUN
+# t1 = 100  # time of split between population 1 and population 2
+# t2 = 200  # time of split between population (1,2) and population 3
+# t3 = 300  # time of split between population (1,2,3) and the outgroup 0
 
-# Provide migration rate
-m = 0.0001  # migration rate between population 2 and population 3
-mig_rate = m
+# # Provide migration rate
+# m = 0.0001  # migration rate between population 2 and population 3
+# mig_rate = m
 
-Ne = 1000  # population size we keep constant for all populations for simplicity
-# Provide population sizes
-NeP1 = Ne
-NeP2 = Ne
-NeP3 = Ne
-NeO = Ne
-NeP12 = Ne
-NeP123 = Ne
-NeANC = Ne
+# Ne = 1000  # population size we keep constant for all populations for simplicity
+# # Provide population sizes
+# NeP1 = Ne
+# NeP2 = Ne
+# NeP3 = Ne
+# NeO = Ne
+# NeP12 = Ne
+# NeP123 = Ne
+# NeANC = Ne
 
 
-# A demography where (1,2) first coalesce, with our given Ne
+# # A demography where (1,2) first coalesce, with our given Ne
 
-demography = msprime.Demography()
+# demography = msprime.Demography()
 
-# initializing populations
-demography.add_population(name="O", initial_size=NeO)
-demography.add_population(name="P1", initial_size=NeP1)
-demography.add_population(name="P2", initial_size=NeP2)
-demography.add_population(name="P3", initial_size=NeP3)
-demography.add_population(name="P13", initial_size=NeP12)
-demography.add_population(name="P123", initial_size=NeP123)
-demography.add_population(name="ANC", initial_size=NeANC)
+# # initializing populations
+# demography.add_population(name="O", initial_size=NeO)
+# demography.add_population(name="P1", initial_size=NeP1)
+# demography.add_population(name="P2", initial_size=NeP2)
+# demography.add_population(name="P3", initial_size=NeP3)
+# demography.add_population(name="P13", initial_size=NeP12)
+# demography.add_population(name="P123", initial_size=NeP123)
+# demography.add_population(name="ANC", initial_size=NeANC)
 
-# adding split times
-demography.add_population_split(time=t1, derived=["P1", "P2"], ancestral="P13")
-demography.add_population_split(time=t2, derived=["P13", "P3"], ancestral="P123")
-demography.add_population_split(time=t3, derived=["P123", "O"], ancestral="ANC")
+# # adding split times
+# demography.add_population_split(time=t1, derived=["P1", "P2"], ancestral="P13")
+# demography.add_population_split(time=t2, derived=["P13", "P3"], ancestral="P123")
+# demography.add_population_split(time=t3, derived=["P123", "O"], ancestral="ANC")
 
-# setting up gene flow
-demography.set_migration_rate("P2", "P3", mig_rate)
+# # setting up gene flow
+# demography.set_migration_rate("P2", "P3", mig_rate)
 
-# from collections import defaultdict
-num_replicates = 20
-# For the locus usage -- ts1 is a tskit.generator object !!
-ts1 = msprime.sim_ancestry(
-    samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
-    demography=demography,
-    num_replicates=num_replicates,
-)
-# For the Chromosome usage -- ts is a tskit.TreeSequence object
-ts = msprime.sim_ancestry(
-    samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
-    demography=demography,
-    sequence_length=100000000,
-    recombination_rate=0.00000001,
-    ploidy=1,
-)
+# ploidy=2
+# # from collections import defaultdict
+# num_replicates = 20
+# COMMENTED OUT: These were executing at module import time, causing unwanted simulations
+# # For the locus usage -- ts1 is a tskit.generator object !!
+# ts1 = msprime.sim_ancestry(
+#     samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
+#     demography=demography,
+#     num_replicates=num_replicates,
+#     ploidy=ploidy,
+# )
+# # For the Chromosome usage -- ts is a tskit.TreeSequence object  
+# ts = msprime.sim_ancestry(
+#     samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
+#     demography=demography,
+#     sequence_length=100000000,
+#     recombination_rate=0.000000001,
+#     ploidy= ploidy,
+# )
 
 ########################################################################################
 
@@ -533,7 +536,7 @@ def ts_to_twisst_weights(
         full_df = pd.concat([header_row, combined_df], ignore_index=True)
 
         # Save to CSV
-        full_df.to_csv(output_file, index=False)
+        full_df.to_csv(output_file, index=False, float_format='%.3f')
 
         if verbose:
             print(f"  Saved results to: {output_file}")
@@ -751,7 +754,7 @@ def newick_to_twisst_weights(
         full_df = pd.concat([header_row, df], ignore_index=True)
 
         # Save
-        full_df.to_csv(output_file, index=False)
+        full_df.to_csv(output_file, index=False, float_format='%.3f')
 
         if verbose:
             print(f"Saved results to: {output_file}")
@@ -763,36 +766,22 @@ def trees_to_twisst_weights_unified(
     file_path,
     taxon_names=None,
     outgroup=None,
+    output_file=None,
     verbose=False,
     twisst_verbose=False,
 ):
     """
     Unified function to extract topology weights from any tree file format.
-    Automatically detects format (TreeSequence, Newick, or Nexus) and processes accordingly.
-    Automatically saves results to Results/{filename}_topology_weights.csv
-
-    Args:
-        file_path (str): Path to the tree file
-        taxon_names (List[str], optional): For Newick/Nexus files, list of taxon names.
-                                          For TreeSequence, this is ignored (populations used instead).
-        outgroup (str, optional): Taxon/population name to use as outgroup. If None, uses the first.
-        verbose (bool): Whether to print verbose output
-        twisst_verbose (bool): Whether to print verbose twisst output
-
-    Returns:
-        pd.DataFrame: Normalized topology weights ready for analysis
     """
-
     if verbose:
         print(f"Processing tree file: {file_path}")
 
-    # Create Results directory if it doesn't exist
-    results_dir = Path("Results")
-    results_dir.mkdir(exist_ok=True)
-
-    # Generate output filename
-    input_filename = Path(file_path).stem  # filename without extension
-    output_file = results_dir / f"{input_filename}_topology_weights.csv"
+    # If no output file specified, create default one in Results directory
+    if output_file is None:
+        results_dir = Path("Results")
+        results_dir.mkdir(exist_ok=True)
+        input_filename = Path(file_path).stem  # filename without extension
+        output_file = results_dir / f"{input_filename}_topology_weights.csv"
 
     if verbose:
         print(f"Will save results to: {output_file}")
@@ -803,15 +792,11 @@ def trees_to_twisst_weights_unified(
     except Exception as e:
         raise ValueError(f"Failed to read tree file '{file_path}': {e}")
 
-    if verbose:
-        print(f"Detected format: {format_type}")
+    #if verbose:
+       # print(f"Detected format: {format_type}")
 
     # Route to appropriate processing function based on detected format
     if format_type == "ts":
-        # TreeSequence format
-        if verbose:
-            print("Routing to TreeSequence processing function...")
-
         return ts_to_twisst_weights(
             tree_data,
             outgroup=outgroup,
@@ -819,12 +804,7 @@ def trees_to_twisst_weights_unified(
             verbose=verbose,
             twisst_verbose=twisst_verbose,
         )
-
     elif format_type == "newick":
-        # Newick format (including converted Nexus)
-        if verbose:
-            print("Routing to Newick processing function...")
-
         return newick_to_twisst_weights(
             tree_data,
             taxon_names=taxon_names,
@@ -833,12 +813,11 @@ def trees_to_twisst_weights_unified(
             verbose=verbose,
             twisst_verbose=twisst_verbose,
         )
-
     else:
         raise ValueError(f"Unsupported tree format: {format_type}")
 
 
-# Not ised directly, but still good to have:
+# Not used directly, but still good to have:
 # taking in a ts object- not in generator or Newick format- and returning the populations with samples
 def debug_ts_populations(ts):
     """
@@ -895,3 +874,42 @@ def process_trees_from_file(file_path, **kwargs):
     Maintains backward compatibility with existing code.
     """
     return trees_to_twisst_weights_unified(file_path, **kwargs)
+
+
+# def infer_ploidy_from_samples(newick_tree):
+#     """
+#     Infer ploidy from sample names in a Newick tree.
+    
+#     Args:
+#         newick_tree (str): Newick tree string
+        
+#     Returns:
+#         int: Inferred ploidy (1 for haploid, 2 for diploid)
+#     """
+#     try:
+#         tree = ete3.Tree(newick_tree)
+#         all_sample_names = [leaf.name for leaf in tree.get_leaves()]
+        
+#         # Group samples by population
+#         population_samples = {}
+#         for sample in all_sample_names:
+#             if "_" in sample:
+#                 pop_name = sample.split("_")[0]
+#                 if pop_name not in population_samples:
+#                     population_samples[pop_name] = []
+#                 population_samples[pop_name].append(sample)
+        
+#         # Check sample counts per population
+#         sample_counts = [len(samples) for samples in population_samples.values()]
+        
+#         # If all populations have even number of samples, likely diploid
+#         # If all populations have odd number of samples, likely haploid
+#         # If mixed, default to haploid
+#         if all(count % 2 == 0 for count in sample_counts):
+#             return 2
+#         else:
+#             return 1
+            
+#     except Exception as e:
+#         print(f"Warning: Could not infer ploidy: {e}")
+#         return 1  # Default to haploid if inference fails

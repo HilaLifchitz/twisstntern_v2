@@ -5,7 +5,6 @@ This module provides functionality to:
 2. Generate tree sequences for different simulation modes:
    - Locus mode: independent non-recombining loci
    - Chromosome mode: recombining chromosome
-   - Both modes: generates both types of simulations
 
 The simulation module supports two main modes:
 
@@ -15,7 +14,7 @@ The simulation module supports two main modes:
    - Useful for studying population structure without recombination
    - Parameters:
      * n_loci: Number of loci to simulate
-     * locus_length: Length of each locus in base pairs
+     * locus_length: Length of each locus in base pairs - can be set to 1 for a single locus
 
 2. Chromosome Mode:
    - Simulates a recombining chromosome
@@ -25,355 +24,513 @@ The simulation module supports two main modes:
      * chromosome_length: Total length of chromosome
      * rec_rate: Recombination rate per base per generation
 
-3. Both Modes:
-   - Runs both locus and chromosome simulations
-   - Useful for comparing results between modes
-   - Requires parameters for both modes
-
 Example usage:
-    from twisstntern.config import Config
-    from twisstntern.simulation import run_simulation
+    from twisstntern_simulate.config import Config
+    from twisstntern_simulate.simulation import run_simulation
 
     # Load configuration from YAML file
     config = Config("config.yaml")
 
-    # Run simulation
-    results = run_simulation(config)
+    # Run simulation (trees are automatically saved)
+    results = run_simulation(config, output_dir="results")
 
     # Access results
-    if 'locus' in results:
+    if config.simulation_mode == 'locus':
         ts_locus = results['locus']
-    if 'chromosome' in results:
+    elif config.simulation_mode == 'chromosome':
         ts_chrom = results['chromosome']
 """
 
 import os
 import msprime
+import tskit
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Tuple
 from pathlib import Path
-import json
 import logging
 from .config import Config
-from .core import dump_data
+import random
+import ete3
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Get logger (logging configured in __init__.py)
 logger = logging.getLogger(__name__)
+######################################################################################
+# SIMULATION FUNCTIONS
+######################################################################################
 
-class DemographicModel:
-    """Class to handle demographic model configuration and simulation."""
-    
-    def __init__(self, config_file: str):
-        """
-        Initialize demographic model from configuration file.
-        
-        Args:
-            config_file (str): Path to configuration file
-        """
-        self.config = self._load_config(config_file)
-        self._validate_config()
-        
-    def _load_config(self, config_file: str) -> Dict:
-        """Load and parse configuration file."""
-        try:
-            with open(config_file, 'r') as f:
-                config = {}
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#'):
-                        if '=' in line:
-                            key, value = line.split('=')
-                            key = key.strip()
-                            value = value.strip()
-                            # Convert numeric values
-                            try:
-                                value = float(value)
-                            except ValueError:
-                                pass
-                            config[key] = value
-                return config
-        except Exception as e:
-            raise Exception(f"Error loading configuration file: {str(e)}")
-    
-    def _validate_config(self):
-        """Validate configuration parameters."""
-        required_params = [
-            't1', 't2', 't3',
-            'ne_p1', 'ne_p2', 'ne_p3', 'ne_p12', 'ne_p123', 'ne_O'
-        ]
-        for param in required_params:
-            if param not in self.config:
-                raise ValueError(f"Missing required parameter: {param}")
-    
-    def create_demography(self) -> msprime.Demography:
-        """Create msprime demography object from configuration."""
-        demography = msprime.Demography()
-        
-        # Add populations
-        demography.add_population(name="p1", initial_size=self.config['ne_p1'])
-        demography.add_population(name="p2", initial_size=self.config['ne_p2'])
-        demography.add_population(name="p3", initial_size=self.config['ne_p3'])
-        demography.add_population(name="p12", initial_size=self.config['ne_p12'])
-        demography.add_population(name="p123", initial_size=self.config['ne_p123'])
-        demography.add_population(name="O", initial_size=self.config['ne_O'])
-        
-        # Add population splits
-        demography.add_population_split(
-            time=self.config['t1'],
-            derived=["p1", "p2"],
-            ancestral="p12"
-        )
-        demography.add_population_split(
-            time=self.config['t2'],
-            derived=["p12", "p3"],
-            ancestral="p123"
-        )
-        demography.add_population_split(
-            time=self.config['t3'],
-            derived=["p123", "O"],
-            ancestral="O"
-        )
-        
-        # Add migration events
-        migration_rates = {k: v for k, v in self.config.items() if k.startswith('m_')}
-        for rate_name, rate in migration_rates.items():
-            if rate > 0:
-                source, dest = rate_name[2:].split('>')
-                demography.add_migration_rate_change(
-                    time=0,
-                    rate=rate,
-                    source=source,
-                    dest=dest
-                )
-        
-        return demography
-
-def simulate_locus(config: Config, locus_length: int = 10000) -> msprime.TreeSequence:
+def simulate_locus(config: Config) -> tskit.TreeSequence:
     """
     Simulates independent non-recombining loci.
-    
+
     This function simulates a single locus without recombination. The locus
     is simulated using the demographic model specified in the configuration.
-    
+
     Args:
         config: Configuration object containing demographic parameters
-        locus_length: Length of each locus in base pairs (default: 10000)
-    
+
     Returns:
-        msprime.TreeSequence: Tree sequence for the simulated locus
-    
+        tskit.TreeSequence: Tree sequence for the simulated locus
+
     Note:
         The recombination rate is set to 0 for locus mode simulations.
     """
-    # Create demographic model
+    # Creating demographic model from the yaml parameters
     demography = msprime.Demography()
-    
+
     # Add populations
     for pop in config.populations:
         demography.add_population(
-            name=pop.name,
-            initial_size=pop.Ne,
-            growth_rate=pop.growth_rate
+            name=pop.name, initial_size=pop.Ne, growth_rate=pop.growth_rate
         )
-    
+
     # Add population splits
     for split in config.splits:
         demography.add_population_split(
             time=split.time,
-            derived=[split.derived_pop],
-            ancestral=split.ancestral_pop
+            derived=[split.derived_pop1, split.derived_pop2],
+            ancestral=split.ancestral_pop,
         )
-    
+
+    # Default values, in case the user hasn't specified them
+    if config.locus_length:
+        locus_length = config.locus_length
+    else:
+        locus_length = 1  # we don't need a locus length, all we care about are the trees themselves -> it is 1 by default
+
+    # Default is haploid
+    if config.ploidy:
+        ploidy = config.ploidy
+    else:
+        ploidy = 1
+
+    # Default if no random seed is specified, we specify a random seed and log it
+    if config.seed:
+        seed = config.seed
+    else:
+        seed = random.randint(0, 2**32 - 1)
+        logger.info(f"Using random seed: {seed}")
+        print(f"Using random seed: {seed}")  # for the user to see
+
     # Simulate tree sequence
     ts = msprime.sim_ancestry(
-        samples={pop.name: pop.sample_size for pop in config.populations},
+        samples={
+            pop.name: pop.sample_size for pop in config.populations if pop.sample_size
+        },
         demography=demography,
+        num_replicates=config.n_loci,
         sequence_length=locus_length,
+        ploidy=ploidy,
+        random_seed=seed,
         recombination_rate=0,  # No recombination for locus mode
-        random_seed=config.seed
     )
-    
+
     return ts
 
-def simulate_chromosome(config: Config) -> msprime.TreeSequence:
+
+def simulate_chromosome(config: Config) -> tskit.TreeSequence:
     """
     Simulates a chromosome with recombination.
-    
+
     This function simulates a chromosome with recombination using the
     demographic model specified in the configuration. The recombination
     rate is applied along the entire chromosome length.
-    
+
     Args:
         config: Configuration object containing demographic parameters
-    
+
     Returns:
-        msprime.TreeSequence: Tree sequence for the simulated chromosome
-    
+        tskit.TreeSequence: Tree sequence for the simulated chromosome
+
     Note:
         The recombination rate is applied per base pair per generation.
     """
     # Create demographic model
     demography = msprime.Demography()
-    
+
     # Add populations
     for pop in config.populations:
         demography.add_population(
-            name=pop.name,
-            initial_size=pop.Ne,
-            growth_rate=pop.growth_rate
+            name=pop.name, initial_size=pop.Ne, growth_rate=pop.growth_rate
         )
-    
+
     # Add population splits
     for split in config.splits:
         demography.add_population_split(
             time=split.time,
-            derived=[split.derived_pop],
-            ancestral=split.ancestral_pop
+            derived=[split.derived_pop1, split.derived_pop2],
+            ancestral=split.ancestral_pop,
         )
-    
+
+    # Default is haploid
+    if config.ploidy:
+        ploidy = config.ploidy
+    else:
+        ploidy = 1
+
+    # Default if no random seed is specified, we specify a random seed and log it
+    if config.seed:
+        seed = config.seed
+    else:
+        seed = random.randint(0, 2**32 - 1)
+        logger.info(f"Using random seed: {seed}")
+        print(f"Using random seed: {seed}")  # for the user to see
+
     # Simulate tree sequence
     ts = msprime.sim_ancestry(
-        samples={pop.name: pop.sample_size for pop in config.populations},
+        samples={
+            pop.name: pop.sample_size for pop in config.populations if pop.sample_size
+        },
         demography=demography,
         sequence_length=config.chromosome_length,
         recombination_rate=config.rec_rate,
-        random_seed=config.seed
+        ploidy=ploidy,
+        random_seed=seed,
     )
-    
+
     return ts
 
-def run_simulation(config: Config) -> dict:
+######################################################################################
+# MAIN SIMULATION FUNCTION
+######################################################################################
+
+def run_simulation(config_yaml: str, output_dir: str) -> dict:
     """
     Runs simulation based on the specified mode in config.
-    
+
     This function is the main entry point for simulations. It handles
-    running the appropriate simulation mode(s) based on the configuration.
-    
+    running the appropriate simulation mode based on the configuration.
+    Trees are automatically saved in Newick format.
+
     Args:
-        config: Configuration object containing simulation parameters
-    
+        config_yaml: Path to the yaml file containing the simulation parameters
+        output_dir: Directory to save tree files
+
     Returns:
-        dict: Dictionary containing simulation results for each mode:
+        dict: Dictionary containing simulation results:
             - 'locus': Tree sequence for locus mode (if requested)
             - 'chromosome': Tree sequence for chromosome mode (if requested)
-    
+            - 'newick_file': Path to saved Newick file
+
     Note:
-        The function will run both modes if simulation_mode is 'both'.
+        Only one mode (locus OR chromosome) will be run based on config.simulation_mode.
     """
     results = {}
+    config = Config(config_yaml)
     
     # Run locus simulation if requested
-    if config.simulation_mode in ['locus', 'both']:
+    if config.simulation_mode == "locus":
         print("Simulating independent non-recombining loci...")
-        ts_locus = simulate_locus(config, config.locus_length)
-        results['locus'] = ts_locus
+        ts_locus = simulate_locus(config)
         print(f"Generated {config.n_loci} non-recombining loci")
-    
+
+        # Convert generator to list once for both saving and processing
+        ts_list = list(ts_locus)
+        
+        # Store the list (not the exhausted generator) for pipeline processing
+        results["locus"] = ts_list
+        
+        # Always save trees
+        # Ensure output directory exists
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        newick_path = Path(output_dir) / f"{config.simulation_mode}_trees.newick"
+        newick_file = save_ts_LOCUS_as_plain_newick(ts_list, newick_path)
+        results["newick_file"] = newick_file
+
     # Run chromosome simulation if requested
-    if config.simulation_mode in ['chromosome', 'both']:
+    elif config.simulation_mode == "chromosome":
         print("Simulating recombining chromosome...")
         ts_chrom = simulate_chromosome(config)
-        results['chromosome'] = ts_chrom
+        results["chromosome"] = ts_chrom
         print(f"Generated chromosome of length {config.chromosome_length}")
+        
+        # Always save trees
+        # Ensure output directory exists
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        newick_path = Path(output_dir) / f"{config.simulation_mode}_trees.newick"
+        newick_file = save_ts_CHROM_as_newick(ts_chrom, newick_path)
+        results["newick_file"] = newick_file
     
+    else:
+        raise ValueError(f"Unknown simulation mode: {config.simulation_mode}. Must be 'locus' or 'chromosome'")
+
     return results
 
-def save_tree_sequences(
-    tree_sequences: Union[msprime.TreeSequence, List[msprime.TreeSequence]],
-    output_dir: str,
-    prefix: str = "simulation"
-):
+
+######################################################################################
+# HELPER FUNCTIONS FOR SAVING TREE SEQUENCES AS NEWICK FILES
+######################################################################################
+# FOR THE CHROMOSOME MODE:
+# 1. Get population map
+# 2. Create newick string with population labels
+# 3. Save Newick trees without metadata headers but with population labels
+######################################################################################
+
+def get_population_map(ts):
     """
-    Save tree sequences to files.
+    Create a mapping from sample ID to unique population sample name for a TreeSequence.
+
+    Args:
+        ts: msprime TreeSequence object
+
+    Returns:
+        dict: Mapping from sample_id (int) to population_sample_name (str) like "P1_1", "P1_2", etc.
+    """
+    pop_map = {}
+
+    # Create mapping from population ID to population name
+    pop_id_to_name = {}
+    for pop_id in range(ts.num_populations):
+        pop = ts.population(pop_id)
+        if pop.metadata and "name" in pop.metadata:
+            pop_name = pop.metadata["name"]
+        else:
+            pop_name = str(pop_id)  # fallback to ID if no name
+        pop_id_to_name[pop_id] = pop_name
+
+    # Count samples within each population to create unique identifiers
+    pop_sample_counts = {}
     
-    This function saves the simulated tree sequences to files in the
-    specified output directory. For locus mode, it saves multiple files
-    (one per locus), while for chromosome mode it saves a single file.
+    # Map each sample to its unique population sample name
+    for sample_id in ts.samples():
+        node = ts.node(sample_id)
+        pop_name = pop_id_to_name[node.population]
+        
+        # Increment counter for this population
+        if pop_name not in pop_sample_counts:
+            pop_sample_counts[pop_name] = 0
+        pop_sample_counts[pop_name] += 1
+        
+        # Create unique sample identifier like "P1_1", "P1_2", etc.
+        unique_sample_name = f"{pop_name}_{pop_sample_counts[pop_name]}"
+        pop_map[sample_id] = unique_sample_name
+
+    return pop_map
+
+
+def create_newick_with_sample_labels(tree, pop_map):
+    """
+    Create a Newick string from a tskit tree with proper sample labels.
+
+    Args:
+        tree: tskit Tree object
+        pop_map: dict mapping sample_id to population_name
+
+    Returns:
+        str: Newick string with population labels for samples
+    """
+
+    def _get_newick_recursive(node):
+        """Recursively build Newick string"""
+        if tree.is_sample(node):
+            # This is a sample - use population label
+            pop_label = pop_map.get(node, f"Sample_{node}")
+            return pop_label
+        else:
+            # This is an internal node - recurse on children
+            children = tree.children(node)
+            if len(children) == 0:
+                return ""
+
+            child_strings = []
+            for child in children:
+                child_str = _get_newick_recursive(child)
+                if child_str:  # Only add if not empty
+                    # Add branch length if available
+                    branch_length = tree.branch_length(child)
+                    if branch_length > 0:
+                        child_str += f":{branch_length}"
+                    child_strings.append(child_str)
+
+            if len(child_strings) == 1:
+                return child_strings[0]
+            else:
+                return f"({','.join(child_strings)})"
+
+    # Start from root
+    root = tree.root
+    newick = _get_newick_recursive(root)
+
+    # Add semicolon at the end
+    if not newick.endswith(";"):
+        newick += ";"
+
+    return newick
+
+def save_ts_CHROM_as_newick(ts, output_path):
+    """
+    Saves marginal trees as Newick format with population labels, no interval annotations.
+    This format is ideal for twisst.
+    """
+    pop_map = get_population_map(ts)
+
+    with open(output_path, "w") as f:
+        for tree in ts.trees():
+            labeled_newick = create_newick_with_sample_labels(tree, pop_map)
+            f.write(labeled_newick + "\n")
+    
+    return str(output_path)
+
+# EXAMPLE:
+#save_ts_chromosome_as_newick(ts, os.path.join(output_dir, "CHROM_pop_plain.newick"))
+########################################################################################
+#FOR THE LOCUS MODE:
+# option1 -- DASHA'S NEWICK FORMAT -- right now hard wired for 4 populations!!
+# 1. Create dictionary to replace ,1: patterns with ,P1_1: patterns in Newick strings.
+# 2. Create dictionary to replace (1: patterns with (P1_1: patterns in Newick strings
+# 3. The tree saving function
+
+
+
+
+def ts_newick_rename_dict_hun(config_yaml): # replaces ,1:	--> ,P1_1:
+    """
+    Creates dictionary to replace ,1: patterns with ,P1_1: patterns in Newick strings.
+    This matches the exact approach from DaSh-bash/LittorinaBrooding that works with twisst.
+    NOTE: This function requires predefined variables nP1, nP2, nP3, n0 which are not available
+    in the general config. Use save_ts_LOCUS_as_plain_newick instead.
+    """
+    config = Config(config_yaml)
+    sample_sizes = {pop.name: pop.sample_size for pop in config.populations if pop.sample_size is not None}
+    np1 = sample_sizes["p1"]
+    np2 = sample_sizes["p2"]
+    np3 = sample_sizes["p3"]
+    no = sample_sizes["O"]
+    
+    sample_names = dict()
+    
+    #Total number of empirical samples
+    ntotal=np1+np2+np3+no
+
+    #Creating list of newick names (patterns to find)
+    ts_name=list()
+    for i in range(1,ntotal+1):
+        ts_name.append(","+str(i)+":")
+
+    #Creating list of population samples (replacement patterns)
+    n0_names=list()
+    for i in range(1,no+1):
+        n0_names.append(",O_"+str(i)+":")
+    
+    
+    nP1_names=list()
+    for i in range(1,np1+1):
+        nP1_names.append(",P1_"+str(i)+":")
+
+    nP2_names=list()
+    for i in range(1,np2+1):
+        nP2_names.append(",P2_"+str(i)+":")
+
+    nP3_names=list()
+    for i in range(1,np3+1):
+        nP3_names.append(",P3_"+str(i)+":")
+
+
+
+    pop_names=nP1_names+nP2_names+nP3_names+n0_names
+
+    #Using dictionary comprehension to convert lists to dictionary
+    sample_names = {ts_name[i]: pop_names[i] for i in range(len(ts_name))}
+    
+    return sample_names
+
+def ts_newick_rename_dict_tens(config_yaml): #  replaces (1: --> (P1_1:
+    """
+    Creates dictionary to replace (1: patterns with (P1_1: patterns in Newick strings.
+    This matches the exact approach from DaSh-bash/LittorinaBrooding that works with twisst.
+    NOTE: This function requires predefined variables nP1, nP2, nP3, n0 which are not available
+    in the general config. Use save_ts_LOCUS_as_plain_newick instead.
+    """
+    config = Config(config_yaml)
+    sample_sizes = {pop.name: pop.sample_size for pop in config.populations if pop.sample_size is not None}
+    np1 = sample_sizes["p1"]
+    np2 = sample_sizes["p2"]
+    np3 = sample_sizes["p3"]
+    no = sample_sizes["O"]
+    sample_names = dict()
+    
+    #Total number of empirical samples
+    ntotal=np1+np2+np3+no
+
+    #Creating list of newick names (patterns to find)
+    ts_name=list()
+    for i in range(1,ntotal+1):
+        ts_name.append("("+str(i)+":")
+
+    #Creating list of population samples (replacement patterns)   
+    n0_names=list()
+    for i in range(1,no+1):
+        n0_names.append("("+"O_"+str(i)+":")
+    
+    nP1_names=list()
+    for i in range(1,np1+1):
+        nP1_names.append("("+"P1_"+str(i)+":")
+
+    nP2_names=list()
+    for i in range(1,np2+1):
+        nP2_names.append("("+"P2_"+str(i)+":")
+
+    nP3_names=list()
+    for i in range(1,np3+1):
+        nP3_names.append("("+"P3_"+str(i)+":")
+
+
+    pop_names=nP1_names+nP2_names+nP3_names+n0_names
+
+    #Using dictionary comprehension to convert lists to dictionary
+    sample_names = {ts_name[i]: pop_names[i] for i in range(len(ts_name))}
+    
+    return sample_names
+
+
+def save_ts_LOCUS_as_dasha_newick(ts_list, output_path, config_yaml):
+    """
+    Save TreeSequence genealogies as Newick format using DaSh-bash approach.
+    This creates files that work properly with twisst.
     
     Args:
-        tree_sequences: Single tree sequence or list of tree sequences
-        output_dir: Directory to save files
-        prefix: Prefix for output files
-    
-    Note:
-        The output files are saved in .ts format, which is the native
-        format for msprime tree sequences.
+        ts_list: iterable of TreeSequence objects
+        output_path: path to save the Newick file
+        config_yaml: path to config file for population naming
     """
-    os.makedirs(output_dir, exist_ok=True)
+    with open(output_path, "w") as file:
+        for replicate_index, ts in enumerate(ts_list):
+            for t in ts.trees():
+                newick = t.newick(precision=1)
+                
+                # Apply DaSh-bash renaming approach
+                replace_strings_tens = ts_newick_rename_dict_tens(config_yaml)            
+                replace_strings_hun = ts_newick_rename_dict_hun(config_yaml)
+                
+                # Apply replacements in correct order
+                for word in replace_strings_tens.items():
+                    newick = newick.replace(str(word[0]), str(word[1]))
+                for word in replace_strings_hun.items():
+                    newick = newick.replace(str(word[0]), str(word[1]))
+                    
+                file.write(newick + "\n")
     
-    if isinstance(tree_sequences, list):
-        for i, ts in enumerate(tree_sequences):
-            output_file = os.path.join(output_dir, f"{prefix}_locus_{i}.ts")
-            ts.dump(output_file)
-    else:
-        output_file = os.path.join(output_dir, f"{prefix}_chromosome.ts")
-        tree_sequences.dump(output_file)
-    
-    logger.info(f"Saved tree sequences to {output_dir}")
+    return str(output_path)
+# # EXAMPLE:
+# # save_ts_LOCUS_as_dasha_newick(ts1_list, dasha_combined_path)
 
-def main():
+# option 2 -- PLAIN NEWICK FORMAT
+def save_ts_LOCUS_as_plain_newick(ts_list, output_path):
     """
-    Command-line interface for simulation.
-    
-    This function provides a command-line interface for running simulations.
-    It parses command-line arguments and runs the appropriate simulation mode.
-    
-    Usage:
-        python -m twisstntern.simulation -m MODE -c CONFIG -o OUTPUT [options]
-    
-    Arguments:
-        -m, --mode: Simulation mode (locus, chromosome, or both)
-        -c, --config: Path to configuration file
-        -o, --output: Output directory
-        --n-ind: Number of haploid individuals per population
-        --n-loci: Number of loci for locus mode
-        --rec-rate: Recombination rate for chromosome mode
-        --seq-length: Sequence length for chromosome mode
-        --mutation-rate: Mutation rate
-        --seed: Random seed
+    Save TreeSequence genealogies as Newick format using plain format.
+    This creates files that work properly with twisst.
     """
-    import argparse
+    with open(output_path, "w") as file:
+        for replicate_index, ts in enumerate(ts_list):
+            pop_map = get_population_map(ts)
+            for tree in ts.trees():
+                labeled_newick = create_newick_with_sample_labels(tree, pop_map)
+                file.write(labeled_newick + "\n")
     
-    parser = argparse.ArgumentParser(description="Simulate demographic scenarios")
-    parser.add_argument("-m", "--mode", choices=["locus", "chromosome", "both"], required=True,
-                      help="Simulation mode")
-    parser.add_argument("-c", "--config", required=True,
-                      help="Path to configuration file")
-    parser.add_argument("-o", "--output", required=True,
-                      help="Output directory")
-    parser.add_argument("--n-ind", type=int, default=20,
-                      help="Number of haploid individuals per population")
-    parser.add_argument("--n-loci", type=int, default=10000,
-                      help="Number of loci for locus mode")
-    parser.add_argument("--rec-rate", type=float, default=1e-8,
-                      help="Recombination rate for chromosome mode")
-    parser.add_argument("--seq-length", type=int, default=1000000,
-                      help="Sequence length for chromosome mode")
-    parser.add_argument("--mutation-rate", type=float, default=1e-8,
-                      help="Mutation rate")
-    parser.add_argument("--seed", type=int,
-                      help="Random seed")
-    
-    args = parser.parse_args()
-    
-    try:
-        config = Config(args.config)
-        config.simulation_mode = args.mode
-        config.n_loci = args.n_loci
-        config.rec_rate = args.rec_rate
-        config.seq_length = args.seq_length
-        config.seed = args.seed
-        
-        results = run_simulation(config)
-        
-        for mode, ts in results.items():
-            save_tree_sequences(ts, args.output, mode)
-        
-    except Exception as e:
-        logger.error(f"Error during simulation: {str(e)}")
-        raise
+    return str(output_path)
 
-if __name__ == "__main__":
-    main() 
+# EXAMPLE:
+# save_ts_LOCUS_as_plain_newick(ts1_list, simple_combined_path)
+
+
+

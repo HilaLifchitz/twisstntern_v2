@@ -226,6 +226,11 @@ def ts_newick_rename_dict_hun(): # replaces ,1:	--> ,P1_1:
         ts_name.append(","+str(i)+":")
 
     #Creating list of population samples (replacement patterns)
+    n0_names=list()
+    for i in range(1,n0+1):
+        n0_names.append(",O_"+str(i)+":")
+    
+    
     nP1_names=list()
     for i in range(1,nP1+1):
         nP1_names.append(",P1_"+str(i)+":")
@@ -238,9 +243,7 @@ def ts_newick_rename_dict_hun(): # replaces ,1:	--> ,P1_1:
     for i in range(1,nP3+1):
         nP3_names.append(",P3_"+str(i)+":")
 
-    n0_names=list()
-    for i in range(1,n0+1):
-        n0_names.append(",O_"+str(i)+":")
+
 
     pop_names=nP1_names+nP2_names+nP3_names+n0_names
 
@@ -265,6 +268,10 @@ def ts_newick_rename_dict_tens(): #  replaces (1: --> (P1_1:
         ts_name.append("("+str(i)+":")
 
     #Creating list of population samples (replacement patterns)   
+    n0_names=list()
+    for i in range(1,n0+1):
+        n0_names.append("("+"O_"+str(i)+":")
+    
     nP1_names=list()
     for i in range(1,nP1+1):
         nP1_names.append("("+"P1_"+str(i)+":")
@@ -277,9 +284,6 @@ def ts_newick_rename_dict_tens(): #  replaces (1: --> (P1_1:
     for i in range(1,nP3+1):
         nP3_names.append("("+"P3_"+str(i)+":")
 
-    n0_names=list()
-    for i in range(1,n0+1):
-        n0_names.append("("+"O_"+str(i)+":")
 
     pop_names=nP1_names+nP2_names+nP3_names+n0_names
 

@@ -1,0 +1,35 @@
+Hila, 10.06.25
+
+-1. look at the text!
+
+0. twisstntern -- get rid of logging information twice -- no idea how!!!
+                - make the --help look a bit nicer?
+                - print results up to 0.000 3 digits to csv file ---DONE
+                - put option to specify output directory-> REsults- should be just the default DONE
+
+1. Consider wether the (supposedly) optimized batch code for the  ts_to_twisst_weights
+    in the ts_processing versus tree_processing really makes a difference.
+    see the debugs.py code (DOESNT SEEM SO, BUT TRY MORE VALUSE. IS THERE ANOTHER WAY?..)
+    DECIDE ON 1 STRATEGY AND APPLY IN BOTH
+
+2. Finish twisstntern_simulate - the version with the yaml config template
+                               - how to add parsing form the command line- hydra? ask Sanketh
+                               - save also the tree object in Newick form - DONE
+                               - chek how to make the topology weights printing only 3 digits- whats the bug?
+
+URGENT- compare the two ways of saving the locus mode- compare the simulate- 
+to running over the two saved trees with the usual twisstNtern!!!
+
+3. write a script that compares two toplogy weights distributions like the pic that Sean sent to DIscord
+
+4. write a script for hypothesis.compare -- for all 4 of our metrics!
+
+5. write a pics_for_article.py visualization script and or a place where it is easy to experiment with plotting functions
+
+6. start thinking about visualizations for 5 populations! - poke Dasha for the data
+
+7. for fun write an alg. that figures out number of topologies for a number of populations (leaves) - rooted and unrooted
+
+8.(?) combining topologies in edges- plotting simplex of the next dimenstion- visualization considerations
+
+9. benchmarkings?

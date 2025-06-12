@@ -2,6 +2,10 @@
 # coding: utf-8
 
 import argparse
+import os
+import sys
+from pathlib import Path
+
 from twisstntern.pipeline import run_analysis
 
 
@@ -29,8 +33,24 @@ def main():
     parser.add_argument(
         "--outgroup", type=str, help="Outgroup taxon name for tree files."
     )
+    parser.add_argument(
+        "-o", "--output", 
+        type=str,
+        default="Results",
+        help="Path to the output directory. If not provided, a 'Results' directory will be created."
+    )
 
     args = parser.parse_args()
+    
+    # Check if input file exists
+    file_path = Path(args.file)
+    if not file_path.exists():
+        print(f"Error: Input file not found: {file_path}")
+        sys.exit(1)
+
+    # Set output directory (default is "Results" if not specified)
+    output_dir = args.output
+
 
     # Convert granularity to float if possible
     try:
@@ -46,9 +66,12 @@ def main():
         granularity=granularity,
         taxon_names=args.taxon_names,
         outgroup=args.outgroup,
+        output_dir=output_dir,
     )
 
-    print("Analysis complete!")
+ 
+    print("----------------------------------------------------------")
+    print("Summary of the analysis:")
     print(f"Data file used: {csv_file_used}")
     print("\nFundamental asymmetry results:")
     print(f"n_right: {fundamental_results[0]}")
@@ -56,7 +79,7 @@ def main():
     print(f"D_LR: {fundamental_results[2]:.4f}")
     print(f"G-test: {fundamental_results[3]:.4f}")
     print(f"p-value: {fundamental_results[4]:.4e}")
-    print("\nResults have been saved to the Results directory.")
+    print(f"\nResults and plots have been saved to the '{output_dir}' directory.")
 
 
 if __name__ == "__main__":
