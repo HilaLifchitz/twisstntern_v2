@@ -325,7 +325,7 @@ def save_ts_as_dasha_newick(genealogies, output_path):
 ######################################################################################
 
 # Create output directory if it doesn't exist
-output_dir = "tree files"
+output_dir = "treeSfiles"
 os.makedirs(output_dir, exist_ok=True)
 
 ##################################################################################

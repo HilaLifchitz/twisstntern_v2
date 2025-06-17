@@ -4,21 +4,23 @@ Hila, 10.06.25
 
 0. twisstntern -- get rid of logging information twice -- no idea how!!!
                 - make the --help look a bit nicer?
-                - print results up to 0.000 3 digits to csv file ---DONE
-                - put option to specify output directory-> REsults- should be just the default DONE
+                - add topology axis vhoice into the parser -- DONE!! :)
+                - a comprehensice cli test!!
 
 1. Consider wether the (supposedly) optimized batch code for the  ts_to_twisst_weights
     in the ts_processing versus tree_processing really makes a difference.
     see the debugs.py code (DOESNT SEEM SO, BUT TRY MORE VALUSE. IS THERE ANOTHER WAY?..)
-    DECIDE ON 1 STRATEGY AND APPLY IN BOTH
+    DECIDE ON 1 STRATEGY AND APPLY IN BOTH --- DONE: conclusion- batch is fake news
+
+    
 
 2. Finish twisstntern_simulate - the version with the yaml config template
                                - how to add parsing form the command line- hydra? ask Sanketh
-                               - save also the tree object in Newick form - DONE
-                               - chek how to make the topology weights printing only 3 digits- whats the bug?
-
+                               - add topology reordering option-- to the parer also
+                               - add override oprion to the parser
+                              
 URGENT- compare the two ways of saving the locus mode- compare the simulate- 
-to running over the two saved trees with the usual twisstNtern!!!
+to running over the two saved trees with the usual twisstNtern!!! -- come back to it!
 
 3. write a script that compares two toplogy weights distributions like the pic that Sean sent to DIscord
 

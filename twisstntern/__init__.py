@@ -33,11 +33,17 @@ from .visualization import (
     plot_fundamental_asymmetry,
 )
 from .tree_processing import (
-    ts_to_twisst_weights,
+    detect_and_read_trees,
+    simplify_topologies,
     ts_chromosome_to_twisst_weights,
+    ts_to_twisst_weights,
     newick_to_twisst_weights,
     trees_to_twisst_weights_unified,
-    detect_and_read_trees,
+    parse_topology_mapping,
+    normalize_topology_string,
+    compare_topologies,
+    reorder_weights_by_topology_preference,
+    print_topology_mapping_with_trees,
 )
 
 __version__ = "0.1.0"

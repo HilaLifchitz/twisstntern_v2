@@ -2,7 +2,9 @@
 # coding: utf-8
 
 import os
-os.environ['QT_QPA_PLATFORM'] = 'xcb'  # Force XCB backend instead of Wayland
+from ete3 import Tree  # Tree object from ete3 to parse and pretty-print Newick trees
+
+os.environ["QT_QPA_PLATFORM"] = "xcb"  # Force XCB backend instead of Wayland
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path

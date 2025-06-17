@@ -17,4 +17,4 @@ sys.path.insert(0, str(package_dir.parent))
 from twisstntern.__main__ import main
 
 if __name__ == "__main__":
-    main() 
+    main()
