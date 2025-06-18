@@ -355,14 +355,18 @@ python -m twisstntern_simulate -c CONFIG[-o OUTPUT][--skip-twisst-check][--force
 ```
 
 - `-c`, `--config`: **(Required)** Path to a YAML configuration file specifying simulation parameters (see `twisstntern_simulate/config_template.yaml` for an example).
-- `-o`, `--output`: (Optional) Output directory for results. Defaults to `Results/`.
+- `-o`, `--output`: Output directory for results. Defaults to `Results/`.
+- `--granularity`: Set analysis granularity (default = 0.1).
+- `--topology-mapping`: Manually specify which topology corresponds to each axis label (T1, T2, T3) in the ternary plot.
+  Format: `'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'`
+  Useful for ensuring consistency across runs or datasets.
+- `--override`: Overriding paramters given in the config.yaml: 'parameter_path=value'
 - `--skip-twisst-check`: Skip checking for the TWISST executable.
 - `--force-download`: Force re-download of the TWISST executable.
 - `--verbose`: Enable verbose logging.
 - `--quiet`: Suppress most output.
 - `--log-file LOG_FILE`: Write logs to a file.
 - `--seed SEED`: Set a random seed for reproducibility.
-- `--granularity GRANULARITY`: Set analysis granularity (overrides config).
 
 **Example:**
 
@@ -418,17 +422,6 @@ You can override any configuration parameter from the YAML file directly via the
 --override 'populations.p2.sample_size=20'
 ```
 
-#### **Multiple Overrides**
-
-You can specify multiple overrides in a single command:
-
-```bash
-python -m twisstntern_simulate -c config.yaml -o results/ \
-  --override 'migration.p1>p2=0.1' \
-  --override 'populations.p1.Ne=5000' \
-  --override 'ploidy=2'
-```
-
 #### **Examples**
 
 **Basic migration override:**
@@ -450,7 +443,8 @@ python -m twisstntern_simulate -c config_template.yaml -o test_params/ \
 
 #### **What Gets Logged**
 
-All applied overrides are automatically logged to the output log file with before/after values:
+Everything that gets logged for twisstntern (System Information,Analysis Parameters,Processing Steps,Topology Information, Results Summary, Error Context).
+Additionaly, all applied overrides are automatically logged to the output log file with before/after values:
 
 ```
 Override applied: migration.p2>p3: 0.0 -> 0.3
