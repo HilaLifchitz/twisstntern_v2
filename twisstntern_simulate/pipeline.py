@@ -49,10 +49,18 @@ def apply_config_overrides(config, overrides_list):
     
     for override_str in overrides_list:
         if '=' not in override_str:
-            logger.warning(f"Invalid override format: {override_str}. Expected 'key=value'")
-            continue
+            raise ValueError(f"Invalid override format: {override_str}. Expected 'key=value'")
             
         key_path, value = override_str.split('=', 1)
+        
+        # Validate that key and value are not empty
+        if not key_path.strip():
+            raise ValueError(f"Invalid override: empty key in '{override_str}'")
+        if not value.strip():
+            raise ValueError(f"Invalid override: empty value in '{override_str}'")
+        
+        key_path = key_path.strip()
+        value = value.strip()
         
         try:
             # Convert value to appropriate type
@@ -74,7 +82,7 @@ def apply_config_overrides(config, overrides_list):
                         applied_overrides[f"migration.{migration_key}"] = f"{old_value} -> {value}"
                         logger.info(f"Override applied: migration.{migration_key}: {old_value} -> {value}")
                     else:
-                        logger.warning(f"Migration configuration not found for override: {override_str}")
+                        raise ValueError(f"Migration configuration not found for override: {override_str}")
                         
                 elif parts[0] == 'populations':
                     # Handle population overrides: populations.p1.Ne=15000
@@ -91,11 +99,11 @@ def apply_config_overrides(config, overrides_list):
                                 logger.info(f"Override applied: populations.{pop_name}.{pop_attr}: {old_value} -> {value}")
                                 break
                         else:
-                            logger.warning(f"Population '{pop_name}' not found for override: {override_str}")
+                            raise ValueError(f"Population '{pop_name}' not found for override: {override_str}")
                     else:
-                        logger.warning(f"Invalid population override format: {override_str}")
+                        raise ValueError(f"Invalid population override format: {override_str}")
                 else:
-                    logger.warning(f"Unsupported nested override: {override_str}")
+                    raise ValueError(f"Unsupported nested override: {override_str}")
             else:
                 # Handle top-level overrides like 'ploidy=2', 'seed=1234'
                 if hasattr(config, key_path):
@@ -104,9 +112,14 @@ def apply_config_overrides(config, overrides_list):
                     applied_overrides[key_path] = f"{old_value} -> {value}"
                     logger.info(f"Override applied: {key_path}: {old_value} -> {value}")
                 else:
-                    logger.warning(f"Unknown configuration key: {key_path}")
+                    raise ValueError(f"Unknown configuration key: {key_path}")
                     
+        except ValueError as e:
+            # Re-raise ValueError exceptions to fail the pipeline
+            logger.error(f"Failed to apply override '{override_str}': {e}")
+            raise e
         except Exception as e:
+            # Log other exceptions and continue (for backward compatibility)
             logger.error(f"Failed to apply override '{override_str}': {e}")
     
     return applied_overrides
@@ -236,8 +249,21 @@ def run_pipeline(
         os.makedirs(output_dir, exist_ok=True)
         weights_file = os.path.join(output_dir, f"{mode}_topology_weights.csv")
 
+        # Create a mapping from numeric population IDs to descriptive labels
+        population_labels = None
+        if hasattr(config, 'population_labels') and config.population_labels:
+            # Create mapping: numeric_id -> descriptive_label 
+            # The numeric ID corresponds to the order populations were added to the demography
+            population_labels = {}
+            populations_with_samples = [pop for pop in config.populations if not pop.is_ancestral and pop.sample_size and pop.sample_size > 0]
+            
+            for idx, pop in enumerate(populations_with_samples):
+                pop_id = str(idx)  # TreeSequence uses string IDs like "0", "1", "2"
+                label = config.population_labels.get(pop.name, pop.name)
+                population_labels[pop_id] = label
+        
         topology_weights = ts_to_twisst_weights(
-            ts_data, output_file=weights_file, verbose=verbose, topology_mapping=topology_mapping
+            ts_data, output_file=weights_file, verbose=verbose, topology_mapping=topology_mapping, population_labels=population_labels
         )
         results["topology_weights"] = topology_weights
 
@@ -256,6 +282,32 @@ def run_pipeline(
         logger.info("FUNDAMENTAL ASYMMETRY RESULTS")
         logger.info("="*60)
         logger.info(f"Data file used: {weights_file}")
+        
+        # Add tree count information for both modes
+        n_total_trees = len(topology_weights)
+        n_right = fundamental_results[0] 
+        n_left = fundamental_results[1]
+        n_trees_used = n_right + n_left
+        
+        if mode == "chromosome":
+            logger.info(f"Total trees computed: {n_total_trees} (n_right + n_left = {n_trees_used})")
+            
+            # Always explain T2=T3 filtering (even when 0)
+            n_filtered = n_total_trees - n_trees_used
+            logger.info(f"Note: {n_filtered} trees were filtered out (trees where T2 = T3, which fall exactly on the y-axis in ternary space)")
+                
+        elif mode == "locus":
+            logger.info(f"n_loci simulated: {config.n_loci}, total trees analyzed: {n_total_trees} (n_right + n_left = {n_trees_used})")
+            
+            # Always explain T2=T3 filtering (even when 0)
+            n_filtered = n_total_trees - n_trees_used
+            logger.info(f"Note: {n_filtered} trees were filtered out (trees where T2 = T3, which fall exactly on the y-axis in ternary space)")
+            
+            # Also show if loci were filtered during processing
+            if n_total_trees < config.n_loci:
+                n_loci_filtered = config.n_loci - n_total_trees
+                logger.info(f"Additional note: {n_loci_filtered} loci were filtered out during processing (e.g., loci with insufficient topology information)")
+        
         logger.info(f"n_right: {fundamental_results[0]}")
         logger.info(f"n_left: {fundamental_results[1]}")
         logger.info(f"D_LR: {fundamental_results[2]:.4f}")

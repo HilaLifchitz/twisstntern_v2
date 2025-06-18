@@ -146,7 +146,7 @@ def simplify_topologies(weightsData):
 
 # this is the main function for the chromosome mode
 def ts_chromosome_to_twisst_weights(
-    ts, outgroup=None, output_file=None, verbose=False, twisst_verbose=False, topology_mapping=None
+    ts, outgroup=None, output_file=None, verbose=False, twisst_verbose=False, topology_mapping=None, population_labels=None
 ):
     """
     Extract topology weights from any TreeSequence object using twisst.
@@ -231,7 +231,7 @@ def ts_chromosome_to_twisst_weights(
             weights_norm,
             simplified_topos,
             columns,
-        ) = reorder_weights_by_topology_preference(weightsData, topology_mapping)
+        ) = reorder_weights_by_topology_preference(weightsData, topology_mapping, population_labels)
     else:  # if no topology mapping
         # we just print the default topologies order by twisst
         print("No topology mapping was provided; displaying the default topology axis")
@@ -267,7 +267,7 @@ def ts_chromosome_to_twisst_weights(
         # Log topologies to file
         logger = get_logger(__name__)
         topos = weightsData["topos"]
-        log_topologies(topos, simplified_topos, columns, logger, "TreeSequence topologies (default order)")
+        log_topologies(topos, simplified_topos, columns, logger, "TreeSequence topologies (default order)", population_labels)
 
     # Get number of topologies for reporting (works for both cases)
     n_topos = len(columns)
@@ -308,7 +308,7 @@ def ts_chromosome_to_twisst_weights(
 #################################################################################
 
 def ts_to_twisst_weights(
-    input_data, outgroup=None, output_file=None, verbose=False, twisst_verbose=False, topology_mapping=None
+    input_data, outgroup=None, output_file=None, verbose=False, twisst_verbose=False, topology_mapping=None, population_labels=None
 ):
     """
     Enhanced version of ts_to_twisst_weights that can handle both single TreeSequence objects
@@ -348,6 +348,7 @@ def ts_to_twisst_weights(
             verbose=verbose,
             twisst_verbose=twisst_verbose,
             topology_mapping=topology_mapping,
+            population_labels=population_labels,
         )
     #########################################################
     # Generator case - process multiple TreeSequences
@@ -434,7 +435,7 @@ def ts_to_twisst_weights(
 
             # Log canonical topologies
             logger = get_logger(__name__)
-            log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)")
+            log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)", population_labels)
 
 
         # Type assertion for Pylance
@@ -515,7 +516,7 @@ def ts_to_twisst_weights(
             reordered_weights,
             reordered_simplified_topos,
             new_columns,
-        ) = reorder_weights_by_topology_preference(temp_weightsData, topology_mapping)
+        ) = reorder_weights_by_topology_preference(temp_weightsData, topology_mapping, population_labels)
 
         # Update combined_df with reordered data
         combined_df = pd.DataFrame(reordered_weights, columns=new_columns)
@@ -530,7 +531,7 @@ def ts_to_twisst_weights(
         
         # Log topologies to file
         logger = get_logger(__name__)
-        log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)")
+        log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)", population_labels)
 
     if verbose:
         print(f"\nCombined Results:")
@@ -711,7 +712,7 @@ def compare_topologies(topo1, topo2):
     return normalize_topology_string(topo1) == normalize_topology_string(topo2)
 
 
-def reorder_weights_by_topology_preference(weightsData, topology_mapping):
+def reorder_weights_by_topology_preference(weightsData, topology_mapping, population_labels=None):
     """
     Reorder topology weights according to user preference.
     This should be called BEFORE creating the DataFrame.
@@ -719,6 +720,7 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
     Args:
         weightsData (dict): Output from twisst.weightTrees containing 'topos' and 'weights'
         topology_mapping (dict): Mapping from T1/T2/T3 to desired topology strings
+        population_labels (dict, optional): Mapping from population IDs to descriptive labels
         
     Returns:
         tuple: (reordered_weights, reordered_simplified_topos, column_names)
@@ -787,12 +789,12 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
     ]
 
     # Print beautiful tree representation (this function also handles logging)
-    print_topology_mapping_with_trees(weightsData, topology_mapping)
+    print_topology_mapping_with_trees(weightsData, topology_mapping, population_labels)
 
     return reordered_weights, reordered_simplified_topos, ["T1", "T2", "T3"]
 
 
-def print_topology_mapping_with_trees(weightsData, topology_mapping):
+def print_topology_mapping_with_trees(weightsData, topology_mapping, population_labels=None):
     """
     Print topology mapping with beautiful ASCII tree representations.
     Uses twisst's built-in tree rendering to show the actual tree structure.
@@ -800,6 +802,7 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
     Args:
         weightsData (dict): Output from twisst.weightTrees containing 'topos'
         topology_mapping (dict): Mapping from T1/T2/T3 to desired topology strings
+        population_labels (dict, optional): Mapping from population IDs to descriptive labels
     """
     # Get original topologies and simplified versions
     original_topos = weightsData[
@@ -847,4 +850,4 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
     # Log the applied topology mapping
     if mapped_topos:
         logger = get_logger(__name__)
-        log_topologies(mapped_topos, mapped_simplified, mapped_columns, logger, "Applied topology mapping")
+        log_topologies(mapped_topos, mapped_simplified, mapped_columns, logger, "Applied topology mapping", population_labels)
