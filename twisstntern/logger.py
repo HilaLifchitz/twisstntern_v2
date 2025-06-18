@@ -203,6 +203,61 @@ def log_analysis_complete(duration: float, output_files: list):
     logger.info("="*60)
 
 
+def log_simulation_config(config, overrides=None):
+    """Log simulation configuration parameters"""
+    logger = get_logger(__name__)
+    
+    logger.info("="*60)
+    logger.info("SIMULATION CONFIGURATION")
+    logger.info("="*60)
+    
+    # Basic simulation parameters
+    logger.info(f"Simulation mode: {config.simulation_mode}")
+    logger.info(f"Random seed: {config.seed}")
+    
+    # Population parameters
+    logger.info(f"Number of populations: {len(config.populations)}")
+    for pop_config in config.populations:
+        if hasattr(pop_config, 'sample_size'):
+            logger.info(f"  {pop_config.name}: Ne={pop_config.Ne}, samples={pop_config.sample_size}")
+        else:
+            logger.info(f"  {pop_config.name}: Ne={pop_config.Ne} (ancestral)")
+    
+    # Migration parameters
+    if hasattr(config, 'migration') and config.migration:
+        logger.info("Migration rates:")
+        for route, rate in config.migration.items():
+            logger.info(f"  {route}: {rate}")
+    
+    # Simulation-specific parameters
+    if config.simulation_mode == "chromosome":
+        logger.info(f"Chromosome length: {config.chromosome_length}")
+        logger.info(f"Recombination rate: {config.rec_rate}")
+        if hasattr(config, 'mutation_rate'):
+            logger.info(f"Mutation rate: {config.mutation_rate}")
+    elif config.simulation_mode == "locus":
+        logger.info(f"Number of loci: {config.n_loci}")
+        logger.info(f"Locus length: {config.locus_length}")
+    
+    # Ploidy
+    logger.info(f"Ploidy: {config.ploidy}")
+    
+    # Demographic events
+    if hasattr(config, 'demographic_events') and config.demographic_events:
+        logger.info("Demographic events:")
+        for event in config.demographic_events:
+            logger.info(f"  {event}")
+    
+    # Command-line overrides
+    if overrides:
+        logger.info("Command-line overrides applied:")
+        for key, value in overrides.items():
+            if value is not None:
+                logger.info(f"  {key}: {value}")
+    
+    logger.info("="*60)
+
+
 def log_error(error: Exception, context: str = ""):
     """Log an error with context"""
     logger = get_logger(__name__)

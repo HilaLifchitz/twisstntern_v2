@@ -37,6 +37,15 @@ def fundamental_asymmetry(data):
             main_p_value   - corresponding p-value
         )
     """
+    # Debug: Check data types being passed to fundamental_asymmetry
+    print(f"DEBUG - fundamental_asymmetry received data:")
+    print(f"  Shape: {data.shape}")
+    print(f"  Dtypes: {data.dtypes.to_dict()}")
+    print(f"  Sample values: {data.iloc[0].values if len(data) > 0 else 'EMPTY'}")
+    if len(data) > 0 and isinstance(data.iloc[0, 0], str):
+        print(f"  WARNING: First row contains strings: {data.iloc[0].tolist()}")
+    print()
+    
     # Convert ternary coordinates to Cartesian x-coordinates
     data["x-axis"] = cartizian(data["T1"], data["T2"], data["T3"])[0]
 

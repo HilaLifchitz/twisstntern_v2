@@ -3,13 +3,13 @@ Hila, 10.06.25
 -1. look at the text!
 
 0. twisstntern -- get rid of logging information twice -- no idea how!!!
-                - make the --help look a bit nicer?
                 - add topology axis vhoice into the parser -- DONE!! :)
-                - a comprehensice cli test!!
+                - a comprehensice cli test!! DONE
+                - create a logger which outputs to the Results file -- DONE!
 
 1. Consider wether the (supposedly) optimized batch code for the  ts_to_twisst_weights
     in the ts_processing versus tree_processing really makes a difference.
-    see the debugs.py code (DOESNT SEEM SO, BUT TRY MORE VALUSE. IS THERE ANOTHER WAY?..)
+    see the debugs.py code 
     DECIDE ON 1 STRATEGY AND APPLY IN BOTH --- DONE: conclusion- batch is fake news
 
     
@@ -17,10 +17,13 @@ Hila, 10.06.25
 2. Finish twisstntern_simulate - the version with the yaml config template
                                - how to add parsing form the command line- hydra? ask Sanketh
                                - add topology reordering option-- to the parer also
-                               - add override oprion to the parser
+                               - add override option to the parser
+                               - a comprehensice CLI test
+
                               
 URGENT- compare the two ways of saving the locus mode- compare the simulate- 
 to running over the two saved trees with the usual twisstNtern!!! -- come back to it!
+--DONE -option 1 (not dasha) is best
 
 3. write a script that compares two toplogy weights distributions like the pic that Sean sent to DIscord
 

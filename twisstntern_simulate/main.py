@@ -15,16 +15,13 @@ Usage:
 import argparse
 import sys
 import os
-import logging
+import time
 from pathlib import Path
 
 from twisstntern_simulate.pipeline import run_pipeline
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+# Import twisstntern logging
+from twisstntern.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
 
 
 def main():
@@ -109,11 +106,7 @@ Examples:
         "--seed", type=int, help="Random seed for simulation (overrides config file)."
     )
 
-    parser.add_argument(
-        "--mode",
-        choices=["locus", "chromosome"],
-        help="Simulation mode (overrides config file).",
-    )
+
 
     # Analysis options
     parser.add_argument(
@@ -123,24 +116,40 @@ Examples:
         help="Granularity for ternary analysis (default: 0.1).",
     )
 
+    parser.add_argument(
+        "--topology-mapping",
+        type=str,
+        help="Custom topology mapping for T1/T2/T3. "
+             "Format: 'T1=(0,(1,(2,3))); T2=(0,(2,(1,3))); T3=(0,(3,(1,2)));' "
+             "This allows you to specify which topology should be assigned to each axis.",
+    )
+
+    # Configuration override options
+    parser.add_argument(
+        "--override",
+        action="append",
+        help="Override specific config values. Format: 'key=value' or 'nested.key=value'. "
+             "Examples: --override 'migration.p3>p2=0.3' --override 'ploidy=2' --override 'populations.p1.Ne=15000'",
+    )
+
 
     args = parser.parse_args()
 
-    # Configure logging based on verbosity
-    if args.quiet:
-        logging.getLogger().setLevel(logging.ERROR)
-    elif args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+    # Create output directory if it doesn't exist
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Add file logging if requested
-    if args.log_file:
-        file_handler = logging.FileHandler(args.log_file)
-        file_handler.setFormatter(
-            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        )
-        logging.getLogger().addHandler(file_handler)
-
-    # Validate arguments - no conflicts to check now
+    # Setup logging (like twisstntern)
+    log_file_path = setup_logging(
+        output_dir=str(output_dir),
+        verbose=args.verbose,
+        console_output=not args.quiet
+    )
+    
+    logger = get_logger(__name__)
+    
+    # Log system information
+    log_system_info()
 
     # Check if config file exists
     config_path = Path(args.config)
@@ -148,36 +157,70 @@ Examples:
         logger.error(f"Configuration file not found: {config_path}")
         sys.exit(1)
 
-    # Create output directory if it doesn't exist
-    # This directory will contain: topology weights, analysis results, plots, CSV files, and tree files
-    output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    # Convert granularity to float if needed
+    try:
+        granularity = float(args.granularity)
+    except ValueError:
+        granularity = args.granularity
 
-    logger.info(f"Starting twisstntern_simulate pipeline")
-    logger.info(f"Config file: {config_path}")
-    logger.info(f"Output directory: {output_dir}")
+    # Log analysis start
+    log_analysis_start(
+        input_file=str(config_path),
+        output_dir=str(output_dir),
+        granularity=granularity,
+        seed_override=args.seed,
+        mode_override=None,
+        topology_mapping=args.topology_mapping,
+        verbose=args.verbose
+    )
+
+    start_time = time.time()
 
     try:
         # Run the pipeline
-        run_pipeline(
+        results = run_pipeline(
             config_path=str(config_path),
             output_dir=str(output_dir),
             skip_twisst_check=args.skip_twisst_check,
             force_download=args.force_download,
             seed_override=args.seed,
-            mode_override=args.mode,
-            granularity=args.granularity,
+            mode_override=None,
+            granularity=granularity,
             verbose=args.verbose,
+            topology_mapping=args.topology_mapping,
+            config_overrides=args.override,
         )
 
-        logger.info("Pipeline completed successfully!")
+        # Calculate duration
+        duration = time.time() - start_time
+        
+        # Collect output files
+        output_files = []
+        if output_dir.exists():
+            output_files.extend([str(f) for f in output_dir.glob("*.*")])
+        
+        # Log completion
+        log_analysis_complete(duration, output_files)
+        
+        # Print summary to console (like main twisstntern)
+        print("----------------------------------------------------------")
+        print("Summary of the analysis:")
+        print(f"Data file used: {results['csv_file_used']}")
+        print("\nFundamental asymmetry results:")
+        fundamental_results = results["fundamental_results"]
+        print(f"n_right: {fundamental_results[0]}")
+        print(f"n_left: {fundamental_results[1]}")
+        print(f"D_LR: {fundamental_results[2]:.4f}")
+        print(f"G-test: {fundamental_results[3]:.4f}")
+        print(f"p-value: {fundamental_results[4]:.4e}")
+        print(f"\nResults and plots have been saved to the '{output_dir}' directory.")
+        
+        if log_file_path:
+            print(f"Log file saved to: {log_file_path}")
 
     except Exception as e:
-        logger.error(f"Pipeline failed with error: {str(e)}")
-        if args.verbose:
-            import traceback
-
-            traceback.print_exc()
+        log_error(e, "twisstntern_simulate main analysis")
+        logger.critical("Analysis failed. Check the log for details.")
         sys.exit(1)
 
 

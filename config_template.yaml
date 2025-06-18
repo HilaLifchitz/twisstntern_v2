@@ -1,0 +1,138 @@
+###################################################################################
+# CONFIGURATION FILE FOR MSPRIME SIMULATION
+###################################################################################
+
+###################################################################################
+# STEP 1: Setting up demography
+###################################################################################
+
+# Four-population demographic model
+# NOTE: ploidy can be set to 1 (haploid) or 2 (diploid)-- haploid is default
+# You can modify the values below or leave them as defaults
+
+#=== POPULATION LABELS (optional) ===#
+# Give meaningful names to your populations
+# These labels will be used in output files and visualizations
+population_labels:
+  p1: "Population 1" # Label for population p1
+  p2: "Population 2" # Label for population p2
+  p3: "Population 3" # Label for population p3
+  p23: "Ancestor p2/p3" # Label for ancestor of p1 and p2
+  p123: "Ancestor p1/p2/p3" # Label for ancestor of p1, p2, and p3
+  O: "Outgroup" # Label for outgroup population
+  ANC: "Ancestral" # Label for the most ancestral population
+
+#=== SPLIT TIMES (in generations before present) ===#
+# These define the timing of historical splits between populations.
+# Larger values indicate older divergence events.
+splits:
+  - time: 100 # Time of split between p1 and p2 (forms ancestor p12)
+    derived_pop1: "p2"
+    derived_pop2: "p3"
+    ancestral_pop: "p23"
+
+  - time: 200 # Time of split between p12 and p3 (forms ancestor p123)
+    derived_pop1: "p23"
+    derived_pop2: "p1"
+    ancestral_pop: "p123"
+
+  - time: 300 # Time of split between p123 and outgroup O
+    derived_pop1: "p123"
+    derived_pop2: "O"
+    ancestral_pop: "ANC"
+
+#=== EFFECTIVE POPULATION SIZES ===#
+# Ne values for each population.
+# For diploid simulations (ploidy=2): Ne is in number of diploid individuals
+# For haploid simulations (ploidy=1): Ne is in number of haploid individuals
+populations:
+  # Extant populations (can be sampled)
+
+  - name: "O" # OUTGROUP!
+    Ne: 1000 # Population size
+    # growth_rate: 0.0  # OPTIONAL: Population growth rate (default: 0.0)
+    sample_size: 10 # Number of samples to take from this population
+
+  - name: "p1"
+    Ne: 1000 # Population size
+    # growth_rate: 0.0  # OPTIONAL: Population growth rate (default: 0.0)
+    sample_size: 10 # Number of samples to take from this population
+
+  - name: "p2"
+    Ne: 1000 # Population size
+    # growth_rate: 0.0  # OPTIONAL: Population growth rate (default: 0.0)
+    sample_size: 10 # Number of samples to take from this population
+
+  - name: "p3"
+    Ne: 1000 # Population size
+    # growth_rate: 0.0  # OPTIONAL: Population growth rate (default: 0.0)
+    sample_size: 10 # Number of samples to take from this population
+
+  # Ancestral populations (cannot be sampled)
+  - name: "p23"
+    Ne: 1000 # Population size
+    # growth_rate: 0.0  # OPTIONAL: Population growth rate (default: 0.0)
+
+  - name: "p123"
+    Ne: 1000 # Population size
+    # growth_rate: 0.0  # OPTIONAL: Population growth rate (default: 0.0)
+
+  - name: "ANC"
+    Ne: 1000 # Population size
+    # growth_rate: 0.0  # OPTIONAL: Population growth rate (default: 0.0)
+
+#=== MIGRATION RATES (per generation) ===#
+# These rates are proportions: e.g. 0.001 means 0.1% of individuals replaced by migrants per generation.
+# Define direction as "source > destination" (note that msprime defines in the reverse order)
+
+# Default m = 0
+migration:
+  # Migration between extant populations
+  "p1>p2": 0.00
+  "p2>p1": 0.00
+  "p1>p3": 0.000
+  "p3>p1": 0.000
+  "p2>p3": 0.000
+  "p3>p2": 0.000
+
+  # Migration between outgroup and extant populations
+  "O>p1": 0.000
+  "p1>O": 0.000
+  "O>p2": 0.000
+  "p2>O": 0.000
+  "O>p3": 0.00
+  "p3>O": 0.0000
+
+  # Migration involving ancestral populations
+  "p23>p1": 0.000 # Migration from ancestor of p2/p3 to p1 (before t2)
+  "p1>p23": 0.00
+  "O>p123": 0.0000 # Migration from outgroup to ancestral p123 (before t3)
+  "p123>O": 0.0000
+
+###################################################################################
+# STEP 2: Coalescent simulation
+###################################################################################
+
+#=== Simulation Mode ===#
+simulation_mode: "chromosome" # Choose: "locus", "chromosome"
+
+#=== Common Parameters ===#
+ploidy: 1 # Ploidy level: 1 for haploid, 2 for diploid -- if non specified default is 1
+seed: 4576 # Random seed for simulation (optional)
+
+#=== Simulation mode "locus" ===#
+# msprime will simulate independent non-recombining loci with length 10k
+n_loci: 1000 # Number of loci / windows to simulate (default 10000)
+locus_length: 1 # Length of each locus in base pairs
+
+#=== Simulation mode "chromosome" ===#
+# msprime will simulate a chromosome of desired length and output tree sequences
+# corresponding to breaks in recombination, genomic length of the loci simulated
+# here will vary
+rec_rate: 1e-8 # Recombination rate per base per generation
+chromosome_length: 1e7 # Length of the chromosome to simulate (in base pairs)
+mutation_rate: 0 # Mutation rate per base per generation (optional)
+
+###################################################################################
+# END OF CONFIGURATION
+###################################################################################

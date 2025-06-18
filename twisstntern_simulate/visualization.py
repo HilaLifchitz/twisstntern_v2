@@ -172,6 +172,7 @@ def plot_fundamental_asymmetry(data, file_name):
     Returns:
         tuple: (D_LR value, G-test statistic, p-value)
     """
+
     fig, ax = plt.subplots(figsize=(6, 4))
 
     # Draw triangle by connecting vertices A (top), B (left), and C (right)

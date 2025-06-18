@@ -16,18 +16,6 @@ In an idealized four population model (3 splits with no migration), we expect th
 
 <img src="images/method_overview.png" height="450pt" align="bottom">
 
-## Supported File Formats
-
-**Tree Files:**
-- **TreeSequence** (`.trees`, `.ts`): TSKit tree sequence files  
-- **Newick** (`.newick`, `.nwk`, `.tree`): Single or multiple Newick format trees  
-- **Nexus** (`.nexus`): Nexus format files
-
-**Data Files:**
-- **CSV** (`.csv`): Pre-computed topology weights (no normalization required)
-
----
-
 ## Installation
 
 You can install the package in one of the following ways:
@@ -47,60 +35,122 @@ pip install -e .[dev]
 
 ---
 
-## Usage
+### Input
 
-### 🔧 Command-Line Interface
+**Tree File Options:**
+
+- **TreeSequence** (`.trees`, `.ts`): TSKit tree sequence files
+- **Newick** (`.newick`, `.nwk`, `.tree`): Single or multiple Newick format trees
+- **Nexus** (`.nexus`): Nexus format files
+
+**Weights Data Files:**
+
+- **CSV** (`.csv`): Pre-computed topology weights (no normalization required)
+
+---
+
+### 🔧 Command-Line Usage
+
+**TWISSTNTERN** accepts both tree files and pre-computed topology weights. The input file can be specified either as a positional argument or using the `--input` flag.
 
 ```bash
-python -m twisstntern [input_file] [granularity or keyword] [options]
+python -m twisstntern INPUT [GRANULARITY] [OPTIONS]
 ```
 
-**Input File Options:**
+#### **Parameters**
+
+- `INPUT`: **(Required)** Input file path - tree file (`.trees`, `.newick`, `.nwk`, `.tree`, `.nexus`) or topology weights CSV `.csv`.
+- `--granularity`: _(Optional, default: `0.1`)_  
+  Sets the resolution of the ternary triangle analysis. Accepts either a float (e.g., `0.05`) or a keyword (`coarse`, `fine`, `superfine`).  
+  Smaller values produce finer subdivisions of the triangle and more detailed results.
+- `-i`, `--input`: Alternative way to specify input file
+- `-o`, `--output`: Output directory (default: `Results/`)
+- `--taxon-names`: Space-separated taxon names for Newick/Nexus files (e.g., `O P1 P2 P3`)
+- `--outgroup`: Outgroup taxon name for Newick/Nexus files
+- `--topology-mapping`: _(Optional)_  
+  Manually specify which topology corresponds to each axis label (T1, T2, T3) in the ternary plot.  
+  Useful for ensuring consistency across runs or datasets. Format:  
+  `'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'`
+- `--verbose`: Enable verbose logging (DEBUG level)
+- `--help`: Show help message
+
+#### **Input Methods**
+
 ```bash
-# Method 1: Positional argument
+# Method 1: Positional arguments
 python -m twisstntern input_file.trees
 
-# Method 2: Using -i or --input flag
-python -m twisstntern -i input_file.trees
+# Method 2: Using --input flag
 python -m twisstntern --input input_file.trees
+
+# Method 3: Combined with granularity
+python -m twisstntern input_file.trees 0.25
 ```
 
-**Examples:**
+#### **Basic Examples**
+
+**TreeSequence files** (no additional parameters needed):
 
 ```bash
-# Analyze a .trees file with default granularity (0.1)
-python -m twisstntern tree_file.trees
-# OR using flag syntax:
-python -m twisstntern -i tree_file.trees
+# Default analysis with granularity 0.1
+python -m twisstntern data.trees
 
-# Use a custom granularity value
-python -m twisstntern tree_file.trees 0.25
+# Custom granularity using positional argument
+python -m twisstntern data.trees 0.05
 
-# Analyze a Newick tree with specified taxon names and outgroup.
-# Granularity can be specified using a keyword (e.g. coarse, fine, superfine)
-python -m twisstntern -i tree_file.newick --granularity superfine --taxon-names O P1 P2 P3 --outgroup O
+# Custom granularity using flag
+python -m twisstntern data.trees --granularity fine
 
-# Enable verbose logging for detailed output
-python -m twisstntern tree_file.newick --taxon-names O P1 P2 P3 --outgroup O --verbose
+# Specify output directory
+python -m twisstntern data.trees --output /custom/output/dir/
+```
 
-# Specify an output directory (otherwise, 'Results/' will be created)
-# * Note: files ending in `.trees` are msprime TreeSequence objects, which do not require specifying --taxon-names or --outgroup.
-python -m twisstntern --input tree_file.tree --granularity 0.1 --taxon-names O P1 P2 P3 --outgroup O --output /your/custom/output_dir
+**Newick/Nexus files** (require taxon names and outgroup):
 
-# Use custom topology mapping to define T1, T2, T3 ordering
-python -m twisstntern -i tree_file.trees --topology-mapping 'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
+```bash
+# Basic Newick analysis
+python -m twisstntern tree.newick --taxon-names O P1 P2 P3 --outgroup O
 
-# Analyze a precomputed CSV file
+# With custom granularity
+python -m twisstntern tree.newick --granularity superfine --taxon-names O P1 P2 P3 --outgroup O
+
+# With verbose logging
+python -m twisstntern tree.newick --taxon-names O P1 P2 P3 --outgroup O --verbose
+```
+
+**Pre-computed CSV files**:
+
+```bash
+# Analyze topology weights CSV
+python -m twisstntern weights.csv
+
+# With specific granularity
 python -m twisstntern weights.csv fine
+```
+
+#### **Advanced Examples**
+
+**Custom topology mapping**:
+
+```bash
+# For TreeSequence files (population IDs: 0, 1, 2, 3)
+python -m twisstntern data.trees \
+  --topology-mapping 'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
+
+# For Newick files (population names: O, P1, P2, P3)
+python -m twisstntern tree.newick \
+  --taxon-names O P1 P2 P3 --outgroup O \
+  --topology-mapping 'T1="(O,(P3,(P1,P2)))"; T2="(O,(P1,(P2,P3)))"; T3="(O,(P2,(P1,P3)))";'
 ```
 
 ---
 
-### 🌳 Topology Mapping
+#### 🌳 Topology Mapping
 
 **TWISSTNTERN** now supports **custom topology ordering** for phylogenetic analyses. By default, topologies are labeled T1, T2, T3 based on the order they are discovered by twisst. However, you can specify which topology should be assigned to each label using the `--topology-mapping` argument.
 
 #### **Format**
+
 ```bash
 --topology-mapping 'T1="(topology1)"; T2="(topology2)"; T3="(topology3)";'
 ```
@@ -108,65 +158,29 @@ python -m twisstntern weights.csv fine
 #### **Examples**
 
 **For TreeSequence files** (population IDs: 0, 1, 2, 3):
+
 ```bash
 python -m twisstntern data.trees \
   --topology-mapping 'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
 ```
 
 **For Newick files** (population names: O, P1, P2, P3):
+
 ```bash
 python -m twisstntern data.newick \
   --taxon-names O P1 P2 P3 --outgroup O \
   --topology-mapping 'T1="(O,(P3,(P1,P2)))"; T2="(O,(P1,(P2,P3)))"; T3="(O,(P2,(P1,P3)))";'
 ```
 
-#### **Benefits**
-- **Consistent Analysis**: Ensure the same biological topology is always labeled as T1 across different datasets
-- **Comparative Studies**: Compare results across analyses with consistent topology labels
-- **Clear Visualization**: See ASCII trees showing exactly which topology corresponds to which label
-
-#### **Output**
-When topology mapping is applied, you'll see the ASCII tree visualizations printed to screen, e.g:
-```
-T1:
-   /-0
---|
-  |   /-3
-   \-|
-     |   /-1
-      \-|
-         \-2
-
-T2:
-   /-0
---|
-  |   /-1
-   \-|
-     |   /-2
-      \-|
-         \-3
-
-T3:
-   /-0
---|
-  |   /-2
-   \-|
-     |   /-1
-      \-|
-         \-3
-```
-
----
-
-### 🧪 Granularity Settings
+#### 🧪 Granularity Settings
 
 Control the resolution of the triangle-based analysis using the `--granularity` argument. Supported predefined values:
 
-| Keyword     | Value   |
-|-------------|---------|
-| `coarse`    | `0.25`  |
-| `fine`      | `0.1`   |
-| `superfine` | `0.05`  |
+| Keyword     | Value  |
+| ----------- | ------ |
+| `coarse`    | `0.25` |
+| `fine`      | `0.1`  |
+| `superfine` | `0.05` |
 
 You can also provide a **custom float value** for granularity (alpha), e.g. `--granularity 0.01`.  
 **Note:** `1 / alpha` must be an **even integer**.
@@ -176,16 +190,55 @@ You can also provide a **custom float value** for granularity (alpha), e.g. `--g
 
 ---
 
-### 📝 Logging and Output
+### **Output**
+
+TWISSTNTERN generates a comprehensive set of output files saved to the specified output directory (default: `Results/`):
+
+**Analysis Files:**
+
+- `[prefix]_topology_weights.csv` - Raw topology weight data for each genomic window
+- `[prefix]_triangle_analysis.csv` - Triangle-based sub-analysis results with statistics
+- `twisstntern_YYYYMMDD_HHMMSS.log` - Detailed log file with complete analysis record
+
+**Visualization Files:**
+
+- `[prefix]_fundamental_asymmetry.png` - Fundamental asymmetry bar chart showing left vs right bias
+- `[prefix]_analysis_granularity_[value].png` - Ternary plot with data points colored by triangle regions
+- `[prefix]_granuality_[value].png` - Main ternary plot with density visualization and statistical overlays
+- `[prefix]_index_granularity_[value].png` - Triangle index visualization showing region boundaries
+
+**File Naming:**
+
+- `[prefix]` is derived from the input filename (e.g., `data.trees` → `data_`)
+- `[value]` represents the granularity setting used (e.g., `0.1`, `0.05`)
+
+**Example Output (granularity 0.1):**
+
+```
+Results/
+├── data_topology_weights.csv
+├── data_triangle_analysis.csv
+├── data_fundamental_asymmetry.png
+├── data_analysis_granularity_0.1.png
+├── data_granuality_0.1.png
+├── data_index_granularity_0.1.png
+└── twisstntern_20250618_151932.log
+```
+
+---
+
+#### 📝 Logging
 
 **TWISSTNTERN** includes comprehensive logging to track analysis progress and results. Every analysis automatically generates a detailed log file saved to the output directory.
 
 #### **Log File Creation**
+
 - **Automatic**: Log files are created for every analysis run
 - **Location**: Saved in the output directory (default: `Results/`)
 - **Format**: `twisstntern_YYYYMMDD_HHMMSS.log`
 
 #### **Logging Levels**
+
 ```bash
 # Standard logging (INFO level)
 python -m twisstntern input.csv
@@ -195,26 +248,31 @@ python -m twisstntern input.newick --taxon-names O P1 P2 P3 --outgroup O --verbo
 ```
 
 #### **What Gets Logged**
+
 - **System Information**: Python version, platform, package versions
 - **Analysis Parameters**: Input file, granularity, taxon names, topology mapping
 - **Processing Steps**: File format detection, tree processing, statistical analysis
 - **Topology Information**: Complete topology details with both string representations and ASCII tree diagrams
 - **Results Summary**: Fundamental asymmetry values, file generation, timing
 - **Error Context**: Detailed error messages with helpful suggestions
+<!--
 
 #### **Console vs File Output**
-- **Console**: Clean, colored progress messages for real-time feedback
-- **Log File**: Complete technical details with timestamps and module context, including detailed topology logging
 
-#### **Topology Logging**
+- **Console**: Clean, colored progress messages for real-time feedback
+- **Log File**: Complete technical details with timestamps and module context, including detailed topology logging -->
+
+<!-- #### **Topology Logging**
+
 When processing tree files (Newick, TreeSequence), TWISSTNTERN automatically logs detailed topology information to the log file, including:
 
 - **Topology Strings**: Simplified Newick format for each topology (e.g., `(O,((P1,P2),P3));`)
 - **ASCII Tree Diagrams**: Beautiful visual representations of each topology structure
-- **Topology Labels**: Clear identification of T1, T2, T3 assignments
-- **Mapping Information**: When custom topology mapping is used, both original and reordered topologies are logged
+- **Topology Labels**: Clear identification of T1, T2, T3 assignments -->
 
+<!--
 **Example Topology Log Content:**
+
 ```
 2025-06-17 17:12:42,554 - INFO - Newick file topologies (default order)
 2025-06-17 17:12:42,555 - INFO - ==================================================
@@ -232,18 +290,7 @@ When processing tree files (Newick, TreeSequence), TWISSTNTERN automatically log
 2025-06-17 17:12:42,556 - INFO -   String: (O,((P1,P3),P2));
 2025-06-17 17:12:42,556 - INFO -   ASCII Tree:
 ...
-```
-
-This topology logging provides:
-- **Reproducibility**: Exact topology structures used in analysis
-- **Debugging**: Visual confirmation of topology assignments
-- **Documentation**: Permanent record of tree structures for publications
-
-#### **Benefits**
-- **Full Traceability**: Complete record of every analysis for reproducibility
-- **Debugging Support**: Detailed technical information when issues occur
-- **Performance Monitoring**: Timing and file size tracking
-- **Error Diagnosis**: Clear context when problems arise
+``` -->
 
 ---
 
@@ -281,17 +328,30 @@ results, fundamental_results, csv_file = run_analysis(
 
 ## 🧬 Simulating Data with `twisstntern_simulate`
 
-The `twisstntern_simulate` module allows you to generate simulated tree sequence data and analyze it using the same ternary pipeline as the main package. This is useful for testing, benchmarking, and exploring the behavior of the analysis under different demographic scenarios.
+The `twisstntern_simulate` module lets you generate simulated tree sequence data and analyze it using the same ternary pipeline as the main package.  
+It is ideal for testing, benchmarking, and exploring different demographic scenarios.
+
+- Runs simulations using `msprime`
+- Automatically Downloads Twisst from https://github.com/simonhmartin/twisst
+- Saves trees in Newick format with standardized taxon names
+- Automatically passes simulated data to the analysis pipeline
+- Outputs CSVs and plots in a structured results directory
+
+---
+
+### Input
+
+Simulation parameters (demography, sample sizes, sequence length, etc.) are specified in a YAML file.  
+See `config_template.yaml` for a template and documentation of available options.
+
+---
 
 ### 🔧 Command-Line Usage
 
-In addition to the required configuration file (`--config`), you can optionally specify an output directory using `--output`. If no output directory is provided, a default `Results/` folder will be created.
-
-You may also override individual parameters from the YAML config directly via additional command-line options (e.g., to test alternative values without editing the file), see below
-
+The only required input is a configuration file provided via the `--config` flag.
 
 ```bash
-python -m twisstntern_simulate -c CONFIG[-o OUTPUT][--skip-twisst-check][--force-download][--verbose][--quiet][--log-file LOG_FILE][--seed SEED][--mode {locus,chromosome}][--granularity GRANULARITY]
+python -m twisstntern_simulate -c CONFIG[-o OUTPUT][--skip-twisst-check][--force-download][--verbose][--quiet][--log-file LOG_FILE][--seed SEED][--granularity GRANULARITY]
 ```
 
 - `-c`, `--config`: **(Required)** Path to a YAML configuration file specifying simulation parameters (see `twisstntern_simulate/config_template.yaml` for an example).
@@ -302,73 +362,140 @@ python -m twisstntern_simulate -c CONFIG[-o OUTPUT][--skip-twisst-check][--force
 - `--quiet`: Suppress most output.
 - `--log-file LOG_FILE`: Write logs to a file.
 - `--seed SEED`: Set a random seed for reproducibility.
-- `--mode {locus,chromosome}`: Simulation mode (default: locus).
 - `--granularity GRANULARITY`: Set analysis granularity (overrides config).
 
 **Example:**
+
 ```bash
 python -m twisstntern_simulate -c config_template.yaml -o SimResults/
 ```
 
-### 📄 What It Does
+---
 
-- Runs msprime-based simulations according to your config.
-- Saves simulated trees in Newick format (with consistent taxon naming for downstream analysis).
-- Passes the simulated data directly to the ternary analysis pipeline.
-- Outputs results (CSV, plots, etc.) in the specified output directory, formatted identically to the main package.
+### ⚙️ Configuration Overrides
 
-### ⚙️ Configuration
+You can override any configuration parameter from the YAML file directly via the command line using the `--override` argument. This is useful for testing different parameter values without editing the configuration file.
 
-Simulation parameters (demography, sample sizes, sequence length, etc.) are specified in a YAML file.  
-See `twisstntern_simulate/config_template.yaml` for a template and documentation of available options.
+#### **Format**
+
+```bash
+--override 'parameter_path=value'
+```
+
+#### **Supported Override Types**
+
+**Top-level parameters:**
+
+```bash
+# Override random seed
+--override 'seed=1234'
+
+# Override ploidy
+--override 'ploidy=2'
+
+# Override simulation mode
+--override 'simulation_mode=locus'
+--override 'simulation_mode=chromosome'
+```
+
+**Migration rates** (format: `migration.source>destination=rate`):
+
+```bash
+# Set migration rate from population p2 to p3
+--override 'migration.p2>p3=0.5'
+
+# Set migration rate from population p1 to p2
+--override 'migration.p1>p2=0.1'
+```
+
+**Population parameters** (format: `populations.population_name.parameter=value`):
+
+```bash
+# Override effective population size
+--override 'populations.p1.Ne=5000'
+
+# Override sample size
+--override 'populations.p2.sample_size=20'
+```
+
+#### **Multiple Overrides**
+
+You can specify multiple overrides in a single command:
+
+```bash
+python -m twisstntern_simulate -c config.yaml -o results/ \
+  --override 'migration.p1>p2=0.1' \
+  --override 'populations.p1.Ne=5000' \
+  --override 'ploidy=2'
+```
+
+#### **Examples**
+
+**Basic migration override:**
+
+```bash
+python -m twisstntern_simulate -c config_template.yaml -o test_migration/ \
+  --override 'migration.p2>p3=0.3'
+```
+
+**Multiple parameter override:**
+
+```bash
+python -m twisstntern_simulate -c config_template.yaml -o test_params/ \
+  --override 'migration.p1>p2=0.1' \
+  --override 'populations.p1.Ne=5000' \
+  --override 'ploidy=2' \
+  --topology-mapping 'T1=(0,(1,(2,3))); T2=(0,(2,(1,3))); T3=(0,(3,(1,2)));'
+```
+
+#### **What Gets Logged**
+
+All applied overrides are automatically logged to the output log file with before/after values:
+
+```
+Override applied: migration.p2>p3: 0.0 -> 0.3
+Override applied: populations.p1.Ne: 1000.0 -> 5000
+Override applied: ploidy: 1 -> 2
+```
+
+The detailed configuration section in the log will show the final parameter values used in the simulation, incorporating all overrides.
 
 ### 📝 Output
 
-- All results (trees, weights, CSVs, plots) are saved in the output directory.
+All results are saved to the specified output directory.  
+If no directory is provided, a default `Results/` folder will be created automatically.
 
----
+In addition to the standard `twisstntern` outputs (weights, CSVs, plots), this module also saves the simulated trees `msprime` generated in Newick format.
 
 **Integration:**  
 You can use the outputs from `twisstntern_simulate` directly with the main `twisstntern` analysis tools for further exploration.
 
 ---
 
-## Citation
+## 📚 Citation
 
-If you use TWISSTNTERN, please cite:
+If you use **TWISSTNTERN**, please cite:
 
-**Stankowski, S., Z. B. Zagrodzka, M. Garlovsky, A. Pal, D. Shipilina, D Garcia Castillo, T. Broquet, E. Leader, J. Reeve, K. Johannesson, A. M. Westram, R. K. Butlin. 2023. Selection on many loci drove the origin and spread of a key innovation. _bioRxiv_ doi: https://doi.org/10.1101/2023.02.13.528213**
+**Stankowski, S., Zagrodzka, Z. B., Garlovsky, M. D., Pal, A., Shipilina, D., Garcia Castillo, D., Lifchitz, H., et al.** (2024). _The genetic basis of a recent transition to live-bearing in marine snails_. **Science**, 383(6678), 114–119. [https://doi.org/10.1126/science.adi2982](https://doi.org/10.1126/science.adi2982)
 
-Stankowski et al 2023 is where we first used the TWISSTNTERN method to study patterns of tree discordance in _Littorina_.
+> This study is the first to use the TWISSTNTERN method to examine patterns of tree discordance in _Littorina_.
 
-For the underlying topology weighting method, please also cite:
-**Martin, S. H., & Van Belleghem, S. M. (2017). Exploring evolutionary relationships across the genome using topology weighting. _Genetics_, 206(1), 429-438. https://doi.org/10.1534/genetics.116.194720**
+Also cite the original topology weighting method:
+
+**Martin, S. H., & Van Belleghem, S. M.** (2017). _Exploring evolutionary relationships across the genome using topology weighting_. **Genetics**, 206(1), 429–438. [https://doi.org/10.1534/genetics.116.194720](https://doi.org/10.1534/genetics.116.194720)
 
 ---
 
 ## Dependencies
 
 - `numpy>=1.21.0`
-- `pandas>=1.3.0`  
+- `pandas>=1.3.0`
 - `scipy>=1.7.0`
 - `matplotlib>=3.4.0`
 - `tskit>=0.4.0`
 - `msprime>=1.0.0`
 - `ete3>=3.1.0`
 - `requests>=2.25.0`
-
----
-
-## Features
-
-- Ternary data loading and preprocessing
-- Visualization with adjustable granularity
-- Fundamental asymmetry detection
-- Triangle-based statistical analysis
-- TWISST-style topology weighting integration
-- **Custom topology mapping** with beautiful ASCII tree visualization
-- **Comprehensive logging** with automatic log file generation
-- Tree sequence generation and demographic simulation via `msprime`
 
 ---
 

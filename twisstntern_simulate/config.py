@@ -67,7 +67,17 @@ Example configuration (YAML):
 import yaml
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
+import re  
 
+
+def is_ancestral_population(pop_name):
+    """
+    Returns True if the population name is ancestral (e.g., 'p12', 'p123', 'p23', 'ANC'), False otherwise.
+    """
+    if pop_name == "ANC":
+        return True
+    match = re.fullmatch(r"p\d{2,}", pop_name)
+    return match is not None
 
 @dataclass
 class Population:
@@ -114,7 +124,6 @@ class Split:
 # it is used in the simulation.py file to run the simulation
 ########################################################################################
 
-
 class Config:
     """
     Configuration handler for twisstntern simulations.
@@ -157,8 +166,8 @@ class Config:
             # Get population label if available
             label = self.population_labels.get(pop["name"])
 
-            # Determine if this is an ancestral population
-            is_ancestral = pop["name"] in ["p12", "p123", "ANC"]
+            # Use the new function to determine if this is an ancestral population
+            is_ancestral = is_ancestral_population(pop["name"])
 
             # Only set sample_size for extant populations
             sample_size = None if is_ancestral else pop.get("sample_size", 10)
@@ -198,31 +207,16 @@ class Config:
         self.mutation_rate = self.config.get("mutation_rate", 1e-8)
         self.seed = self.config.get("seed")
 
-        # Simulation parameters
-        self.simulation_mode = self.config.get("simulation_mode", "locus")
-
-        # Initialize mode-specific parameters
+        # Initialize mode-specific parameters first
         self.n_loci = None
         self.locus_length = None
         self.chromosome_length = None
         self.rec_rate = None
 
-        # Load mode-specific parameters
-        if self.simulation_mode == "locus":
-            if "n_loci" not in self.config:
-                raise ValueError("n_loci is required for locus mode")
-            if "locus_length" not in self.config:
-                raise ValueError("locus_length is required for locus mode")
-            self.n_loci = self.config["n_loci"]
-            self.locus_length = self.config["locus_length"]
+        # Simulation parameters - set the initial mode and load parameters
+        self._simulation_mode = self.config.get("simulation_mode", "locus")
+        self._reload_mode_parameters()
 
-        elif self.simulation_mode == "chromosome":
-            if "chromosome_length" not in self.config:
-                raise ValueError("chromosome_length is required for chromosome mode")
-            if "rec_rate" not in self.config:
-                raise ValueError("rec_rate is required for chromosome mode")
-            self.chromosome_length = self.config["chromosome_length"]
-            self.rec_rate = self.config["rec_rate"]
 
         # Validate configuration
         self._validate()
@@ -257,17 +251,6 @@ class Config:
                 #  print(f"Added migration rate {rate} from {source} to {dest} at position [{source_idx}][{dest_idx}]")
             except ValueError:
                 raise ValueError(f"Invalid migration rate key format: {source_dest}")
-
-        # print("      ", end="")
-        # for pop in matrix_order:
-        #     print(f"{pop:>8}", end="")
-        # print("\n")
-        # for i, row in enumerate(matrix):
-        #     print(f"{matrix_order[i]:<6}", end="")
-        #     for val in row:
-        #         print(f"{val:8.6f}", end="")
-        #     print()
-
         return matrix
 
     def get_population_label(self, pop_name: str) -> str:
@@ -281,6 +264,48 @@ class Config:
             The population label if available, otherwise the population name
         """
         return self.population_labels.get(pop_name, pop_name)
+
+    def _reload_mode_parameters(self):
+        """
+        Reload mode-specific parameters after simulation_mode has been changed.
+        This allows for proper mode overriding after initialization.
+        """
+        # Reset all mode-specific parameters
+        self.n_loci = None
+        self.locus_length = None
+        self.chromosome_length = None
+        self.rec_rate = None
+
+        # Load mode-specific parameters based on current simulation_mode
+        if self.simulation_mode == "locus":
+            if "n_loci" not in self.config:
+                raise ValueError("n_loci is required for locus mode")
+            if "locus_length" not in self.config:
+                raise ValueError("locus_length is required for locus mode")
+            self.n_loci = self.config["n_loci"]
+            self.locus_length = self.config["locus_length"]
+
+        elif self.simulation_mode == "chromosome":
+            if "chromosome_length" not in self.config:
+                raise ValueError("chromosome_length is required for chromosome mode")
+            if "rec_rate" not in self.config:
+                raise ValueError("rec_rate is required for chromosome mode")
+            self.chromosome_length = float(self.config["chromosome_length"])    
+            self.rec_rate = float(self.config["rec_rate"])
+
+        # Re-validate with new parameters
+        self._validate()
+
+    @property
+    def simulation_mode(self):
+        """Get the simulation mode."""
+        return self._simulation_mode
+
+    @simulation_mode.setter
+    def simulation_mode(self, value):
+        """Set the simulation mode and reload mode-specific parameters."""
+        self._simulation_mode = value
+        self._reload_mode_parameters()
 
     def _validate(self):
         """
@@ -399,7 +424,7 @@ class Config:
                 raise ValueError(
                     f"Population {pop['name']} sample_size must be a positive integer"
                 )
-            if pop["name"] in ["p12", "p123", "ANC"]:
+            if is_ancestral_population(pop["name"]):
                 raise ValueError(
                     f"Sample size should not be specified for ancestral population {pop['name']}"
                 )
@@ -431,3 +456,21 @@ class Config:
         ):
             if pop["growth_rate"] < 0:
                 raise ValueError(f"Growth rate for {pop['name']} must be non-negative")
+
+    def _validate_taxon_names(self):
+        """
+        Validate the taxon names for the simulation.
+
+        This method checks that:
+        1. All populations with sample size > 0 are included in the taxonNames list.
+
+        Raises:
+            ValueError: If any validation check fails
+        """
+        taxonNames = [
+            pop.name
+            for pop in self.populations
+            if not pop.is_ancestral and (pop.sample_size is not None and pop.sample_size > 0)
+        ]
+        if not taxonNames:
+            raise ValueError("No populations with sample size > 0 found")

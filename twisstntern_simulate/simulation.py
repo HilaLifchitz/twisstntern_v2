@@ -46,10 +46,10 @@ import msprime
 import tskit
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Optional, Literal
 from pathlib import Path
 import logging
-from .config import Config
+from .config import Config 
 import random
 import ete3
 
@@ -59,18 +59,18 @@ logger = logging.getLogger(__name__)
 # SIMULATION FUNCTIONS
 ######################################################################################
 
-def simulate_locus(config: Config) -> tskit.TreeSequence:
+def simulate_locus(config: Config):
     """
     Simulates independent non-recombining loci.
 
-    This function simulates a single locus without recombination. The locus
+    This function simulates multiple independent loci without recombination. Each locus
     is simulated using the demographic model specified in the configuration.
 
     Args:
         config: Configuration object containing demographic parameters
 
     Returns:
-        tskit.TreeSequence: Tree sequence for the simulated locus
+        Generator of tskit.TreeSequence: Generator yielding TreeSequence objects for each locus
 
     Note:
         The recombination rate is set to 0 for locus mode simulations.
@@ -187,14 +187,14 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
         ploidy=ploidy,
         random_seed=seed,
     )
-
     return ts
 
 ######################################################################################
 # MAIN SIMULATION FUNCTION
 ######################################################################################
 
-def run_simulation(config_yaml: str, output_dir: str) -> dict:
+
+def run_simulation(config_yaml: str, output_dir: str, mode_override: Optional[str] = None) -> dict:
     """
     Runs simulation based on the specified mode in config.
 
@@ -205,6 +205,7 @@ def run_simulation(config_yaml: str, output_dir: str) -> dict:
     Args:
         config_yaml: Path to the yaml file containing the simulation parameters
         output_dir: Directory to save tree files
+        mode_override: Optional override for simulation mode (overrides config file)
 
     Returns:
         dict: Dictionary containing simulation results:
@@ -218,6 +219,12 @@ def run_simulation(config_yaml: str, output_dir: str) -> dict:
     results = {}
     config = Config(config_yaml)
     
+    # Apply mode override if provided
+    if mode_override is not None:
+        # Type assertion for Pylance - we know mode_override is a string here
+        assert isinstance(mode_override, str)
+        config.simulation_mode = mode_override
+    
     # Run locus simulation if requested
     if config.simulation_mode == "locus":
         print("Simulating independent non-recombining loci...")
@@ -230,11 +237,15 @@ def run_simulation(config_yaml: str, output_dir: str) -> dict:
         # Store the list (not the exhausted generator) for pipeline processing
         results["locus"] = ts_list
         
-        # Always save trees
         # Ensure output directory exists
         Path(output_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Save trees as Newick format
         newick_path = Path(output_dir) / f"{config.simulation_mode}_trees.newick"
         newick_file = save_ts_LOCUS_as_plain_newick(ts_list, newick_path)
+        
+        print(f"✅ Saved trees: {newick_file}")
+        
         results["newick_file"] = newick_file
 
     # Run chromosome simulation if requested
@@ -242,7 +253,7 @@ def run_simulation(config_yaml: str, output_dir: str) -> dict:
         print("Simulating recombining chromosome...")
         ts_chrom = simulate_chromosome(config)
         results["chromosome"] = ts_chrom
-        print(f"Generated chromosome of length {config.chromosome_length}")
+        print(f"Generated chromosome of length {config.chromosome_length:.1e} with reocmbination rate of {config.rec_rate:.1e}")
         
         # Always save trees
         # Ensure output directory exists
@@ -256,14 +267,8 @@ def run_simulation(config_yaml: str, output_dir: str) -> dict:
 
     return results
 
-
 ######################################################################################
 # HELPER FUNCTIONS FOR SAVING TREE SEQUENCES AS NEWICK FILES
-######################################################################################
-# FOR THE CHROMOSOME MODE:
-# 1. Get population map
-# 2. Create newick string with population labels
-# 3. Save Newick trees without metadata headers but with population labels
 ######################################################################################
 
 def get_population_map(ts):
@@ -356,7 +361,8 @@ def create_newick_with_sample_labels(tree, pop_map):
         newick += ";"
 
     return newick
-
+#######################################################################################
+# FOR THE CHROMOSOME MODE:
 def save_ts_CHROM_as_newick(ts, output_path):
     """
     Saves marginal trees as Newick format with population labels, no interval annotations.
@@ -373,148 +379,10 @@ def save_ts_CHROM_as_newick(ts, output_path):
 
 # EXAMPLE:
 #save_ts_chromosome_as_newick(ts, os.path.join(output_dir, "CHROM_pop_plain.newick"))
-########################################################################################
-#FOR THE LOCUS MODE:
-# option1 -- DASHA'S NEWICK FORMAT -- right now hard wired for 4 populations!!
-# 1. Create dictionary to replace ,1: patterns with ,P1_1: patterns in Newick strings.
-# 2. Create dictionary to replace (1: patterns with (P1_1: patterns in Newick strings
-# 3. The tree saving function
+##################################################################################
+# LOCUS MODE:
+##################################################################################
 
-
-
-
-def ts_newick_rename_dict_hun(config_yaml): # replaces ,1:	--> ,P1_1:
-    """
-    Creates dictionary to replace ,1: patterns with ,P1_1: patterns in Newick strings.
-    This matches the exact approach from DaSh-bash/LittorinaBrooding that works with twisst.
-    NOTE: This function requires predefined variables nP1, nP2, nP3, n0 which are not available
-    in the general config. Use save_ts_LOCUS_as_plain_newick instead.
-    """
-    config = Config(config_yaml)
-    sample_sizes = {pop.name: pop.sample_size for pop in config.populations if pop.sample_size is not None}
-    np1 = sample_sizes["p1"]
-    np2 = sample_sizes["p2"]
-    np3 = sample_sizes["p3"]
-    no = sample_sizes["O"]
-    
-    sample_names = dict()
-    
-    #Total number of empirical samples
-    ntotal=np1+np2+np3+no
-
-    #Creating list of newick names (patterns to find)
-    ts_name=list()
-    for i in range(1,ntotal+1):
-        ts_name.append(","+str(i)+":")
-
-    #Creating list of population samples (replacement patterns)
-    n0_names=list()
-    for i in range(1,no+1):
-        n0_names.append(",O_"+str(i)+":")
-    
-    
-    nP1_names=list()
-    for i in range(1,np1+1):
-        nP1_names.append(",P1_"+str(i)+":")
-
-    nP2_names=list()
-    for i in range(1,np2+1):
-        nP2_names.append(",P2_"+str(i)+":")
-
-    nP3_names=list()
-    for i in range(1,np3+1):
-        nP3_names.append(",P3_"+str(i)+":")
-
-
-
-    pop_names=nP1_names+nP2_names+nP3_names+n0_names
-
-    #Using dictionary comprehension to convert lists to dictionary
-    sample_names = {ts_name[i]: pop_names[i] for i in range(len(ts_name))}
-    
-    return sample_names
-
-def ts_newick_rename_dict_tens(config_yaml): #  replaces (1: --> (P1_1:
-    """
-    Creates dictionary to replace (1: patterns with (P1_1: patterns in Newick strings.
-    This matches the exact approach from DaSh-bash/LittorinaBrooding that works with twisst.
-    NOTE: This function requires predefined variables nP1, nP2, nP3, n0 which are not available
-    in the general config. Use save_ts_LOCUS_as_plain_newick instead.
-    """
-    config = Config(config_yaml)
-    sample_sizes = {pop.name: pop.sample_size for pop in config.populations if pop.sample_size is not None}
-    np1 = sample_sizes["p1"]
-    np2 = sample_sizes["p2"]
-    np3 = sample_sizes["p3"]
-    no = sample_sizes["O"]
-    sample_names = dict()
-    
-    #Total number of empirical samples
-    ntotal=np1+np2+np3+no
-
-    #Creating list of newick names (patterns to find)
-    ts_name=list()
-    for i in range(1,ntotal+1):
-        ts_name.append("("+str(i)+":")
-
-    #Creating list of population samples (replacement patterns)   
-    n0_names=list()
-    for i in range(1,no+1):
-        n0_names.append("("+"O_"+str(i)+":")
-    
-    nP1_names=list()
-    for i in range(1,np1+1):
-        nP1_names.append("("+"P1_"+str(i)+":")
-
-    nP2_names=list()
-    for i in range(1,np2+1):
-        nP2_names.append("("+"P2_"+str(i)+":")
-
-    nP3_names=list()
-    for i in range(1,np3+1):
-        nP3_names.append("("+"P3_"+str(i)+":")
-
-
-    pop_names=nP1_names+nP2_names+nP3_names+n0_names
-
-    #Using dictionary comprehension to convert lists to dictionary
-    sample_names = {ts_name[i]: pop_names[i] for i in range(len(ts_name))}
-    
-    return sample_names
-
-
-def save_ts_LOCUS_as_dasha_newick(ts_list, output_path, config_yaml):
-    """
-    Save TreeSequence genealogies as Newick format using DaSh-bash approach.
-    This creates files that work properly with twisst.
-    
-    Args:
-        ts_list: iterable of TreeSequence objects
-        output_path: path to save the Newick file
-        config_yaml: path to config file for population naming
-    """
-    with open(output_path, "w") as file:
-        for replicate_index, ts in enumerate(ts_list):
-            for t in ts.trees():
-                newick = t.newick(precision=1)
-                
-                # Apply DaSh-bash renaming approach
-                replace_strings_tens = ts_newick_rename_dict_tens(config_yaml)            
-                replace_strings_hun = ts_newick_rename_dict_hun(config_yaml)
-                
-                # Apply replacements in correct order
-                for word in replace_strings_tens.items():
-                    newick = newick.replace(str(word[0]), str(word[1]))
-                for word in replace_strings_hun.items():
-                    newick = newick.replace(str(word[0]), str(word[1]))
-                    
-                file.write(newick + "\n")
-    
-    return str(output_path)
-# # EXAMPLE:
-# # save_ts_LOCUS_as_dasha_newick(ts1_list, dasha_combined_path)
-
-# option 2 -- PLAIN NEWICK FORMAT
 def save_ts_LOCUS_as_plain_newick(ts_list, output_path):
     """
     Save TreeSequence genealogies as Newick format using plain format.
@@ -528,9 +396,5 @@ def save_ts_LOCUS_as_plain_newick(ts_list, output_path):
                 file.write(labeled_newick + "\n")
     
     return str(output_path)
-
-# EXAMPLE:
-# save_ts_LOCUS_as_plain_newick(ts1_list, simple_combined_path)
-
 
 
