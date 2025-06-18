@@ -1,0 +1,134 @@
+2025-06-18 22:11:46,933 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:46,933 - [32mINFO[0m - TWISSTNTERN Analysis Session
+2025-06-18 22:11:46,933 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:46,933 - [32mINFO[0m - Python version: 3.10.12 (main, May 27 2025, 17:12:29) [GCC 11.4.0]
+2025-06-18 22:11:46,947 - [32mINFO[0m - Platform: Linux-5.15.0-141-generic-x86_64-with-glibc2.35
+2025-06-18 22:11:46,947 - [32mINFO[0m - Working directory: /home/hlifchit/twisstntern2.0
+2025-06-18 22:11:46,948 - [32mINFO[0m - Starting TWISSTNTERN analysis
+2025-06-18 22:11:46,948 - [32mINFO[0m - Input file: /home/hlifchit/twisstntern2.0/config_template.yaml
+2025-06-18 22:11:46,948 - [32mINFO[0m - Output directory: Results
+2025-06-18 22:11:46,948 - [32mINFO[0m - granularity: 0.1
+2025-06-18 22:11:46,948 - [32mINFO[0m - topology_mapping: T1=(0,(1,(2,3))); T2=(0,(3,(1,2))); T3=(0,(2,(1,3)));
+2025-06-18 22:11:46,948 - [32mINFO[0m - verbose: False
+2025-06-18 22:11:46,948 - [32mINFO[0m - ---------------------------------------------------------
+2025-06-18 22:11:46,948 - [32mINFO[0m - Starting twisstntern_simulate pipeline
+2025-06-18 22:11:46,948 - [32mINFO[0m - ---------------------------------------------------------
+2025-06-18 22:11:46,948 - [32mINFO[0m - Loading configuration...
+2025-06-18 22:11:46,967 - [32mINFO[0m - Configuration loaded - Mode: chromosome, Seed: 4576
+2025-06-18 22:11:46,968 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:46,968 - [32mINFO[0m - SIMULATION CONFIGURATION
+2025-06-18 22:11:46,968 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:46,968 - [32mINFO[0m - Simulation mode: chromosome
+2025-06-18 22:11:46,968 - [32mINFO[0m - Random seed: 4576
+2025-06-18 22:11:46,968 - [32mINFO[0m - Number of populations: 7
+2025-06-18 22:11:46,968 - [32mINFO[0m -   O (Outgroup): Ne=1000.0, samples=10
+2025-06-18 22:11:46,968 - [32mINFO[0m -   p1 (Population 1): Ne=1000.0, samples=10
+2025-06-18 22:11:46,968 - [32mINFO[0m -   p2 (Population 2): Ne=1000.0, samples=10
+2025-06-18 22:11:46,968 - [32mINFO[0m -   p3 (Population 3): Ne=1000.0, samples=10
+2025-06-18 22:11:46,968 - [32mINFO[0m -   p23 (Ancestor p2/p3): Ne=1000.0 (ancestral)
+2025-06-18 22:11:46,968 - [32mINFO[0m -   p123 (Ancestor p1/p2/p3): Ne=1000.0 (ancestral)
+2025-06-18 22:11:46,968 - [32mINFO[0m -   ANC (Ancestral): Ne=1000.0 (ancestral)
+2025-06-18 22:11:46,969 - [32mINFO[0m - Migration rates:
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p1>p2 (Population 1 → Population 2): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p2>p1 (Population 2 → Population 1): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p1>p3 (Population 1 → Population 3): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p3>p1 (Population 3 → Population 1): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p2>p3 (Population 2 → Population 3): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p3>p2 (Population 3 → Population 2): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   O>p1 (Outgroup → Population 1): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p1>O (Population 1 → Outgroup): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   O>p2 (Outgroup → Population 2): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p2>O (Population 2 → Outgroup): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   O>p3 (Outgroup → Population 3): 0.0
+2025-06-18 22:11:46,969 - [32mINFO[0m -   p3>O (Population 3 → Outgroup): 0.0
+2025-06-18 22:11:46,970 - [32mINFO[0m -   p23>p1 (Ancestor p2/p3 → Population 1): 0.0
+2025-06-18 22:11:46,970 - [32mINFO[0m -   p1>p23 (Population 1 → Ancestor p2/p3): 0.0
+2025-06-18 22:11:46,970 - [32mINFO[0m -   O>p123 (Outgroup → Ancestor p1/p2/p3): 0.0
+2025-06-18 22:11:46,970 - [32mINFO[0m -   p123>O (Ancestor p1/p2/p3 → Outgroup): 0.0
+2025-06-18 22:11:46,970 - [32mINFO[0m - Chromosome length: 10000000.0
+2025-06-18 22:11:46,970 - [32mINFO[0m - Recombination rate: 1e-08
+2025-06-18 22:11:46,970 - [32mINFO[0m - Mutation rate: 0
+2025-06-18 22:11:46,970 - [32mINFO[0m - Ploidy: 1
+2025-06-18 22:11:46,970 - [32mINFO[0m - Command-line overrides applied:
+2025-06-18 22:11:46,970 - [32mINFO[0m -   topology_mapping: T1=(0,(1,(2,3))); T2=(0,(3,(1,2))); T3=(0,(2,(1,3)));
+2025-06-18 22:11:46,970 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:46,970 - [32mINFO[0m - Running msprime simulation...
+2025-06-18 22:11:47,665 - [32mINFO[0m - Simulation completed
+2025-06-18 22:11:47,665 - [32mINFO[0m - Trees saved to: Results/chromosome_trees.newick
+2025-06-18 22:11:47,665 - [32mINFO[0m - Checking twisst availability...
+2025-06-18 22:11:47,665 - [32mINFO[0m - Processing tree sequences...
+2025-06-18 22:11:56,152 - INFO - Applied topology mapping
+2025-06-18 22:11:56,152 - INFO - ==================================================
+2025-06-18 22:11:56,152 - INFO - Population Legend:
+2025-06-18 22:11:56,152 - INFO - --------------------
+2025-06-18 22:11:56,152 - INFO -   0 = Outgroup
+2025-06-18 22:11:56,152 - INFO -   1 = Population 1
+2025-06-18 22:11:56,152 - INFO -   2 = Population 2
+2025-06-18 22:11:56,152 - INFO -   3 = Population 3
+2025-06-18 22:11:56,153 - INFO - 
+2025-06-18 22:11:56,153 - INFO - T1:
+2025-06-18 22:11:56,153 - INFO -   String: (0,(1,(2,3)));
+2025-06-18 22:11:56,153 - INFO -   ASCII Tree:
+2025-06-18 22:11:56,153 - INFO -        /-0
+2025-06-18 22:11:56,153 - INFO -     --|
+2025-06-18 22:11:56,153 - INFO -       |   /-1
+2025-06-18 22:11:56,153 - INFO -        \-|
+2025-06-18 22:11:56,153 - INFO -          |   /-2
+2025-06-18 22:11:56,153 - INFO -           \-|
+2025-06-18 22:11:56,153 - INFO -              \-3
+2025-06-18 22:11:56,153 - INFO - 
+2025-06-18 22:11:56,153 - INFO - T2:
+2025-06-18 22:11:56,153 - INFO -   String: (0,(3,(1,2)));
+2025-06-18 22:11:56,153 - INFO -   ASCII Tree:
+2025-06-18 22:11:56,153 - INFO -        /-0
+2025-06-18 22:11:56,153 - INFO -     --|
+2025-06-18 22:11:56,153 - INFO -       |   /-3
+2025-06-18 22:11:56,153 - INFO -        \-|
+2025-06-18 22:11:56,153 - INFO -          |   /-1
+2025-06-18 22:11:56,154 - INFO -           \-|
+2025-06-18 22:11:56,154 - INFO -              \-2
+2025-06-18 22:11:56,154 - INFO - 
+2025-06-18 22:11:56,154 - INFO - T3:
+2025-06-18 22:11:56,154 - INFO -   String: (0,(2,(1,3)));
+2025-06-18 22:11:56,154 - INFO -   ASCII Tree:
+2025-06-18 22:11:56,154 - INFO -        /-0
+2025-06-18 22:11:56,154 - INFO -     --|
+2025-06-18 22:11:56,154 - INFO -       |   /-2
+2025-06-18 22:11:56,154 - INFO -        \-|
+2025-06-18 22:11:56,154 - INFO -          |   /-1
+2025-06-18 22:11:56,154 - INFO -           \-|
+2025-06-18 22:11:56,154 - INFO -              \-3
+2025-06-18 22:11:56,154 - INFO - 
+2025-06-18 22:11:56,154 - INFO - ==================================================
+2025-06-18 22:11:56,161 - [32mINFO[0m - Tree processing completed - weights saved to: Results/chromosome_topology_weights.csv
+2025-06-18 22:11:56,162 - [32mINFO[0m - Running triangle analysis...
+2025-06-18 22:11:56,279 - [32mINFO[0m - Running fundamental asymmetry analysis...
+2025-06-18 22:11:56,282 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:56,282 - [32mINFO[0m - FUNDAMENTAL ASYMMETRY RESULTS
+2025-06-18 22:11:56,282 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:56,282 - [32mINFO[0m - Data file used: Results/chromosome_topology_weights.csv
+2025-06-18 22:11:56,282 - [32mINFO[0m - Total trees computed: 1210 (n_right + n_left = 1208)
+2025-06-18 22:11:56,282 - [32mINFO[0m - Note: 2 trees were filtered out (trees where T2 = T3, which fall exactly on the y-axis in ternary space)
+2025-06-18 22:11:56,282 - [32mINFO[0m - n_right: 484
+2025-06-18 22:11:56,282 - [32mINFO[0m - n_left: 724
+2025-06-18 22:11:56,282 - [32mINFO[0m - D_LR: -0.1987
+2025-06-18 22:11:56,283 - [32mINFO[0m - G-test: 48.0009
+2025-06-18 22:11:56,283 - [32mINFO[0m - p-value: 4.2604e-12
+2025-06-18 22:11:56,283 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:56,283 - [32mINFO[0m - Generating visualizations...
+2025-06-18 22:11:58,804 - [32mINFO[0m - Saved triangle analysis results to: Results/chromosome_triangle_analysis.csv
+2025-06-18 22:11:58,804 - [32mINFO[0m - Analysis pipeline completed successfully!
+2025-06-18 22:11:58,804 - [32mINFO[0m - Pipeline completed successfully - Results in: Results
+2025-06-18 22:11:58,804 - [32mINFO[0m - ============================================================
+2025-06-18 22:11:58,805 - [32mINFO[0m - Analysis completed successfully!
+2025-06-18 22:11:58,805 - [32mINFO[0m - Total duration: 11.86 seconds
+2025-06-18 22:11:58,805 - [32mINFO[0m - Generated files:
+2025-06-18 22:11:58,805 - [32mINFO[0m -   ✓ Results/chromosome_analysis_granularity_0.1.png (274,132 bytes)
+2025-06-18 22:11:58,805 - [32mINFO[0m -   ✓ Results/twisstntern_20250618_221146.log (9,053 bytes)
+2025-06-18 22:11:58,805 - [32mINFO[0m -   ✓ Results/chromosome_index_granularity_0.1.png (288,096 bytes)
+2025-06-18 22:11:58,805 - [32mINFO[0m -   ✓ Results/chromosome_trees.newick (2,065,937 bytes)
+2025-06-18 22:11:58,805 - [32mINFO[0m -   ✓ Results/chromosome_fundamental_asymmetry.png (75,898 bytes)
+2025-06-18 22:11:58,805 - [32mINFO[0m -   ✓ Results/chromosome_granuality_0.1.png (629,699 bytes)
+2025-06-18 22:11:58,805 - [32mINFO[0m -   ✓ Results/chromosome_topology_weights.csv (24,106 bytes)
+2025-06-18 22:11:58,806 - [32mINFO[0m -   ✓ Results/chromosome_triangle_analysis.csv (2,849 bytes)
+2025-06-18 22:11:58,806 - [32mINFO[0m - ============================================================
