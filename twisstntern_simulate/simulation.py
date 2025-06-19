@@ -92,6 +92,14 @@ def simulate_locus(config: Config):
             ancestral=split.ancestral_pop,
         )
 
+    # Add migration rates
+    if hasattr(config, 'migration') and config.migration:
+        for migration_route, rate in config.migration.items():
+            if rate > 0:  # Only add non-zero migration rates
+                # Parse migration route like "p1>p2" -> source="p1", dest="p2"
+                source, dest = migration_route.split('>')
+                demography.set_migration_rate(source=source, dest=dest, rate=rate)
+
     # Default values, in case the user hasn't specified them
     if config.locus_length:
         locus_length = config.locus_length
@@ -162,6 +170,14 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
             ancestral=split.ancestral_pop,
         )
 
+    # Add migration rates
+    if hasattr(config, 'migration') and config.migration:
+        for migration_route, rate in config.migration.items():
+            if rate > 0:  # Only add non-zero migration rates
+                # Parse migration route like "p1>p2" -> source="p1", dest="p2"
+                source, dest = migration_route.split('>')
+                demography.set_migration_rate(source=source, dest=dest, rate=rate)
+
     # Default is haploid
     if config.ploidy:
         ploidy = config.ploidy
@@ -194,16 +210,15 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
 ######################################################################################
 
 
-def run_simulation(config_yaml: str, output_dir: str, mode_override: Optional[str] = None) -> dict:
+def run_simulation(config: Config, output_dir: str, mode_override: Optional[str] = None) -> dict:
     """
     Runs simulation based on the specified mode in config.
-
-    This function is the main entry point for simulations. It handles
+    This function acts as a dispatcher for different simulation modes,
     running the appropriate simulation mode based on the configuration.
     Trees are automatically saved in Newick format.
 
     Args:
-        config_yaml: Path to the yaml file containing the simulation parameters
+        config: Configuration object containing simulation parameters (with any overrides already applied)
         output_dir: Directory to save tree files
         mode_override: Optional override for simulation mode (overrides config file)
 
@@ -217,7 +232,6 @@ def run_simulation(config_yaml: str, output_dir: str, mode_override: Optional[st
         Only one mode (locus OR chromosome) will be run based on config.simulation_mode.
     """
     results = {}
-    config = Config(config_yaml)
     
     # Apply mode override if provided
     if mode_override is not None:

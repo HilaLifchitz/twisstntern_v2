@@ -66,8 +66,18 @@ def apply_config_overrides(config, overrides_list):
             # Convert value to appropriate type
             if value.lower() in ['true', 'false']:
                 value = value.lower() == 'true'
-            elif value.replace('.', '').replace('-', '').isdigit():
-                value = float(value) if '.' in value else int(value)
+            else:
+                # Try to convert to number (handles scientific notation like 1e-7)
+                try:
+                    # First try int conversion
+                    if '.' not in value and 'e' not in value.lower():
+                        value = int(value)
+                    else:
+                        # Use float for decimals and scientific notation
+                        value = float(value)
+                except ValueError:
+                    # Keep as string if conversion fails
+                    pass
             
             # Handle nested keys like 'migration.p1>p2' or 'populations.p1.Ne'
             if '.' in key_path:
@@ -213,7 +223,7 @@ def run_pipeline(
         # Ensure Results directory exists
         output_dir = Path(output_dir)
         output_dir.mkdir(exist_ok=True)
-        simulation_results = run_simulation(config_path, output_dir=output_dir, mode_override=config.simulation_mode)
+        simulation_results = run_simulation(config, output_dir=output_dir, mode_override=config.simulation_mode)
         results["simulation_results"] = simulation_results
 
         logger.info(f"Simulation completed")

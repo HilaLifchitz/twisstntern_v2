@@ -378,7 +378,7 @@ python -m twisstntern_simulate -c config_template.yaml -o SimResults/
 
 ### ⚙️ Configuration Overrides
 
-You can override any configuration parameter from the YAML file directly via the command line using the `--override` argument. This is useful for testing different parameter values without editing the configuration file.
+You can override any configuration parameter from the YAML file directly via the command line using the `--override` argument. This is extremely useful for testing different parameter values, running parameter sweeps, or exploring sensitivity analyses without editing configuration files.
 
 #### **Format**
 
@@ -386,73 +386,113 @@ You can override any configuration parameter from the YAML file directly via the
 --override 'parameter_path=value'
 ```
 
-#### **Supported Override Types**
+#### **Supported Parameter Types**
 
-**Top-level parameters:**
-
-```bash
-# Override random seed
---override 'seed=1234'
-
-# Override ploidy
---override 'ploidy=2'
-
-# Override simulation mode
---override 'simulation_mode=locus'
---override 'simulation_mode=chromosome'
-```
-
-**Migration rates** (format: `migration.source>destination=rate`):
+**Top-level Parameters:**
 
 ```bash
-# Set migration rate from population p2 to p3
---override 'migration.p2>p3=0.5'
-
-# Set migration rate from population p1 to p2
---override 'migration.p1>p2=0.1'
+--override "seed=1234"                    # Random seed (int)
+--override "ploidy=2"                     # Ploidy level (int: 1=haploid, 2=diploid)
+--override "mutation_rate=1e-7"           # Mutation rate (float, supports scientific notation)
+--override "chromosome_length=5e7"        # Chromosome length (float)
+--override "rec_rate=2e-8"               # Recombination rate (float)
+--override "n_loci=500"                  # Number of loci for locus mode (int)
+--override "locus_length=10000"          # Locus length for locus mode (int)
 ```
 
-**Population parameters** (format: `populations.population_name.parameter=value`):
+**Population Parameters** (format: `populations.{pop_name}.{parameter}=value`):
 
 ```bash
-# Override effective population size
---override 'populations.p1.Ne=5000'
-
-# Override sample size
---override 'populations.p2.sample_size=20'
+--override "populations.p1.Ne=2000"           # Effective population size (float)
+--override "populations.p1.sample_size=15"    # Number of samples (int)
+--override "populations.p2.growth_rate=0.01"  # Population growth rate (float)
 ```
+
+**Migration Parameters** (format: `migration.{source}>{dest}=rate`):
+
+```bash
+--override "migration.p1>p2=0.05"        # Migration from p1 to p2 (float)
+--override "migration.p2>p3=0.8"         # Migration from p2 to p3 (float)
+--override "migration.O>p1=0.001"        # Migration from outgroup to p1 (float)
+```
+
+#### **Value Type Conversion**
+
+The override system automatically converts values to appropriate types:
+
+- **Integers**: `seed=1234` → `1234` (int)
+- **Floats**: `Ne=1000.5` → `1000.5` (float)
+- **Scientific notation**: `mutation_rate=1e-7` → `0.0000001` (float)
+- **Booleans**: `param=true` → `True`, `param=false` → `False` (bool)
 
 #### **Examples**
 
-**Basic migration override:**
+**Basic single override:**
 
 ```bash
-python -m twisstntern_simulate -c config_template.yaml -o test_migration/ \
-  --override 'migration.p2>p3=0.3'
+python -m twisstntern_simulate --config config_template.yaml --output test_migration/ \
+  --override "migration.p2>p3=0.3"
 ```
 
-**Multiple parameter override:**
+**Multiple parameter overrides:**
 
 ```bash
-python -m twisstntern_simulate -c config_template.yaml -o test_params/ \
-  --override 'migration.p1>p2=0.1' \
-  --override 'populations.p1.Ne=5000' \
-  --override 'ploidy=2' \
-  --topology-mapping 'T1=(0,(1,(2,3))); T2=(0,(2,(1,3))); T3=(0,(3,(1,2)));'
+python -m twisstntern_simulate --config config_template.yaml --output test_params/ \
+  --override "seed=1234" \
+  --override "ploidy=2" \
+  --override "migration.p1>p2=0.05" \
+  --override "populations.p1.Ne=2000" \
+  --override "populations.p1.sample_size=15" \
+  --override "mutation_rate=1e-7" \
+  --override "chromosome_length=5e7"
 ```
 
-#### **What Gets Logged**
+**Scientific notation and complex parameters:**
 
-Everything that gets logged for twisstntern (System Information,Analysis Parameters,Processing Steps,Topology Information, Results Summary, Error Context).
-Additionaly, all applied overrides are automatically logged to the output log file with before/after values:
+```bash
+python -m twisstntern_simulate --config config_template.yaml --output scientific_test/ \
+  --override "rec_rate=2e-8" \
+  --override "mutation_rate=1e-7" \
+  --override "migration.p2>p3=0.8" \
+  --override "populations.p1.Ne=5000"
+```
+
+**Combining with topology mapping:**
+
+```bash
+python -m twisstntern_simulate --config config_template.yaml --output custom_test/ \
+  --override "migration.p1>p2=0.1" \
+  --override "populations.p1.Ne=5000" \
+  --override "ploidy=2" \
+  --topology-mapping 'T1="(0,(1,(2,3)))"; T2="(0,(2,(1,3)))"; T3="(0,(3,(1,2)))";'
+```
+
+#### **Override Logging**
+
+All applied overrides are automatically logged to the output log file with before/after values:
 
 ```
-Override applied: migration.p2>p3: 0.0 -> 0.3
-Override applied: populations.p1.Ne: 1000.0 -> 5000
+Override applied: seed: 4576 -> 1234
 Override applied: ploidy: 1 -> 2
+Override applied: migration.p1>p2: 0.0 -> 0.05
+Override applied: populations.p1.Ne: 1000.0 -> 2000
+Override applied: populations.p1.sample_size: 10 -> 15
+Override applied: mutation_rate: 0 -> 1e-07
+Override applied: chromosome_length: 100000000.0 -> 5e7
 ```
 
-The detailed configuration section in the log will show the final parameter values used in the simulation, incorporating all overrides.
+The detailed configuration section in the log shows the final parameter values used in the simulation, incorporating all overrides, making it easy to verify that your intended parameters were applied correctly.
+
+#### **Error Handling**
+
+The system provides clear error messages for invalid overrides:
+
+- **Invalid format**: `--override "invalid_format"` → Error: Expected 'key=value'
+- **Unknown parameters**: `--override "nonexistent_param=123"` → Error: Unknown configuration key
+- **Invalid population names**: `--override "populations.invalid_pop.Ne=1000"` → Error: Population not found
+- **Invalid migration routes**: `--override "migration.invalid>route=0.1"` → Error: Population not found
+
+---
 
 ### 📝 Output
 
