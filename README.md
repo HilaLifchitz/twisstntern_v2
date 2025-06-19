@@ -437,51 +437,17 @@ python -m twisstntern_simulate --config config_template.yaml --output test_migra
 **Multiple parameter overrides:**
 
 ```bash
-python -m twisstntern_simulate --config config_template.yaml --output test_params/ \
-  --override "seed=1234" \
-  --override "ploidy=2" \
-  --override "migration.p1>p2=0.05" \
-  --override "populations.p1.Ne=2000" \
-  --override "populations.p1.sample_size=15" \
-  --override "mutation_rate=1e-7" \
-  --override "chromosome_length=5e7"
-```
-
-**Scientific notation and complex parameters:**
-
-```bash
 python -m twisstntern_simulate --config config_template.yaml --output scientific_test/ \
   --override "rec_rate=2e-8" \
   --override "mutation_rate=1e-7" \
   --override "migration.p2>p3=0.8" \
-  --override "populations.p1.Ne=5000"
-```
-
-**Combining with topology mapping:**
-
-```bash
-python -m twisstntern_simulate --config config_template.yaml --output custom_test/ \
-  --override "migration.p1>p2=0.1" \
   --override "populations.p1.Ne=5000" \
-  --override "ploidy=2" \
   --topology-mapping 'T1="(0,(1,(2,3)))"; T2="(0,(2,(1,3)))"; T3="(0,(3,(1,2)))";'
 ```
 
-#### **Override Logging**
+#### **What gets logged**
 
-All applied overrides are automatically logged to the output log file with before/after values:
-
-```
-Override applied: seed: 4576 -> 1234
-Override applied: ploidy: 1 -> 2
-Override applied: migration.p1>p2: 0.0 -> 0.05
-Override applied: populations.p1.Ne: 1000.0 -> 2000
-Override applied: populations.p1.sample_size: 10 -> 15
-Override applied: mutation_rate: 0 -> 1e-07
-Override applied: chromosome_length: 100000000.0 -> 5e7
-```
-
-The detailed configuration section in the log shows the final parameter values used in the simulation, incorporating all overrides, making it easy to verify that your intended parameters were applied correctly.
+Evrything that gets logged in twisstntern (System Information, Analysis Parameters, Processing Steps, Topology Information, Results Summary, Error Context). Additionaly, all the paramters in the config sile, including all applied overrides with the before/after values.
 
 #### **Error Handling**
 
