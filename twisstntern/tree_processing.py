@@ -52,7 +52,7 @@ except ImportError:
 from twisstntern.logger import get_logger
 
 
-def log_topologies(topos, simplified_topos, columns, logger, message_prefix=""):
+def log_topologies(topos, simplified_topos, columns, logger, message_prefix="", population_labels=None):
     """
     Log topology information both as strings and ASCII trees to the log file ONLY.
     This avoids duplicating the console output that's already handled by print() statements.
@@ -63,6 +63,7 @@ def log_topologies(topos, simplified_topos, columns, logger, message_prefix=""):
         columns: List of column names (T1, T2, T3, etc.)
         logger: Logger instance
         message_prefix: Optional prefix for log messages
+        population_labels: Optional dict mapping population IDs to descriptive labels
     """
     # Get a file-only logger to avoid duplicating console output
     file_logger = logging.getLogger(f"{logger.name}.topologies")
@@ -90,6 +91,23 @@ def log_topologies(topos, simplified_topos, columns, logger, message_prefix=""):
         file_logger.info("Discovered topologies:")
     
     file_logger.info("="*50)
+    
+    # Add population legend if available
+    if population_labels:
+        file_logger.info("Population Legend:")
+        file_logger.info("-" * 20)
+        # Extract all leaf names from topologies to determine which populations are present
+        leaf_names = set()
+        for topo in topos:
+            leaf_names.update([leaf.name for leaf in topo.get_leaves()])
+        
+        # Sort leaf names for consistent output
+        for leaf_name in sorted(leaf_names):
+            if leaf_name in population_labels:
+                file_logger.info(f"  {leaf_name} = {population_labels[leaf_name]}")
+            else:
+                file_logger.info(f"  {leaf_name} = Population {leaf_name}")
+        file_logger.info("")
     
     for i, (topo, simplified, col_name) in enumerate(zip(topos, simplified_topos, columns)):
         file_logger.info(f"{col_name}:")

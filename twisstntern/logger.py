@@ -218,16 +218,36 @@ def log_simulation_config(config, overrides=None):
     # Population parameters
     logger.info(f"Number of populations: {len(config.populations)}")
     for pop_config in config.populations:
-        if hasattr(pop_config, 'sample_size'):
-            logger.info(f"  {pop_config.name}: Ne={pop_config.Ne}, samples={pop_config.sample_size}")
+        # Use population label if available, otherwise just the name
+        pop_display = pop_config.name
+        if hasattr(pop_config, 'label') and pop_config.label and pop_config.label != pop_config.name:
+            pop_display = f"{pop_config.name} ({pop_config.label})"
+        
+        if hasattr(pop_config, 'sample_size') and pop_config.sample_size is not None:
+            logger.info(f"  {pop_display}: Ne={pop_config.Ne}, samples={pop_config.sample_size}")
         else:
-            logger.info(f"  {pop_config.name}: Ne={pop_config.Ne} (ancestral)")
+            logger.info(f"  {pop_display}: Ne={pop_config.Ne} (ancestral)")
     
     # Migration parameters
     if hasattr(config, 'migration') and config.migration:
         logger.info("Migration rates:")
         for route, rate in config.migration.items():
-            logger.info(f"  {route}: {rate}")
+            # Enhance migration logging with population labels if available
+            if hasattr(config, 'get_population_label'):
+                try:
+                    source, dest = route.split('>')
+                    source_label = config.get_population_label(source)
+                    dest_label = config.get_population_label(dest)
+                    if source_label != source or dest_label != dest:
+                        # Show both short names and labels for clarity
+                        route_display = f"{route} ({source_label} → {dest_label})"
+                    else:
+                        route_display = route
+                except:
+                    route_display = route
+            else:
+                route_display = route
+            logger.info(f"  {route_display}: {rate}")
     
     # Simulation-specific parameters
     if config.simulation_mode == "chromosome":

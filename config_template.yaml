@@ -130,7 +130,7 @@ locus_length: 1 # Length of each locus in base pairs
 # corresponding to breaks in recombination, genomic length of the loci simulated
 # here will vary
 rec_rate: 1e-8 # Recombination rate per base per generation
-chromosome_length: 1e7 # Length of the chromosome to simulate (in base pairs)
+chromosome_length: 1e8 # Length of the chromosome to simulate (in base pairs)
 mutation_rate: 0 # Mutation rate per base per generation (optional)
 
 ###################################################################################

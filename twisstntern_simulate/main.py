@@ -147,7 +147,7 @@ Examples:
     )
     
     logger = get_logger(__name__)
-    
+
     # Log system information
     log_system_info()
 

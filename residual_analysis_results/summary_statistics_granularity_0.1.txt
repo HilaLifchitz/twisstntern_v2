@@ -1,0 +1,18 @@
+Topology Weights Residual Analysis Summary
+==================================================
+
+Data 1: /home/hlifchit/twisstntern2.0/dataCompare/migration_topology_weights.csv
+Data 2: /home/hlifchit/twisstntern2.0/dataCompare/NoMigration_topology_weights.csv
+Granularity: 0.1
+
+L2_distance: 1.671464e+02
+chi2_statistic: 2.736647e+04
+degrees_freedom: 61
+p_value: 0.000000e+00
+residual_mean: 4.336809e-20
+residual_std: 1.483157e-02
+residual_min: -3.709809e-02
+residual_max: 7.356046e-02
+total_data_points: 11303
+total_model_points: 11559
+num_triangles: 100
