@@ -2,6 +2,24 @@
 
 <img src="images/logo.png" height="270pt" align="bottom">
 
+## Table of Contents
+- [What does TWISSTNTERN do?](#what-does-twisstntern-do)
+- [Installation](#installation)
+- [Automatic twisst.py Handling](#automatic-twisstpy-handling)
+- [Input](#input)
+- [Command-Line Usage](#command-line-usage)
+- [Topology Mapping](#topology-mapping)
+- [Granularity Settings](#granularity-settings)
+- [Output](#output)
+- [Simulating Data with twisstntern_simulate](#simulating-data-with-twisstntern_simulate)
+- [twisstntern_simulate Input](#input-1)
+- [twisstntern_simulate Command-Line Usage](#command-line-usage-1)
+- [twisstntern_simulate Configuration Overrides](#configuration-overrides)
+- [twisstntern_simulate Output](#output-1)
+- [Citation](#citation)
+- [Dependencies](#dependencies)
+- [Contributing](#contributing)
+
 ## A method for analysing topology weights in a ternary framework
 
 TWISSTNTERN is an analytical framework for visualising and analysing topology weights in a ternary plot. This is a modernized, command-line version that can calculate topology weights directly from tree files or analyze pre-computed weights from CSV files.
@@ -35,7 +53,41 @@ pip install -e .[dev]
 
 ---
 
-### Input
+### 🧬 Automatic twisst.py Handling
+
+You **do not need to manually install or download `twisst.py`** to use this package!
+
+Both the main analysis (`twisstntern`) and simulation (`twisstntern_simulate`) pipelines will:
+- **Automatically check for the required `twisst.py` script** (used for topology weighting).
+- **Download and patch it if missing or outdated**—no manual steps required.
+- **Work out-of-the-box** in any fresh environment, as long as you install this package and its dependencies.
+
+### How it works
+- When you run:
+  ```bash
+  python -m twisstntern treeSfiles/CHROM.trees
+  # or
+  python -m twisstntern_simulate -c config_template.yaml
+  ```
+  The pipeline will ensure `twisst.py` is present and compatible before starting the analysis.
+
+- If you want to **force a fresh download** (e.g., if you suspect a corrupted file), use:
+  ```bash
+  python -m twisstntern_simulate -c config_template.yaml --force-download
+  ```
+
+- If you want to **skip the check** (not recommended unless you know what you're doing), use:
+  ```bash
+  python -m twisstntern_simulate -c config_template.yaml --skip-twisst-check
+  ```
+
+### Why is this needed?
+- `twisst.py` is a third-party script not available on PyPI.
+- This package bundles and manages it for you, so you never have to worry about missing dependencies.
+
+---
+
+## Input
 
 **Tree File Options:**
 
@@ -49,8 +101,7 @@ pip install -e .[dev]
 
 ---
 
-### 🔧 Command-Line Usage
-
+## 🔧 Command-Line Usage
 **TWISSTNTERN** accepts both tree files and pre-computed topology weights. The input file can be specified either as a positional argument or using the `--input` flag.
 
 ```bash
@@ -71,77 +122,9 @@ python -m twisstntern INPUT [GRANULARITY] [OPTIONS]
   Manually specify which topology corresponds to each axis label (T1, T2, T3) in the ternary plot.  
   Useful for ensuring consistency across runs or datasets. Format:  
   `'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'`
+- `--downsample N`: Downsample the data by keeping only every Nth tree/locus. Works for both locus and chromosome mode.
 - `--verbose`: Enable verbose logging (DEBUG level)
 - `--help`: Show help message
-
-#### **Input Methods**
-
-```bash
-# Method 1: Positional arguments
-python -m twisstntern input_file.trees
-
-# Method 2: Using --input flag
-python -m twisstntern --input input_file.trees
-
-# Method 3: Combined with granularity
-python -m twisstntern input_file.trees 0.25
-```
-
-#### **Basic Examples**
-
-**TreeSequence files** (no additional parameters needed):
-
-```bash
-# Default analysis with granularity 0.1
-python -m twisstntern data.trees
-
-# Custom granularity using positional argument
-python -m twisstntern data.trees 0.05
-
-# Custom granularity using flag
-python -m twisstntern data.trees --granularity fine
-
-# Specify output directory
-python -m twisstntern data.trees --output /custom/output/dir/
-```
-
-**Newick/Nexus files** (require taxon names and outgroup):
-
-```bash
-# Basic Newick analysis
-python -m twisstntern tree.newick --taxon-names O P1 P2 P3 --outgroup O
-
-# With custom granularity
-python -m twisstntern tree.newick --granularity superfine --taxon-names O P1 P2 P3 --outgroup O
-
-# With verbose logging
-python -m twisstntern tree.newick --taxon-names O P1 P2 P3 --outgroup O --verbose
-```
-
-**Pre-computed CSV files**:
-
-```bash
-# Analyze topology weights CSV
-python -m twisstntern weights.csv
-
-# With specific granularity
-python -m twisstntern weights.csv fine
-```
-
-#### **Advanced Examples**
-
-**Custom topology mapping**:
-
-```bash
-# For TreeSequence files (population IDs: 0, 1, 2, 3)
-python -m twisstntern data.trees \
-  --topology-mapping 'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
-
-# For Newick files (population names: O, P1, P2, P3)
-python -m twisstntern tree.newick \
-  --taxon-names O P1 P2 P3 --outgroup O \
-  --topology-mapping 'T1="(O,(P3,(P1,P2)))"; T2="(O,(P1,(P2,P3)))"; T3="(O,(P2,(P1,P3)))";'
-```
 
 ---
 
@@ -190,13 +173,13 @@ You can also provide a **custom float value** for granularity (alpha), e.g. `--g
 
 ---
 
-### **Output**
+## **Output**
 
 TWISSTNTERN generates a comprehensive set of output files saved to the specified output directory (default: `Results/`):
 
 **Analysis Files:**
 
-- `[prefix]_topology_weights.csv` - Raw topology weight data for each genomic window
+- `[prefix]_topology_weights.csv` - Raw topology weight data for each genomic window. In chromosome mode, this file will always include a `position` column indicating the start position of each tree along the chromosome (in base pairs), which is used for KB-based downsampling and genome position-aware analyses.
 - `[prefix]_triangle_analysis.csv` - Triangle-based sub-analysis results with statistics
 - `twisstntern_YYYYMMDD_HHMMSS.log` - Detailed log file with complete analysis record
 
@@ -326,7 +309,7 @@ results, fundamental_results, csv_file = run_analysis(
 
 ---
 
-## 🧬 Simulating Data with `twisstntern_simulate`
+# 🧬 Simulating Data with `twisstntern_simulate`
 
 The `twisstntern_simulate` module lets you generate simulated tree sequence data and analyze it using the same ternary pipeline as the main package.  
 It is ideal for testing, benchmarking, and exploring different demographic scenarios.
@@ -339,23 +322,25 @@ It is ideal for testing, benchmarking, and exploring different demographic scena
 
 ---
 
-### Input
+## Input
 
 Simulation parameters (demography, sample sizes, sequence length, etc.) are specified in a YAML file.  
 See `config_template.yaml` for a template and documentation of available options.
 
 ---
 
-### 🔧 Command-Line Usage
+## 🔧 Command-Line Usage
 
 The only required input is a configuration file provided via the `--config` flag.
 
 ```bash
-python -m twisstntern_simulate -c CONFIG[-o OUTPUT][--skip-twisst-check][--force-download][--verbose][--quiet][--log-file LOG_FILE][--seed SEED][--granularity GRANULARITY]
+python -m twisstntern_simulate -c CONFIG [-o OUTPUT] [--downsample N] [--downsampleKB N] [--skip-twisst-check] [--force-download] [--verbose] [--quiet] [--log-file LOG_FILE] [--seed SEED] [--granularity GRANULARITY]
 ```
 
 - `-c`, `--config`: **(Required)** Path to a YAML configuration file specifying simulation parameters (see `twisstntern_simulate/config_template.yaml` for an example).
 - `-o`, `--output`: Output directory for results. Defaults to `Results/`.
+- `--downsample N`: Downsample the data by keeping only every Nth tree/locus. Works for both locus and chromosome mode.
+- `--downsampleKB N`: **(chromosome mode only)** Downsample by keeping one tree every N kilobases along the simulated chromosome. Requires an integer argument (e.g., `--downsampleKB 100` for every 100 kb). This option is ignored in locus mode. The output CSV will always include a `position` column in chromosome mode, representing the start position of each tree along the chromosome, which is used for KB-based downsampling.
 - `--granularity`: Set analysis granularity (default = 0.1).
 - `--topology-mapping`: Manually specify which topology corresponds to each axis label (T1, T2, T3) in the ternary plot.
   Format: `'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'`
@@ -368,11 +353,23 @@ python -m twisstntern_simulate -c CONFIG[-o OUTPUT][--skip-twisst-check][--force
 - `--log-file LOG_FILE`: Write logs to a file.
 - `--seed SEED`: Set a random seed for reproducibility.
 
-**Example:**
+**Examples:**
 
 ```bash
-python -m twisstntern_simulate -c config_template.yaml -o SimResults/
+# Downsample to every 10th locus (locus mode)
+python -m twisstntern_simulate -c config_template.yaml --downsample 10
+
+# Downsample to every 10th tree (chromosome mode)
+python -m twisstntern_simulate -c config_template.yaml --downsample 10
+
+# Downsample to one tree every 50 kb (chromosome mode only)
+python -m twisstntern_simulate -c config_template.yaml --downsampleKB 50
 ```
+
+**Note:**
+- If both `--downsample` and `--downsampleKB` are provided in chromosome mode, `--downsample` takes precedence.
+- The log file will record the number of data points (trees/loci) before and after downsampling/trimming, as well as after filtering for symmetry analysis, matching the detailed logging style of the main `twisstntern` tool.
+- `--downsampleKB` must be followed by an integer value (e.g., `--downsampleKB 100`).
 
 ---
 

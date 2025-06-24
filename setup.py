@@ -38,6 +38,7 @@ setup(
         "tskit>=0.4.0",
         "msprime>=1.0.0",
         "ete3>=3.1.0",
+        "pyyaml>=6.0.0",
         "requests>=2.25.0",
     ],
     extras_require={

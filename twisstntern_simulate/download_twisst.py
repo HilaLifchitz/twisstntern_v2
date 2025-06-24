@@ -87,13 +87,16 @@ def fix_existing_twisst():
         return False
 
 
-def ensure_twisst_available():
-    """Ensure twisst.py is available and working. Download if necessary."""
+def ensure_twisst_available(force_download=False):
+    """Ensure twisst.py is available and working. Download if necessary or if force_download is True."""
     script_dir = Path(__file__).parent
     external_dir = script_dir / "external"
     twisst_path = external_dir / "twisst.py"
 
-    if twisst_path.exists():
+    if force_download:
+        print("Force re-downloading twisst.py...")
+        download_twisst()
+    elif twisst_path.exists():
         print("Found existing twisst.py")
         if not fix_existing_twisst():
             print("Trying to re-download...")

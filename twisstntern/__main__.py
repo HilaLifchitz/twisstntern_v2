@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-from twisstntern.pipeline import run_analysis
+from twisstntern.pipeline import run_analysis, ensure_twisst_available
 from twisstntern.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
 
 
@@ -49,6 +49,12 @@ def main():
         help='Custom topology ordering. Format: \'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";\'',
     )
     parser.add_argument(
+        "--downsample",
+        type=int,
+        default=None,
+        help="If set, only every Nth row of the topology weights will be used for analysis (downsampling).",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         type=str,
@@ -63,6 +69,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Ensure twisst.py is available before any analysis
+    ensure_twisst_available()
 
     # Determine which file argument to use
     input_file = args.file_flag if args.file_flag else args.file
@@ -119,6 +128,7 @@ def main():
             outgroup=args.outgroup,
             output_dir=output_dir,
             topology_mapping=args.topology_mapping,
+            downsample=args.downsample,
         )
 
         # Calculate duration

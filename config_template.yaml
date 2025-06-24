@@ -14,11 +14,11 @@
 # Give meaningful names to your populations
 # These labels will be used in output files and visualizations
 population_labels:
-  p1: "Population 1" # Label for population p1
-  p2: "Population 2" # Label for population p2
-  p3: "Population 3" # Label for population p3
-  p23: "Ancestor p2/p3" # Label for ancestor of p1 and p2
-  p123: "Ancestor p1/p2/p3" # Label for ancestor of p1, p2, and p3
+  p1: "A" # Label for population p1
+  p2: "B" # Label for population p2
+  p3: "C" # Label for population p3
+  p23: "Ancestor AB" # Label for ancestor of p1 and p2
+  p123: "Ancestor ABC" # Label for ancestor of p1, p2, and p3
   O: "Outgroup" # Label for outgroup population
   ANC: "Ancestral" # Label for the most ancestral population
 

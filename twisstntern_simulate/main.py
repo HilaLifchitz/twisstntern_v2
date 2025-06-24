@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 
 from twisstntern_simulate.pipeline import run_pipeline
+from twisstntern_simulate.download_twisst import ensure_twisst_available
 
 # Import twisstntern logging
 from twisstntern.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
@@ -132,8 +133,24 @@ Examples:
              "Examples: --override 'migration.p3>p2=0.3' --override 'ploidy=2' --override 'populations.p1.Ne=15000'",
     )
 
+    parser.add_argument(
+        "--downsample",
+        type=int,
+        default=None,
+        help="If set, only every Nth tree/locus will be used for analysis (downsampling).",
+    )
+    parser.add_argument(
+        "--downsampleKB",
+        type=int,
+        default=None,
+        help="(chromosome mode only) Sample a tree every N kilobases along the genome.",
+    )
 
     args = parser.parse_args()
+
+    # Ensure twisst.py is available unless --skip-twisst-check is set
+    if not getattr(args, 'skip_twisst_check', False):
+        ensure_twisst_available(force_download=getattr(args, 'force_download', False))
 
     # Create output directory if it doesn't exist
     output_dir = Path(args.output)
@@ -189,6 +206,8 @@ Examples:
             verbose=args.verbose,
             topology_mapping=args.topology_mapping,
             config_overrides=args.override,
+            downsample=args.downsample,
+            downsample_kb=args.downsampleKB,
         )
 
         # Calculate duration

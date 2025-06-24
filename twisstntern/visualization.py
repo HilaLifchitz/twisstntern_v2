@@ -27,6 +27,7 @@ from twisstntern.utils import (
     number_triangles,
 )
 from twisstntern.analysis import fundamental_asymmetry, triangles_analysis
+import seaborn as sns  # For color palettes
 
 
 # Colors for the isoclines of T1, T2, T3
@@ -952,5 +953,177 @@ def plot_toblerone_single_3D(
 
     # Save the plot
     title = f"{file_name}_ternary_prism_x_{view_angle}.png"
+    save_figure(fig, title)
+    return fig
+
+
+def plot_ternary_heatmap_data(data, granularity, file_name, colormap="viridis", grid_color=None, normalize=True):
+    """
+    Plot a ternary heatmap: each subtriangle is colored by the number (or proportion) of data points it contains.
+    - colormap: 'viridis' (proportion) or 'magma' (count) by default, but with endpoints tweaked.
+    - grid_color: color for grid lines (default: grey from seaborn muted palette; set to None for colored grid lines)
+    - normalize: if True, color by proportion; if False, color by count
+    - The colormap starts from light grey, goes through the original gradient, and ends with vibrant yellow.
+    """
+    import matplotlib as mpl
+    from matplotlib.colors import LinearSegmentedColormap
+    if granularity == "superfine":
+        alpha = 0.05
+    elif granularity == "fine":
+        alpha = 0.1
+    elif granularity == "coarse":
+        alpha = 0.25
+    else:
+        alpha = float(granularity)
+
+    def create_triangular_grid(alpha):
+        triangles = []
+        steps = int(1 / alpha)
+        for k in range(steps):
+            a1 = round(k * alpha, 10)
+            b1 = round((k + 1) * alpha, 10)
+            T2_upper_limit = round(1 - k * alpha, 10)
+            T2_steps = round(T2_upper_limit / alpha)
+            a3_1 = round(1 - (k + 1) * alpha, 10)
+            b3_1 = round(1 - k * alpha, 10)
+            for T2_step in range(T2_steps):
+                a2 = round(T2_step * alpha, 10)
+                b2 = round((T2_step + 1) * alpha, 10)
+                if a3_1 >= 0:
+                    triangles.append({
+                        'T1': (a1, b1),
+                        'T2': (a2, b2),
+                        'T3': (a3_1, b3_1)
+                    })
+                a3_2 = round(a3_1 - alpha, 10)
+                b3_2 = round(b3_1 - alpha, 10)
+                if a3_2 >= 0:
+                    triangles.append({
+                        'T1': (a1, b1),
+                        'T2': (a2, b2),
+                        'T3': (a3_2, b3_2)
+                    })
+                a3_1 = a3_2
+                b3_1 = b3_2
+        return triangles
+
+    def n_twisstcompare(a1, b1, a2, b2, a3, b3, data):
+        if a1 == 0:
+            condition_a1 = a1 <= data.T1
+        else:
+            condition_a1 = a1 < data.T1
+        if a2 == 0:
+            condition_a2 = a2 <= data.T2
+        else:
+            condition_a2 = a2 < data.T2
+        if a3 == 0:
+            condition_a3 = a3 <= data.T3
+        else:
+            condition_a3 = a3 < data.T3
+        n = len(data[(condition_a1 & (data.T1 <= b1)) &
+                     (condition_a2 & (data.T2 <= b2)) &
+                     (condition_a3 & (data.T3 <= b3))])
+        return n
+
+    triangles = create_triangular_grid(alpha)
+    total_points = len(data)
+    counts = []
+    for triangle in triangles:
+        count = n_twisstcompare(
+            triangle['T1'][0], triangle['T1'][1],
+            triangle['T2'][0], triangle['T2'][1],
+            triangle['T3'][0], triangle['T3'][1],
+            data
+        )
+        counts.append(count)
+    counts = np.array(counts)
+    if normalize and total_points > 0:
+        values = counts / total_points
+        nonzero = values > 0
+        vmin = np.min(values[nonzero]) if np.any(nonzero) else 0.0
+        vmax = np.max(values) if np.any(nonzero) else 1.0
+    else:
+        values = counts
+        nonzero = values > 0
+        vmin = 1 if np.any(nonzero) else 0
+        vmax = np.max(values) if np.any(nonzero) else 1
+
+    # Use the same custom colormap for both proportion and count
+    base_cmap = mpl.cm.get_cmap("viridis")
+    # Sample the original colormap (skip the very start/end for better blending)
+    orig_colors = base_cmap(np.linspace(0.08, 0.92, 200))
+    # New colormap: light grey -> original viridis -> vibrant yellow
+    colors = np.vstack([
+        [224/255,224/255,224/255,1],  # light grey
+        orig_colors,
+        [1,1,0,1]  # vibrant yellow
+    ])
+    custom_cmap = LinearSegmentedColormap.from_list("custom_viridis", colors)
+    cmap = custom_cmap
+
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = plt.axes()
+    triangle_x = [0, -0.5, 0.5, 0]
+    triangle_y = [h, 0, 0, h]
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
+
+    # Grid lines
+    if grid_color is None:
+        steps = np.arange(alpha, 1, alpha)
+        for y in steps:
+            x1_l, x1_r = T1_lim(y)
+            ax.hlines(y=y * h, xmin=x1_l, xmax=x1_r, color=T1_color, linewidth=1)
+            x2_l, x2_r = T2_lim(y)
+            x2 = np.linspace(x2_l, x2_r, 100)
+            ax.plot(x2, T2(y, x2), color=T2_color, linewidth=1)
+            x3_l, x3_r = T3_lim(y)
+            x3 = np.linspace(x3_l, x3_r, 100)
+            ax.plot(x3, T3(y, x3), color=T3_color, linewidth=1)
+        ax.vlines(x=0, ymin=0, ymax=h, colors="#3E3E3E", linestyles=":")
+    else:
+        steps = np.arange(alpha, 1, alpha)
+        for y in steps:
+            x1_l, x1_r = T1_lim(y)
+            ax.hlines(y=y * h, xmin=x1_l, xmax=x1_r, color=grid_color, linewidth=0.8, alpha=0.6)
+            x2_l, x2_r = T2_lim(y)
+            x2 = np.linspace(x2_l, x2_r, 100)
+            ax.plot(x2, T2(y, x2), color=grid_color, linewidth=0.8, alpha=0.6)
+            x3_l, x3_r = T3_lim(y)
+            x3 = np.linspace(x3_l, x3_r, 100)
+            ax.plot(x3, T3(y, x3), color=grid_color, linewidth=0.8, alpha=0.6)
+        ax.vlines(x=0, ymin=0, ymax=h, colors=grid_color, linestyles=":", linewidth=1.0, alpha=0.7)
+
+    # Plot filled triangles (only for nonzero bins)
+    for idx, triangle in enumerate(triangles):
+        if values[idx] > 0:
+            (a1, b1), (a2, b2), (a3, b3) = triangle['T1'], triangle['T2'], triangle['T3']
+            trianglex, triangley, _ = return_triangle_coord(a1, b1, a2, b2, a3, b3)
+            color = cmap(norm(values[idx]))
+            ax.fill(trianglex, triangley, color=color, edgecolor='none')
+
+    # Corner labels
+    ax.text(-0.02, 0.88, "T1", size=12, color="#333333")
+    ax.text(0.54, -0.01, "T3", size=12, color="#333333")
+    ax.text(-0.58, -0.01, "T2", size=12, color="#333333")
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+
+    # Colorbar (starts from vmin, which is 1 for count, min>0 for prop)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    cax = inset_axes(ax, width="3%", height="80%", loc='center right',
+                     bbox_to_anchor=(0.05, 0, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cbar = plt.colorbar(sm, cax=cax)
+    cbar.set_label(('Proportion (non-empty)' if normalize else 'Count (non-empty)'), fontsize=10)
+    cbar.set_ticks([vmin, vmax])
+    cbar.ax.set_yticklabels([f"{vmin:.2g}", f"{vmax:.2g}"])
+
+    title = file_name + ("_heatmap_prop.png" if normalize else "_heatmap_count.png")
     save_figure(fig, title)
     return fig

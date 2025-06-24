@@ -42,7 +42,7 @@ sys.path.append(str(EXTERNAL_DIR))
 
 # Import twisst functions
 try:
-    from twisst import weightTrees, summary
+    from twisst import weightTrees, summary  # type: ignore
 except ImportError:
     # This will be handled by the pipeline calling download_twisst
     weightTrees = None
@@ -92,22 +92,30 @@ def log_topologies(topos, simplified_topos, columns, logger, message_prefix="", 
     
     file_logger.info("="*50)
     
-    # Add population legend if available
+    # Always add population legend - extract all leaf names from topologies
+    leaf_names = set()
+    for topo in topos:
+        leaf_names.update([leaf.name for leaf in topo.get_leaves()])
+    
+    # Sort leaf names for consistent output
+    sorted_leaf_names = sorted(leaf_names)
+    
+    file_logger.info("Population Legend:")
+    file_logger.info("-" * 20)
+    
     if population_labels:
-        file_logger.info("Population Legend:")
-        file_logger.info("-" * 20)
-        # Extract all leaf names from topologies to determine which populations are present
-        leaf_names = set()
-        for topo in topos:
-            leaf_names.update([leaf.name for leaf in topo.get_leaves()])
-        
-        # Sort leaf names for consistent output
-        for leaf_name in sorted(leaf_names):
+        # Use custom population labels if provided
+        for leaf_name in sorted_leaf_names:
             if leaf_name in population_labels:
                 file_logger.info(f"  {leaf_name} = {population_labels[leaf_name]}")
             else:
                 file_logger.info(f"  {leaf_name} = Population {leaf_name}")
-        file_logger.info("")
+    else:
+        # Create basic legend with numeric IDs
+        for leaf_name in sorted_leaf_names:
+            file_logger.info(f"  {leaf_name} = Population {leaf_name}")
+    
+    file_logger.info("")
     
     for i, (topo, simplified, col_name) in enumerate(zip(topos, simplified_topos, columns)):
         file_logger.info(f"{col_name}:")
@@ -131,7 +139,7 @@ def log_topologies(topos, simplified_topos, columns, logger, message_prefix="", 
 # to know if the file is a tree sequence or a newick file
 def detect_and_read_trees(
     file_path: str,
-) -> Tuple[Union[tskit.TreeSequence, List[str]], str]:
+) -> Tuple[Optional[Union[tskit.TreeSequence, List[str]]], str]:
     """
     Automatically detect tree file format and load the appropriate data structure.
 
@@ -182,7 +190,11 @@ def detect_and_read_trees(
     # Case 3: Content-based detection for files without clear extensions
     try:
         with open(file_path, "r") as f:
-            first_line = f.readline().strip()
+            first_line = f.readline()
+            if first_line is not None:
+                first_line = first_line.strip()
+            else:
+                first_line = ""
             rest = f.read()
     except Exception as e:
         raise IOError(f"Could not read file: {e}")
@@ -362,34 +374,34 @@ def ts_chromosome_to_twisst_weights(
     else:  # if no topology mapping
         # we just print the default topologies order by twisst
         print("No topology mapping was provided; displaying the default topology axis")
-    topos = weightsData["topos"]
-    for i, topo in enumerate(topos):
-        print(f"Topology {i+1}")
-        print(topo)
+        topos = weightsData["topos"]
+        for i, topo in enumerate(topos):
+            print(f"Topology {i+1}")
+            print(topo)
 
-    # Extract normalized weights
-    if "weights_norm" in weightsData:
-        weights_norm = weightsData["weights_norm"]
-    else:
-        # Normalize manually if not already normalized
-        weights = weightsData["weights"]
-        # Check if all weights are zero (which would cause division by zero)
-        row_sums = weights.sum(axis=1)
-        if np.all(row_sums == 0):
-            raise ValueError(
-                "All topology weights are zero - this suggests a problem with the analysis"
-            )
-        weights_norm = weights / row_sums[:, np.newaxis]
+        # Extract normalized weights
+        if "weights_norm" in weightsData:
+            weights_norm = weightsData["weights_norm"]
+        else:
+            # Normalize manually if not already normalized
+            weights = weightsData["weights"]
+            # Check if all weights are zero (which would cause division by zero)
+            row_sums = weights.sum(axis=1)
+            if np.all(row_sums == 0):
+                raise ValueError(
+                    "All topology weights are zero - this suggests a problem with the analysis"
+                )
+            weights_norm = weights / row_sums[:, np.newaxis]
 
         # Get simplified topologies for CSV header
         simplified_topos = simplify_topologies(weightsData)
 
-    # Create column names based on number of topologies
+        # Create column names based on number of topologies
         n_topos = weights_norm.shape[1]
-    if n_topos == 3:
-        columns = ["T1", "T2", "T3"]  # Standard 3-topology case (4 populations)
-    else:
-        columns = [f"Topo{i+1}" for i in range(n_topos)]
+        if n_topos == 3:
+            columns = ["T1", "T2", "T3"]  # Standard 3-topology case (4 populations)
+        else:
+            columns = [f"Topo{i+1}" for i in range(n_topos)]
 
         # Log topologies to file
         logger = get_logger(__name__)

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import warnings
 from math import sqrt, log
+import re
 
 # from sympy import Eq, Symbol as sym, solve
 from scipy.stats import binom, chi2
@@ -231,11 +232,12 @@ def mid_point_triangle(a1, b1, a2, b2, a3, b3):
 ###########################################
 
 
-def dump_data(file):
+def dump_data(file, logger=None):
     """Load and process data from CSV file.
 
     Args:
         file: Path to the input CSV file
+        logger: Optional logger to log messages (default: None)
 
     Returns:
         pandas.DataFrame: Processed data with normalized coordinates
@@ -255,6 +257,27 @@ def dump_data(file):
                 lines.append(line)
                 if len(lines) >= 10:
                     break
+
+    # Try to detect if the first row contains Newick-like tree strings
+    topology_row = None
+    if lines:
+        first_row = lines[0].strip().split(",")
+        # Heuristic: look for parentheses and semicolon (Newick format)
+        if all(re.match(r"^\s*\(?[\w,()]+\)?;?\s*$", s) and ("(" in s and ")" in s and ";" in s) for s in first_row):
+            topology_row = first_row
+
+    if topology_row:
+        print("\nDetected topology header row (Newick strings):")
+        for i, topo in enumerate(topology_row):
+            print(f"  T{i+1}: {topo.strip()}")
+        if logger:
+            logger.info("Detected topology header row (Newick strings):")
+            for i, topo in enumerate(topology_row):
+                logger.info(f"  T{i+1}: {topo.strip()}")
+    else:
+        # Only log this message, do not print
+        if logger:
+            logger.info("No topology header row detected. Assuming columns are T1, T2, T3 (in order).")
 
     # Try each delimiter and find the one that gives us 3 numeric columns
     best_delimiter = None

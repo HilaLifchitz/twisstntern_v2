@@ -275,6 +275,10 @@ def ts_chromosome_to_twisst_weights(
     # Create DataFrame
     df = pd.DataFrame(weights_norm, columns=columns)
 
+    # Add position column: start position of each tree
+    positions = [tree.interval[0] for tree in ts.trees()]
+    df.insert(0, "position", positions)
+
     # Remove any rows with NaN values (trees where no valid topology was found)
     df = df.dropna()
 
@@ -340,8 +344,8 @@ def ts_to_twisst_weights(
     )
 
     if not is_generator:
-        # Single TreeSequence case
-        return ts_chromosome_to_twisst_weights(
+        # Single TreeSequence case (chromosome mode)
+        df = ts_chromosome_to_twisst_weights(
             input_data,
             outgroup=outgroup,
             output_file=output_file,
@@ -350,6 +354,12 @@ def ts_to_twisst_weights(
             topology_mapping=topology_mapping,
             population_labels=population_labels,
         )
+        # Ensure 'position' column is present (should already be added by ts_chromosome_to_twisst_weights)
+        if 'position' not in df.columns:
+            if isinstance(input_data, tskit.TreeSequence):
+                positions = [tree.interval[0] for tree in input_data.trees()]
+                df.insert(0, 'position', positions)
+        return df
     #########################################################
     # Generator case - process multiple TreeSequences
     # Convert generator to list for processing - but check if it's actually iterable first

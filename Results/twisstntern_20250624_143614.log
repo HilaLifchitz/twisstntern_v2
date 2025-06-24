@@ -1,0 +1,97 @@
+2025-06-24 14:36:14,656 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:146 - ============================================================
+2025-06-24 14:36:14,656 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:147 - TWISSTNTERN Analysis Session
+2025-06-24 14:36:14,656 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:148 - ============================================================
+2025-06-24 14:36:14,656 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:149 - Python version: 3.11.13 (main, Jun  5 2025, 13:12:00) [GCC 11.2.0]
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:150 - Platform: Linux-6.11.0-26-generic-x86_64-with-glibc2.39
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:151 - Working directory: /home/hlifchit/projects/twissting_baby
+2025-06-24 14:36:14,659 - twisstntern.logger - [36mDEBUG[0m - logger.log_system_info:156 - NumPy version: 2.3.1
+2025-06-24 14:36:14,659 - twisstntern.logger - [36mDEBUG[0m - logger.log_system_info:162 - Pandas version: 2.3.0
+2025-06-24 14:36:14,659 - twisstntern.logger - [36mDEBUG[0m - logger.log_system_info:168 - Matplotlib version: 3.10.3
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:177 - Starting TWISSTNTERN analysis
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:178 - Input file: /home/hlifchit/projects/twissting_baby/treeSfiles/CHROM_pop.nexus
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:179 - Output directory: Results
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:184 - granularity: 0.1
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:184 - taxon_names: ['O', 'P1', 'P2', 'P3']
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:184 - outgroup: O
+2025-06-24 14:36:14,659 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:184 - verbose: True
+2025-06-24 14:36:14,659 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:185 - Output directory: Results
+2025-06-24 14:36:14,659 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:189 - Detected file type: tree
+2025-06-24 14:36:14,659 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:192 - Processing tree file to generate topology weights...
+2025-06-24 14:36:19,604 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:199 - Detected tree format: newick
+2025-06-24 14:36:19,605 - twisstntern.pipeline - [36mDEBUG[0m - pipeline.run_analysis:203 - Validating Newick file parameters...
+2025-06-24 14:36:19,605 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:224 - Using taxon names: ['O', 'P1', 'P2', 'P3']
+2025-06-24 14:36:19,605 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:225 - Using outgroup: O
+2025-06-24 14:36:19,605 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:232 - Converting trees to topology weights...
+2025-06-24 14:36:53,460 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:89 - Newick file topologies (default order)
+2025-06-24 14:36:53,460 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:93 - ==================================================
+2025-06-24 14:36:53,460 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:103 - Population Legend:
+2025-06-24 14:36:53,460 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:104 - --------------------
+2025-06-24 14:36:53,460 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:116 -   O = Population O
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:116 -   P1 = Population P1
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:116 -   P2 = Population P2
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:116 -   P3 = Population P3
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:118 - 
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:121 - T1:
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:122 -   String: (O,(P1,(P2,P3)));
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:128 -   ASCII Tree:
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -        /-O
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -     --|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -       |   /-P1
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -        \-|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -          |   /-P2
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -           \-|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -              \-P3
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:135 - 
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:121 - T2:
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:122 -   String: (O,(P2,(P1,P3)));
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:128 -   ASCII Tree:
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -        /-O
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -     --|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -       |   /-P2
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -        \-|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -          |   /-P1
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -           \-|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -              \-P3
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:135 - 
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:121 - T3:
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:122 -   String: (O,(P3,(P1,P2)));
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:128 -   ASCII Tree:
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -        /-O
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -     --|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -       |   /-P3
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -        \-|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -          |   /-P1
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -           \-|
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:131 -              \-P2
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:135 - 
+2025-06-24 14:36:53,461 - twisstntern.tree_processing.topologies - INFO - tree_processing.log_topologies:137 - ==================================================
+2025-06-24 14:36:53,477 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:241 - Generated topology weights CSV: Results/CHROM_pop_topology_weights.csv
+2025-06-24 14:36:53,477 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:256 - Loading data from: Results/CHROM_pop_topology_weights.csv
+2025-06-24 14:36:53,478 - twisstntern.pipeline - [32mINFO[0m - utils.dump_data:280 - No topology header row detected. Assuming columns are T1, T2, T3 (in order).
+2025-06-24 14:36:57,349 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:259 - Loaded data shape: (11617, 3)
+2025-06-24 14:36:57,349 - twisstntern.pipeline - [36mDEBUG[0m - pipeline.run_analysis:260 - Data columns: ['T1', 'T2', 'T3']
+2025-06-24 14:36:57,350 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:263 - Running triangle analysis...
+2025-06-24 14:36:57,393 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:266 - Triangle analysis completed. Results shape: (45, 7)
+2025-06-24 14:36:57,393 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:268 - Running fundamental asymmetry analysis...
+2025-06-24 14:36:57,394 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:271 - Fundamental asymmetry: D_LR=0.3422, p-value=0.0000e+00
+2025-06-24 14:36:57,394 - twisstntern.pipeline - [36mDEBUG[0m - pipeline.run_analysis:275 - Output prefix: Results/CHROM_pop
+2025-06-24 14:36:57,394 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:278 - Generating visualizations...
+2025-06-24 14:36:57,848 - twisstntern.pipeline - [36mDEBUG[0m - pipeline.run_analysis:281 - Generated fundamental asymmetry plot
+2025-06-24 14:36:58,232 - twisstntern.pipeline - [36mDEBUG[0m - pipeline.run_analysis:283 - Generated ternary plot
+2025-06-24 14:36:58,573 - twisstntern.pipeline - [36mDEBUG[0m - pipeline.run_analysis:285 - Generated results plot
+2025-06-24 14:36:58,835 - twisstntern.pipeline - [36mDEBUG[0m - pipeline.run_analysis:287 - Generated triangle index plot
+2025-06-24 14:36:58,836 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:304 - Saving results...
+2025-06-24 14:36:58,837 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:307 - Saved triangle analysis results to: Results/CHROM_pop_triangle_analysis.csv
+2025-06-24 14:36:58,837 - twisstntern.pipeline - [32mINFO[0m - pipeline.run_analysis:310 - Analysis pipeline completed successfully!
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:191 - ============================================================
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:192 - Analysis completed successfully!
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:193 - Total duration: 44.18 seconds
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:194 - Generated files:
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ Results/CHROM_pop_triangle_analysis.csv (3,017 bytes)
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ Results/CHROM_pop_topology_weights.csv (233,092 bytes)
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ Results/CHROM_pop_fundamental_asymmetry.png (78,608 bytes)
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ Results/CHROM_pop_analysis_granularity_0.1.png (284,311 bytes)
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ Results/twisstntern_20250624_143614.log (12,201 bytes)
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ Results/CHROM_pop_granuality_0.1.png (1,328,495 bytes)
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ Results/CHROM_pop_index_granularity_0.1.png (288,097 bytes)
+2025-06-24 14:36:58,837 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:203 - ============================================================

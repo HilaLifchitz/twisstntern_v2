@@ -146,6 +146,8 @@ def run_pipeline(
     verbose: bool = False,
     topology_mapping: Optional[str] = None,
     config_overrides: Optional[list] = None,
+    downsample: Optional[int] = None,
+    downsample_kb: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Run the complete twisstntern_simulate pipeline.
@@ -161,6 +163,8 @@ def run_pipeline(
         verbose: Enable verbose output
         topology_mapping: Custom topology mapping string for T1/T2/T3
         config_overrides: List of config override strings in format 'key=value'
+        downsample: Downsample factor for locus mode
+        downsample_kb: Downsample factor for chromosome mode in kb
 
     Returns:
         Dictionary containing pipeline results and metadata
@@ -250,8 +254,13 @@ def run_pipeline(
         mode = config.simulation_mode
         if mode == "locus":
             ts_data = simulation_results["locus"]
+            n_before = len(ts_data)
+            logger.info(f"Locus mode: {n_before} loci simulated.")
+            ts_data = list(ts_data)
         elif mode == "chromosome":
             ts_data = simulation_results["chromosome"]
+            n_before = ts_data.num_trees
+            logger.info(f"Chromosome mode: {n_before} trees in simulated chromosome.")
         else:
             raise ValueError(f"Unknown simulation mode: {mode}")
         
@@ -276,6 +285,43 @@ def run_pipeline(
             ts_data, output_file=weights_file, verbose=verbose, topology_mapping=topology_mapping, population_labels=population_labels
         )
         results["topology_weights"] = topology_weights
+
+        # === Downsampling logic (after DataFrame is generated) ===
+        n_before_downsample = len(topology_weights)
+        logger.info(f"Number of data points before downsampling: {n_before_downsample}")
+        topology_weights_downsampled = topology_weights
+        downsample_mode = None
+        if downsample is not None and downsample > 1:
+            topology_weights_downsampled = topology_weights.iloc[::downsample, :].reset_index(drop=True)
+            logger.info(f"Downsampled to every {downsample}th data point. {len(topology_weights_downsampled)} remain.")
+            downsample_mode = f"every {downsample}th"
+        elif downsample_kb is not None and downsample_kb > 0 and mode == "chromosome":
+            if "position" in topology_weights.columns:
+                n_kb = downsample_kb * 1000
+                max_pos = topology_weights["position"].max()
+                target_positions = list(range(0, int(max_pos) + 1, n_kb))
+                selected_indices = []
+                last_idx = -1
+                for pos in target_positions:
+                    candidates = topology_weights.index[topology_weights["position"] >= pos]
+                    if len(candidates) > 0:
+                        idx = candidates[0]
+                        if idx != last_idx:
+                            selected_indices.append(idx)
+                            last_idx = idx
+                topology_weights_downsampled = topology_weights.loc[selected_indices].reset_index(drop=True)
+                logger.info(f"Downsampled to one data point every {downsample_kb} kb. {len(topology_weights_downsampled)} remain.")
+                downsample_mode = f"every {downsample_kb} kb"
+            else:
+                logger.warning("KB downsampling requested but no 'position' column found in topology weights. Skipping KB downsampling.")
+        n_after_downsample = len(topology_weights_downsampled)
+        if downsample_mode:
+            logger.info(f"Number of data points after downsampling ({downsample_mode}): {n_after_downsample}")
+        else:
+            logger.info(f"No downsampling applied. Data points used: {n_after_downsample}")
+
+        # Use downsampled data for all further analysis
+        topology_weights = topology_weights_downsampled
 
         logger.info(f"Tree processing completed - weights saved to: {weights_file}")
 

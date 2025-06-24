@@ -1,0 +1,103 @@
+2025-06-24 15:04:41,024 - [32mINFO[0m - ============================================================
+2025-06-24 15:04:41,024 - [32mINFO[0m - TWISSTNTERN Analysis Session
+2025-06-24 15:04:41,024 - [32mINFO[0m - ============================================================
+2025-06-24 15:04:41,024 - [32mINFO[0m - Python version: 3.11.13 (main, Jun  5 2025, 13:12:00) [GCC 11.2.0]
+2025-06-24 15:04:41,026 - [32mINFO[0m - Platform: Linux-6.11.0-26-generic-x86_64-with-glibc2.39
+2025-06-24 15:04:41,026 - [32mINFO[0m - Working directory: /home/hlifchit/projects/twissting_baby
+2025-06-24 15:04:41,026 - [32mINFO[0m - Starting TWISSTNTERN analysis
+2025-06-24 15:04:41,026 - [32mINFO[0m - Input file: /home/hlifchit/projects/twissting_baby/treeSfiles/simple_replicates_LOCUS.newick
+2025-06-24 15:04:41,027 - [32mINFO[0m - Output directory: Results
+2025-06-24 15:04:41,027 - [32mINFO[0m - granularity: 0.05
+2025-06-24 15:04:41,027 - [32mINFO[0m - taxon_names: ['O', 'P1', 'P2', 'P3']
+2025-06-24 15:04:41,027 - [32mINFO[0m - outgroup: O
+2025-06-24 15:04:41,027 - [32mINFO[0m - topology_mapping: T1="(O,(P3,(P1,P2)))"; T2="(O,(P1,(P2,P3)))"; T3="(O,(P2,(P1,P3)))";
+2025-06-24 15:04:41,027 - [32mINFO[0m - verbose: False
+2025-06-24 15:04:41,027 - [32mINFO[0m - Output directory: Results
+2025-06-24 15:04:41,027 - [32mINFO[0m - Detected file type: tree
+2025-06-24 15:04:41,027 - [32mINFO[0m - Processing tree file to generate topology weights...
+2025-06-24 15:04:41,029 - [32mINFO[0m - Detected tree format: newick
+2025-06-24 15:04:41,029 - [32mINFO[0m - Using taxon names: ['O', 'P1', 'P2', 'P3']
+2025-06-24 15:04:41,029 - [32mINFO[0m - Using outgroup: O
+2025-06-24 15:04:41,029 - [32mINFO[0m - Converting trees to topology weights...
+2025-06-24 15:04:43,261 - INFO - Applied topology mapping
+2025-06-24 15:04:43,261 - INFO - ==================================================
+2025-06-24 15:04:43,261 - INFO - Population Legend:
+2025-06-24 15:04:43,261 - INFO - --------------------
+2025-06-24 15:04:43,261 - INFO -   O = Population O
+2025-06-24 15:04:43,261 - INFO -   P1 = Population P1
+2025-06-24 15:04:43,261 - INFO -   P2 = Population P2
+2025-06-24 15:04:43,261 - INFO -   P3 = Population P3
+2025-06-24 15:04:43,261 - INFO - 
+2025-06-24 15:04:43,261 - INFO - T1:
+2025-06-24 15:04:43,261 - INFO -   String: (O,(P3,(P1,P2)));
+2025-06-24 15:04:43,261 - INFO -   ASCII Tree:
+2025-06-24 15:04:43,261 - INFO -        /-O
+2025-06-24 15:04:43,261 - INFO -     --|
+2025-06-24 15:04:43,261 - INFO -       |   /-P3
+2025-06-24 15:04:43,261 - INFO -        \-|
+2025-06-24 15:04:43,261 - INFO -          |   /-P1
+2025-06-24 15:04:43,261 - INFO -           \-|
+2025-06-24 15:04:43,261 - INFO -              \-P2
+2025-06-24 15:04:43,261 - INFO - 
+2025-06-24 15:04:43,261 - INFO - T2:
+2025-06-24 15:04:43,261 - INFO -   String: (O,(P1,(P2,P3)));
+2025-06-24 15:04:43,261 - INFO -   ASCII Tree:
+2025-06-24 15:04:43,261 - INFO -        /-O
+2025-06-24 15:04:43,261 - INFO -     --|
+2025-06-24 15:04:43,261 - INFO -       |   /-P1
+2025-06-24 15:04:43,261 - INFO -        \-|
+2025-06-24 15:04:43,261 - INFO -          |   /-P2
+2025-06-24 15:04:43,261 - INFO -           \-|
+2025-06-24 15:04:43,261 - INFO -              \-P3
+2025-06-24 15:04:43,261 - INFO - 
+2025-06-24 15:04:43,261 - INFO - T3:
+2025-06-24 15:04:43,261 - INFO -   String: (O,(P2,(P1,P3)));
+2025-06-24 15:04:43,261 - INFO -   ASCII Tree:
+2025-06-24 15:04:43,261 - INFO -        /-O
+2025-06-24 15:04:43,261 - INFO -     --|
+2025-06-24 15:04:43,261 - INFO -       |   /-P2
+2025-06-24 15:04:43,261 - INFO -        \-|
+2025-06-24 15:04:43,261 - INFO -          |   /-P1
+2025-06-24 15:04:43,261 - INFO -           \-|
+2025-06-24 15:04:43,261 - INFO -              \-P3
+2025-06-24 15:04:43,261 - INFO - 
+2025-06-24 15:04:43,261 - INFO - ==================================================
+2025-06-24 15:04:43,264 - [32mINFO[0m - Generated topology weights CSV: Results/simple_replicates_LOCUS_topology_weights.csv
+2025-06-24 15:04:43,264 - [32mINFO[0m - Loading data from: Results/simple_replicates_LOCUS_topology_weights.csv
+2025-06-24 15:04:43,264 - [32mINFO[0m - No topology header row detected. Assuming columns are T1, T2, T3 (in order).
+2025-06-24 15:04:43,494 - [32mINFO[0m - Loaded data shape: (997, 3)
+2025-06-24 15:04:43,494 - [32mINFO[0m - Running triangle analysis...
+2025-06-24 15:04:43,614 - [32mINFO[0m - Triangle analysis completed. Results shape: (190, 7)
+2025-06-24 15:04:43,614 - [32mINFO[0m - Running fundamental asymmetry analysis...
+2025-06-24 15:04:43,615 - [32mINFO[0m - Fundamental asymmetry: D_LR=0.0150, p-value=6.3474e-01
+2025-06-24 15:04:43,615 - [32mINFO[0m - Generating visualizations...
+2025-06-24 15:04:45,098 - [32mINFO[0m - Saving results...
+2025-06-24 15:04:45,099 - [32mINFO[0m - Saved triangle analysis results to: Results/simple_replicates_LOCUS_triangle_analysis.csv
+2025-06-24 15:04:45,099 - [32mINFO[0m - Analysis pipeline completed successfully!
+2025-06-24 15:04:45,099 - [32mINFO[0m - ============================================================
+2025-06-24 15:04:45,099 - [32mINFO[0m - Analysis completed successfully!
+2025-06-24 15:04:45,099 - [32mINFO[0m - Total duration: 4.07 seconds
+2025-06-24 15:04:45,099 - [32mINFO[0m - Generated files:
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/dasha_approach_LOCUS_analysis_granularity_0.1.png (278,086 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/simple_replicates_LOCUS_triangle_analysis.csv (11,806 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/CHROM_pop_triangle_analysis.csv (3,017 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/simple_replicates_LOCUS_fundamental_asymmetry.png (75,767 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/CHROM_pop_topology_weights.csv (233,092 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/simple_replicates_LOCUS_analysis_granularity_0.05.png (449,170 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/dasha_approach_LOCUS_granuality_0.1.png (618,282 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/CHROM_pop_fundamental_asymmetry.png (78,608 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/dasha_approach_LOCUS_triangle_analysis.csv (2,912 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/CHROM_pop_analysis_granularity_0.1.png (284,311 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/dasha_approach_LOCUS_topology_weights.csv (20,075 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/simple_replicates_LOCUS_topology_weights.csv (20,075 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/twisstntern_20250624_143614.log (12,842 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/dasha_approach_LOCUS_index_granularity_0.1.png (288,097 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/twisstntern_20250624_144204.log (6,919 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/twisstntern_20250624_150316.log (7,021 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/twisstntern_20250624_150441.log (7,082 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/simple_replicates_LOCUS_granuality_0.05.png (872,962 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/dasha_approach_LOCUS_fundamental_asymmetry.png (77,914 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/simple_replicates_LOCUS_index_granularity_0.05.png (578,254 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/CHROM_pop_granuality_0.1.png (1,328,495 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m -   ✓ Results/CHROM_pop_index_granularity_0.1.png (288,097 bytes)
+2025-06-24 15:04:45,100 - [32mINFO[0m - ============================================================

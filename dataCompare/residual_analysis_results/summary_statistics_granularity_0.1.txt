@@ -1,8 +1,8 @@
 Topology Weights Residual Analysis Summary
 ==================================================
 
-Data 1: /home/hlifchit/twisstntern2.0/dataCompare/migration_topology_weights.csv
-Data 2: /home/hlifchit/twisstntern2.0/dataCompare/NoMigration_topology_weights.csv
+Data 1: /home/hlifchit/projects/twissting_baby/dataCompare/migration_topology_weights.csv
+Data 2: /home/hlifchit/projects/twissting_baby/dataCompare/NoMigration_topology_weights.csv
 Granularity: 0.1
 
 L2_distance: 1.671464e+02

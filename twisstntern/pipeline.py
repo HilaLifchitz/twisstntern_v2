@@ -11,6 +11,7 @@ from twisstntern.visualization import (
     plot_results,
     plotting_triangle_index,
     plot_fundamental_asymmetry,
+    plot_ternary_heatmap_data,
 )
 from twisstntern.tree_processing import (
     detect_and_read_trees,
@@ -155,6 +156,7 @@ def run_analysis(
     outgroup=None,
     output_dir="Results",
     topology_mapping=None,
+    downsample=None,
 ):
     """
     Orchestrates the full analysis and visualization pipeline for both tree files and CSV files.
@@ -170,6 +172,7 @@ def run_analysis(
         topology_mapping (str, optional): User-defined topology mapping for custom topology ordering.
                                          Format: 'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
                                          Ignored for CSV files.
+        downsample (int, optional): Downsample factor for topology weights
 
     Returns:
         tuple: (results, fundamental_results, csv_file_used)
@@ -255,9 +258,25 @@ def run_analysis(
     # Load and process the CSV data (either original or generated from trees)
     logger.info(f"Loading data from: {csv_file}")
     print(f"Loading data from: {csv_file}")
-    data = dump_data(csv_file)
+    data = dump_data(csv_file, logger=logger)
+    n_before_trim = len(data)
     logger.info(f"Loaded data shape: {data.shape}")
     logger.debug(f"Data columns: {list(data.columns)}")
+
+    # Downsample if requested
+    if downsample is not None and downsample > 1:
+        logger.info(f"Downsampling: keeping every {downsample}th row of topology weights.")
+        print(f"Downsampling: keeping every {downsample}th row of topology weights.")
+        data_trimmed = data.iloc[::downsample, :].reset_index(drop=True)
+        trimmed_csv_file = str(Path(csv_file).with_name(Path(csv_file).stem + "_trimmed.csv"))
+        data_trimmed.to_csv(trimmed_csv_file, index=False)
+        logger.info(f"Trimmed topology weights saved to: {trimmed_csv_file}")
+        n_after_trim = len(data_trimmed)
+        logger.info(f"Number of data points after downsampling: {n_after_trim}")
+        data = data_trimmed
+        csv_file = trimmed_csv_file
+    else:
+        n_after_trim = n_before_trim
 
     # Run standard twisstntern analyses
     logger.info("Running triangle analysis...")
@@ -268,7 +287,26 @@ def run_analysis(
     logger.info("Running fundamental asymmetry analysis...")
     print("Running fundamental asymmetry analysis...")
     fundamental_results = fundamental_asymmetry(data)
-    logger.info(f"Fundamental asymmetry: D_LR={fundamental_results[2]:.4f}, p-value={fundamental_results[4]:.4e}")
+    n_right = fundamental_results[0]
+    n_left = fundamental_results[1]
+    n_used = n_right + n_left
+    n_filtered = n_after_trim - n_used
+
+    logger.info("="*60)
+    logger.info("FUNDAMENTAL ASYMMETRY RESULTS")
+    logger.info("="*60)
+    logger.info(f"Data file used: {csv_file}")
+    logger.info(f"Total data points before downsampling: {n_before_trim}")
+    if downsample is not None and downsample > 1:
+        logger.info(f"Total data points after downsampling: {n_after_trim}")
+    logger.info(f"Total data points used in symmetry analysis: {n_used} (n_right + n_left = {n_used})")
+    logger.info(f"Note: {n_filtered} data points were filtered out (where T2 = T3, which fall exactly on the y-axis in ternary space)")
+    logger.info(f"n_right: {n_right}")
+    logger.info(f"n_left: {n_left}")
+    logger.info(f"D_LR: {fundamental_results[2]:.4f}")
+    logger.info(f"G-test: {fundamental_results[3]:.4f}")
+    logger.info(f"p-value: {fundamental_results[4]:.4e}")
+    logger.info("="*60)
 
     # Generate output prefix based on original file name
     output_prefix = str(results_dir / Path(file).stem)
@@ -281,6 +319,18 @@ def run_analysis(
     logger.debug("Generated fundamental asymmetry plot")
     plot(data, granularity, output_prefix)
     logger.debug("Generated ternary plot")
+    # New: Ternary heatmap (proportion, colored grid)
+    plot_ternary_heatmap_data(data, granularity, output_prefix, colormap="viridis", grid_color=None, normalize=True)
+    logger.debug("Generated ternary heatmap (proportion, colored grid)")
+    # New: Ternary heatmap (proportion, all grey grid)
+    plot_ternary_heatmap_data(data, granularity, output_prefix + "_greygrid", colormap="viridis", grid_color="#888888", normalize=True)
+    logger.debug("Generated ternary heatmap (proportion, all grey grid)")
+    # New: Ternary heatmap (raw count, colored grid)
+    plot_ternary_heatmap_data(data, granularity, output_prefix + "_count", colormap="viridis", grid_color=None, normalize=False)
+    logger.debug("Generated ternary heatmap (count, colored grid)")
+    # New: Ternary heatmap (raw count, all grey grid)
+    plot_ternary_heatmap_data(data, granularity, output_prefix + "_count_greygrid", colormap="viridis", grid_color="#888888", normalize=False)
+    logger.debug("Generated ternary heatmap (count, all grey grid)")
     plot_results(results, granularity, output_prefix)
     logger.debug("Generated results plot")
     plotting_triangle_index(granularity, output_prefix)
