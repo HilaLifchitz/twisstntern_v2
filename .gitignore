@@ -39,3 +39,4 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db miniconda.sh
+miniconda.sh
