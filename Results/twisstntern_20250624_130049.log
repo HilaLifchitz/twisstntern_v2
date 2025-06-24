@@ -1,0 +1,45 @@
+2025-06-24 13:00:49,382 - [32mINFO[0m - ============================================================
+2025-06-24 13:00:49,382 - [32mINFO[0m - TWISSTNTERN Analysis Session
+2025-06-24 13:00:49,382 - [32mINFO[0m - ============================================================
+2025-06-24 13:00:49,382 - [32mINFO[0m - Python version: 3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]
+2025-06-24 13:00:49,384 - [32mINFO[0m - Platform: Linux-6.11.0-26-generic-x86_64-with-glibc2.39
+2025-06-24 13:00:49,384 - [32mINFO[0m - Working directory: /home/hlifchit/projects/twissting baby
+2025-06-24 13:00:49,384 - [32mINFO[0m - Starting TWISSTNTERN analysis
+2025-06-24 13:00:49,384 - [32mINFO[0m - Input file: /home/hlifchit/projects/twissting baby/csv files/gene_flow_sims/A_m0EDITED.csv
+2025-06-24 13:00:49,384 - [32mINFO[0m - Output directory: Results
+2025-06-24 13:00:49,384 - [32mINFO[0m - granularity: 0.1
+2025-06-24 13:00:49,384 - [32mINFO[0m - verbose: False
+2025-06-24 13:00:49,384 - [32mINFO[0m - Output directory: Results
+2025-06-24 13:00:49,384 - [32mINFO[0m - Detected file type: csv
+2025-06-24 13:00:49,384 - [32mINFO[0m - Using CSV file directly for analysis
+2025-06-24 13:00:49,385 - [32mINFO[0m - Loading data from: /home/hlifchit/projects/twissting baby/csv files/gene_flow_sims/A_m0EDITED.csv
+2025-06-24 13:00:55,706 - [32mINFO[0m - Loaded data shape: (29691, 3)
+2025-06-24 13:00:55,706 - [32mINFO[0m - Running triangle analysis...
+2025-06-24 13:00:55,741 - [32mINFO[0m - Triangle analysis completed. Results shape: (45, 7)
+2025-06-24 13:00:55,741 - [32mINFO[0m - Running fundamental asymmetry analysis...
+2025-06-24 13:00:55,742 - [32mINFO[0m - Fundamental asymmetry: D_LR=0.0557, p-value=0.0000e+00
+2025-06-24 13:00:55,742 - [32mINFO[0m - Generating visualizations...
+2025-06-24 13:00:56,724 - [32mINFO[0m - Saving results...
+2025-06-24 13:00:56,725 - [32mINFO[0m - Saved triangle analysis results to: Results/A_m0EDITED_triangle_analysis.csv
+2025-06-24 13:00:56,725 - [32mINFO[0m - Analysis pipeline completed successfully!
+2025-06-24 13:00:56,726 - [32mINFO[0m - ============================================================
+2025-06-24 13:00:56,726 - [32mINFO[0m - Analysis completed successfully!
+2025-06-24 13:00:56,726 - [32mINFO[0m - Total duration: 7.34 seconds
+2025-06-24 13:00:56,726 - [32mINFO[0m - Generated files:
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/chromosome_fundamental_asymmetry.png (77,221 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/A_m0EDITED_analysis_granularity_0.1.png (275,423 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/A_m0EDITED_granuality_0.1.png (2,602,520 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/chromosome_granuality_0.1.png (1,346,018 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/chromosome_topology_weights.csv (231,309 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/A_m0EDITED_fundamental_asymmetry.png (78,398 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/A_m0EDITED_triangle_analysis.csv (3,147 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/twisstntern_20250624_130049.log (3,128 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/chromosome_trees.newick (19,762,665 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/A_m0EDITED_index_granularity_0.1.png (288,097 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/twisstntern_20250620_135551.log (9,807 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/chromosome_triangle_analysis.csv (3,029 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/chromosome_analysis_granularity_0.1.png (279,781 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/twisstntern_20250620_133112.log (10,164 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/twisstntern_20250618_221146.log (9,881 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m -   ✓ Results/chromosome_index_granularity_0.1.png (288,096 bytes)
+2025-06-24 13:00:56,726 - [32mINFO[0m - ============================================================
