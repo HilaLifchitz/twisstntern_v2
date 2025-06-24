@@ -1,0 +1,15 @@
+(((cra,his),sit),L10_A,L10_a);
+(((cra,his),L10_A),sit,L10_a);
+(((cra,his),L10_a),sit,L10_A);
+(((cra,sit),his),L10_A,L10_a);
+(((cra,sit),L10_A),his,L10_a);
+(((cra,sit),L10_a),his,L10_A);
+(((cra,L10_A),his),sit,L10_a);
+(((cra,L10_A),sit),his,L10_a);
+(((cra,L10_A),L10_a),his,sit);
+(((cra,L10_a),his),sit,L10_A);
+(((cra,L10_a),sit),his,L10_A);
+(((cra,L10_a),L10_A),his,sit);
+((cra,(his,sit)),L10_A,L10_a);
+((cra,(his,L10_A)),sit,L10_a);
+((cra,(his,L10_a)),sit,L10_A);
