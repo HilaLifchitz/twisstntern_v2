@@ -1,29 +1,28 @@
-Hila, 10.06.25
+Hila, 26.06.25
 
--1. look at the text!
+missions for today and tmr
 
-0. twisstntern -- get rid of logging information twice -- no idea how!!!
-                - add topology axis vhoice into the parser -- DONE!! :)
-                - a comprehensice cli test!! DONE
-                - create a logger which outputs to the Results file -- DONE!
+- check that twisstntern yes understands the first line as topologies-
+(not super important)
 
-1. Consider wether the (supposedly) optimized batch code for the  ts_to_twisst_weights
-    in the ts_processing versus tree_processing really makes a difference.
-    see the debugs.py code 
-    DECIDE ON 1 STRATEGY AND APPLY IN BOTH --- DONE: conclusion- batch is fake news
+- finish the visualization: 1- color scheme prepared
+                            0 - add the empty subtriangle script from dasha
+                            2 - now the same for the subtriangles populations
+                            3 - plot function- play about
 
-    
+                            meanwhile everything just on twisstntern
 
-2. Finish twisstntern_simulate - the version with the yaml config template
-                               - how to add parsing form the command line- hydra? ask Sanketh
-                               - add topology reordering option-- to the parer also
-                               - add override option to the parser
-                               - a comprehensice CLI test
+  add the --downsample N+index thingy at both
+
+figure out the wasserstein distnace- seperate script
+do the data_copmare option - residuals
+produce the examples compare again
+
+--------------------------------------------------------------------
+
 
                               
-URGENT- compare the two ways of saving the locus mode- compare the simulate- 
-to running over the two saved trees with the usual twisstNtern!!! -- come back to it!
---DONE -option 1 (not dasha) is best
+10.6
 
 3. write a script that compares two toplogy weights distributions like the pic that Sean sent to DIscord
 
@@ -33,8 +32,8 @@ to running over the two saved trees with the usual twisstNtern!!! -- come back t
 
 6. start thinking about visualizations for 5 populations! - poke Dasha for the data
 
-7. for fun write an alg. that figures out number of topologies for a number of populations (leaves) - rooted and unrooted
 
 8.(?) combining topologies in edges- plotting simplex of the next dimenstion- visualization considerations
 
 9. benchmarkings?
+

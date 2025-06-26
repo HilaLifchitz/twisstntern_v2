@@ -6,12 +6,13 @@ import pandas as pd
 
 from twisstntern.utils import dump_data
 from twisstntern.analysis import triangles_analysis, fundamental_asymmetry
-from twisstntern.visualization import (
+from twisstntern.visualization import ( # add the plot functions here 25.6
     plot,
     plot_results,
     plotting_triangle_index,
     plot_fundamental_asymmetry,
     plot_ternary_heatmap_data,
+    plot_genome_position_2d
 )
 from twisstntern.tree_processing import (
     detect_and_read_trees,
@@ -149,7 +150,7 @@ def process_tree_file(
 
 
 # default granularity is 0.1
-def run_analysis(
+def run_analysis( # add plot functions here 25.6
     file,
     granularity=0.1,
     taxon_names=None,
@@ -312,27 +313,30 @@ def run_analysis(
     output_prefix = str(results_dir / Path(file).stem)
     logger.debug(f"Output prefix: {output_prefix}")
 
-    # Generate all plots
+    #################################################################
+    #                         Plots
+    #################################################################
+    # Generate all plots # add plot functions here 25.6
     logger.info("Generating visualizations...")
     print("Generating visualizations...")
+    # the main triangles plot
     plot_fundamental_asymmetry(data, output_prefix)
     logger.debug("Generated fundamental asymmetry plot")
+    # the ternary plot with data points
     plot(data, granularity, output_prefix)
     logger.debug("Generated ternary plot")
-    # New: Ternary heatmap (proportion, colored grid)
-    plot_ternary_heatmap_data(data, granularity, output_prefix, colormap="viridis", grid_color=None, normalize=True)
-    logger.debug("Generated ternary heatmap (proportion, colored grid)")
-    # New: Ternary heatmap (proportion, all grey grid)
-    plot_ternary_heatmap_data(data, granularity, output_prefix + "_greygrid", colormap="viridis", grid_color="#888888", normalize=True)
-    logger.debug("Generated ternary heatmap (proportion, all grey grid)")
-    # New: Ternary heatmap (raw count, colored grid)
-    plot_ternary_heatmap_data(data, granularity, output_prefix + "_count", colormap="viridis", grid_color=None, normalize=False)
-    logger.debug("Generated ternary heatmap (count, colored grid)")
-    # New: Ternary heatmap (raw count, all grey grid)
-    plot_ternary_heatmap_data(data, granularity, output_prefix + "_count_greygrid", colormap="viridis", grid_color="#888888", normalize=False)
-    logger.debug("Generated ternary heatmap (count, all grey grid)")
+
+    # the hat maps
+    # plot_genome_position_2d(data, output_prefix, genome_positions=None, colormap=colormap)
+    # logger.debug("Generated genome position plot")
+    # New: Ternary heatmap (count, dark grey grid)
+    plot_ternary_heatmap_data(data, granularity, output_prefix)
+    logger.debug("Generated ternary heatmap (count, dark grey grid)")
+
+    
     plot_results(results, granularity, output_prefix)
     logger.debug("Generated results plot")
+    # the triangle index plot
     plotting_triangle_index(granularity, output_prefix)
     logger.debug("Generated triangle index plot")
 

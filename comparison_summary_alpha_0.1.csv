@@ -1,2 +1,0 @@
-l2_distance,chi_squared,chi_squared_pvalue,wasserstein_euclidean,wasserstein_kl,asym1_dlr,asym1_pvalue,asym2_dlr,asym2_pvalue,residual_mean,residual_std,residual_min,residual_max
-149.60548118301014,21926.399153059378,0.0,0.024719516695682606,0.05786209855557091,-0.2328,0.0,0.006,0.5485050358762513,-5.204170427930421e-20,0.014960548118301014,-0.0368,0.07429999999999999

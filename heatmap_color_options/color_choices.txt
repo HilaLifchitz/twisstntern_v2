@@ -1,0 +1,49 @@
+ Get professional diverging colormaps suitable for scientific publication.
+    
+    Args:
+        style (str): One of the following professional colormap styles:
+            - "RdBu_r": Red-Blue diverging (reversed) - classic scientific
+            - "coolwarm": Cool-warm diverging - Nature journal style
+            - "seismic": Seismic diverging - Geophysical style
+            - "seismic_soft": Soft seismic - lighter, more pastel version
+            - "seismic_bold": Bold seismic - more vibrant version
+            - "seismic_enhanced": Enhanced seismic - better white center
+            - "bwr": Blue-White-Red - clean and professional
+            - "PRGn": Purple-Green diverging - colorblind friendly
+            - "PiYG": Pink-Yellow-Green diverging - vibrant but professional
+            - "viridis": Viridis - modern and colorblind friendly
+            - "plasma": Plasma - vibrant purple to yellow
+            - "magma": Magma - dark to light
+            - "inferno": Inferno - dark to bright
+            - "inferno_r": Reversed inferno
+            - "inferno_r_soft": Reversed inferno with subtle yellow start
+            - "inferno_midrange": Custom inferno with mid-range center instead of white
+            - "inferno_midrange_r": Reversed inferno_midrange
+            - "vlag": Violet-Light Blue diverging
+            - "PuOr": Purple-Orange diverging
+            - "blue_grey_red": Custom Blue-Grey-Red diverging
+            - "Greys": Light gray to black - clean, minimal
+            - "Blues": White to dark blue - elegant, geoscience
+            - "Reds": White to dark red - elegant, warm
+            - "Greens": White to dark green - natural, environmental
+            - "Oranges": White to dark orange - warm, energetic
+            - "YlOrRd": Yellow to orange to red - vibrant sequential
+            - "Purples": Light lavender to deep purple - density plots
+            - "rocket_r": Seaborn sequential reversed - light red to dark maroon
+            - "mako_r": Seaborn sequential reversed - light teal to deep blue
+            - "crest_r": Seaborn cool gradient reversed - light aqua to dark blue/green
+            - "BuGn_r": Blue-green reversed - light to dark cyan
+            - "copper": White to brownish-black - physical sciences
+            - "Greys_r": Black to light gray - reversed
+            - "Blues_r": Dark blue to white - reversed
+            - "Purples_r": Deep purple to light lavender - reversed
+            - "rocket": Seaborn sequential - dark maroon to light red
+            - "mako": Seaborn sequential - deep blue to light teal
+            - "crest": Seaborn cool gradient - dark blue/green to light aqua
+            - "BuGn": Blue-green - dark cyan to light
+            - "BuGn_r": Blue-green reversed - light to dark cyan
+            - "BuViolet": Blue to violet - elegant gradient
+            - "BuMagenta": Blue to magenta - vibrant gradient
+            - "BuPi": Blue to pink - starts exactly like BuGn, ends in pink
+            - "BuPu": Blue to purple - starts exactly like BuGn, ends in dark dramatic purple
+        truncate (bool): Whether to truncate the colormap to avoid extreme colors
