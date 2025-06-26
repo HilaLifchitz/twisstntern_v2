@@ -5,10 +5,55 @@ import argparse
 import os
 import sys
 import time
+import re
 from pathlib import Path
 
 from twisstntern.pipeline import run_analysis, ensure_twisst_available
 from twisstntern.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
+
+
+def parse_downsample_arg(downsample_str):
+    """
+    Parse downsample argument in format 'N' or 'N+i' where:
+    - N = sample every Nth tree/locus
+    - i = starting index (offset)
+    - If only N is provided, default to N+0 (start from index 0)
+    - Constraint: i < N (offset must be less than the sampling interval)
+    
+    Args:
+        downsample_str (str): String in format 'N' or 'N+i'
+        
+    Returns:
+        tuple: (N, i) where N is the sampling interval and i is the starting index
+        
+    Raises:
+        ValueError: If format is invalid or i >= N
+    """
+    if downsample_str is None:
+        return None, None
+        
+    # Check if it's just a number (N format)
+    if downsample_str.isdigit():
+        N = int(downsample_str)
+        if N < 1:
+            raise ValueError("Downsample interval N must be >= 1")
+        return N, 0  # Default to starting from index 0
+    
+    # Check if it's in N+i format
+    match = re.match(r'^(\d+)\+(\d+)$', downsample_str)
+    if match:
+        N = int(match.group(1))
+        i = int(match.group(2))
+        
+        if N < 1:
+            raise ValueError("Downsample interval N must be >= 1")
+        if i >= N:
+            raise ValueError(f"Starting index i ({i}) must be < N ({N})")
+            
+        return N, i
+    
+    # Invalid format
+    raise ValueError(f"Invalid downsample format: '{downsample_str}'. Use 'N' or 'N+i' (e.g., '10' or '10+3')")
 
 
 def main():
@@ -50,9 +95,11 @@ def main():
     )
     parser.add_argument(
         "--downsample",
-        type=int,
+        type=str,
         default=None,
-        help="If set, only every Nth row of the topology weights will be used for analysis (downsampling).",
+        help="Downsample format: 'N' or 'N+i' where N=sample every Nth row, i=starting index. "
+             "Examples: '10' (every 10th starting from 0), '10+1' (every 10th starting from index 1), "
+             "'5+3' (every 5th starting from index 3). Constraint: i < N.",
     )
     parser.add_argument(
         "-o",
@@ -106,6 +153,13 @@ def main():
     except ValueError:
         granularity = args.granularity
 
+    # Parse downsample argument
+    try:
+        downsample_N, downsample_i = parse_downsample_arg(args.downsample)
+    except ValueError as e:
+        logger.error(f"Invalid downsample argument: {e}")
+        sys.exit(1)
+
     # Log analysis start
     log_analysis_start(
         input_file=str(file_path),
@@ -128,7 +182,8 @@ def main():
             outgroup=args.outgroup,
             output_dir=output_dir,
             topology_mapping=args.topology_mapping,
-            downsample=args.downsample,
+            downsample_N=downsample_N,
+            downsample_i=downsample_i,
         )
 
         # Calculate duration

@@ -122,7 +122,8 @@ python -m twisstntern INPUT [GRANULARITY] [OPTIONS]
   Manually specify which topology corresponds to each axis label (T1, T2, T3) in the ternary plot.  
   Useful for ensuring consistency across runs or datasets. Format:  
   `'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'`
-- `--downsample N`: Downsample the data by keeping only every Nth tree/locus. Works for both locus and chromosome mode.
+- `--downsample N` or `--downsample "N+i"`: Downsample the data by keeping only every Nth tree/locus. 
+  - **Format**: `N` (every Nth starting from index 0) or `"N+i"` (every Nth starting from index i< N)
 - `--verbose`: Enable verbose logging (DEBUG level)
 - `--help`: Show help message
 
@@ -339,13 +340,25 @@ python -m twisstntern_simulate -c CONFIG [-o OUTPUT] [--downsample N] [--downsam
 
 - `-c`, `--config`: **(Required)** Path to a YAML configuration file specifying simulation parameters (see `twisstntern_simulate/config_template.yaml` for an example).
 - `-o`, `--output`: Output directory for results. Defaults to `Results/`.
-- `--downsample N`: Downsample the data by keeping only every Nth tree/locus. Works for both locus and chromosome mode.
-- `--downsampleKB N`: **(chromosome mode only)** Downsample by keeping one tree every N kilobases along the simulated chromosome. Requires an integer argument (e.g., `--downsampleKB 100` for every 100 kb). This option is ignored in locus mode. The output CSV will always include a `position` column in chromosome mode, representing the start position of each tree along the chromosome, which is used for KB-based downsampling.
+- `--downsample N` or `--downsample "N+i"`: Downsample the data by keeping only every Nth tree/locus.Or every Nth starting from index i< N. Works for both locus and chromosome mode.
+- `--downsampleKB Nkb` or `--downsampleKB Nkb+ikb`: **(chromosome mode only)** Downsample by keeping one tree every N kilobases along the simulated chromosome.
+  - **Format**: `Nkb` (every N kb starting from position 0) or `Nkb+ikb` (every N kb starting from position i)
+  - **Units supported**: kb (kilobases), mb (megabases), gb (gigabases), or bp (base pairs)
+  - **Examples**: 
+    - `--downsampleKB "100kb"` → every 100kb starting from position 0
+    - `--downsampleKB "100kb+50kb"` → every 100kb starting from 50kb
+    - `--downsampleKB "50kb+25000"` → every 50kb starting from 25,000 bp
+  - **Constraint**: i < N (starting position must be less than sampling interval)
+  - **This option is ignored in locus mode**
 - `--granularity`: Set analysis granularity (default = 0.1).
 - `--topology-mapping`: Manually specify which topology corresponds to each axis label (T1, T2, T3) in the ternary plot.
   Format: `'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'`
   Useful for ensuring consistency across runs or datasets.
-- `--override`: Overriding paramters given in the config.yaml: 'parameter_path=value'
+- `--override`: Override configuration values using the format 'key=value' or 'nested.key=value'. Examples:
+  - `--override "migration.p2>p3=0.1"` → Set migration rate from population p2 to p3 to 0.1
+  - `--override "populations.p1.Ne=2000"` → Set effective population size of p1 to 2000
+  - `--override "samplesize=20"` → Set sample size to 20 for all non-ancestral populations
+  - `--override "seed=12345"` → Set random seed to 12345
 - `--skip-twisst-check`: Skip checking for the TWISST executable.
 - `--force-download`: Force re-download of the TWISST executable.
 - `--verbose`: Enable verbose logging.
@@ -356,20 +369,27 @@ python -m twisstntern_simulate -c CONFIG [-o OUTPUT] [--downsample N] [--downsam
 **Examples:**
 
 ```bash
-# Downsample to every 10th locus (locus mode)
+# Basic downsampling - every 10th locus/tree starting from index 0
 python -m twisstntern_simulate -c config_template.yaml --downsample 10
 
-# Downsample to every 10th tree (chromosome mode)
-python -m twisstntern_simulate -c config_template.yaml --downsample 10
+# Enhanced downsampling - every 10th tree starting from index 3
+python -m twisstntern_simulate -c config_template.yaml --downsample "10+3"
 
-# Downsample to one tree every 50 kb (chromosome mode only)
-python -m twisstntern_simulate -c config_template.yaml --downsampleKB 50
+# KB-based downsampling - every 100kb starting from position 0
+python -m twisstntern_simulate -c config_template.yaml --downsampleKB "100kb"
+
+# Enhanced KB-based downsampling - every 100kb starting from 50kb
+python -m twisstntern_simulate -c config_template.yaml --downsampleKB "100kb+50kb"
+
+# KB-based downsampling with different units - every 1000kb starting from 30mb
+python -m twisstntern_simulate -c config_template.yaml --downsampleKB "1000kb+30mb"
+
+# Override sample size for all populations
+python -m twisstntern_simulate -c config_template.yaml --override "samplesize=20"
+
+# Multiple overrides including sample size
+python -m twisstntern_simulate -c config_template.yaml --override "samplesize=15" --override "migration.p2>p3=0.1" --override "populations.p1.Ne=2000"
 ```
-
-**Note:**
-- If both `--downsample` and `--downsampleKB` are provided in chromosome mode, `--downsample` takes precedence.
-- The log file will record the number of data points (trees/loci) before and after downsampling/trimming, as well as after filtering for symmetry analysis, matching the detailed logging style of the main `twisstntern` tool.
-- `--downsampleKB` must be followed by an integer value (e.g., `--downsampleKB 100`).
 
 ---
 
@@ -419,91 +439,4 @@ The override system automatically converts values to appropriate types:
 
 - **Integers**: `seed=1234` → `1234` (int)
 - **Floats**: `Ne=1000.5` → `1000.5` (float)
-- **Scientific notation**: `mutation_rate=1e-7` → `0.0000001` (float)
-- **Booleans**: `param=true` → `True`, `param=false` → `False` (bool)
-
-#### **Examples**
-
-**Basic single override:**
-
-```bash
-python -m twisstntern_simulate --config config_template.yaml --output test_migration/ \
-  --override "migration.p2>p3=0.3"
-```
-
-**Multiple parameter overrides:**
-
-```bash
-python -m twisstntern_simulate --config config_template.yaml --output scientific_test/ \
-  --override "rec_rate=2e-8" \
-  --override "mutation_rate=1e-7" \
-  --override "migration.p2>p3=0.8" \
-  --override "populations.p1.Ne=5000" \
-  --topology-mapping 'T1="(0,(1,(2,3)))"; T2="(0,(2,(1,3)))"; T3="(0,(3,(1,2)))";'
-```
-
-#### **What gets logged**
-
-Evrything that gets logged in twisstntern (System Information, Analysis Parameters, Processing Steps, Topology Information, Results Summary, Error Context). Additionaly, all the paramters in the config sile, including all applied overrides with the before/after values.
-
-#### **Error Handling**
-
-The system provides clear error messages for invalid overrides:
-
-- **Invalid format**: `--override "invalid_format"` → Error: Expected 'key=value'
-- **Unknown parameters**: `--override "nonexistent_param=123"` → Error: Unknown configuration key
-- **Invalid population names**: `--override "populations.invalid_pop.Ne=1000"` → Error: Population not found
-- **Invalid migration routes**: `--override "migration.invalid>route=0.1"` → Error: Population not found
-
----
-
-### 📝 Output
-
-All results are saved to the specified output directory.  
-If no directory is provided, a default `Results/` folder will be created automatically.
-
-In addition to the standard `twisstntern` outputs (weights, CSVs, plots), this module also saves the simulated trees `msprime` generated in Newick format.
-
-**Integration:**  
-You can use the outputs from `twisstntern_simulate` directly with the main `twisstntern` analysis tools for further exploration.
-
----
-
-## 📚 Citation
-
-If you use **TWISSTNTERN**, please cite:
-
-**Stankowski, S., Zagrodzka, Z. B., Garlovsky, M. D., Pal, A., Shipilina, D., Garcia Castillo, D., Lifchitz, H., et al.** (2024). _The genetic basis of a recent transition to live-bearing in marine snails_. **Science**, 383(6678), 114–119. [https://doi.org/10.1126/science.adi2982](https://doi.org/10.1126/science.adi2982)
-
-> This study is the first to use the TWISSTNTERN method to examine patterns of tree discordance in _Littorina_.
-
-Also cite the original topology weighting method:
-
-**Martin, S. H., & Van Belleghem, S. M.** (2017). _Exploring evolutionary relationships across the genome using topology weighting_. **Genetics**, 206(1), 429–438. [https://doi.org/10.1534/genetics.116.194720](https://doi.org/10.1534/genetics.116.194720)
-
----
-
-## Dependencies
-
-- `numpy>=1.21.0`
-- `pandas>=1.3.0`
-- `scipy>=1.7.0`
-- `matplotlib>=3.4.0`
-- `tskit>=0.4.0`
-- `msprime>=1.0.0`
-- `ete3>=3.1.0`
-- `requests>=2.25.0`
-
----
-
-## Contributing
-
-Feedback, issues, and enhancement suggestions are welcome!  
-To install in development mode and test the CLI:
-
-```bash
-pip install -r requirements.txt
-pip install -e .
-python -m twisstntern --help
-python -m twisstntern_simulate --help
-```
+- **Scientific notation**: `mutation_rate=1e-7` → `0.0000001`

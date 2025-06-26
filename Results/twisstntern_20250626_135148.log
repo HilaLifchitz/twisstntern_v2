@@ -1,0 +1,75 @@
+2025-06-26 13:51:48,403 - [32mINFO[0m - ============================================================
+2025-06-26 13:51:48,403 - [32mINFO[0m - TWISSTNTERN Analysis Session
+2025-06-26 13:51:48,403 - [32mINFO[0m - ============================================================
+2025-06-26 13:51:48,403 - [32mINFO[0m - Python version: 3.11.13 (main, Jun  5 2025, 13:12:00) [GCC 11.2.0]
+2025-06-26 13:51:48,406 - [32mINFO[0m - Platform: Linux-6.11.0-26-generic-x86_64-with-glibc2.39
+2025-06-26 13:51:48,406 - [32mINFO[0m - Working directory: /home/hlifchit/projects/twissting_baby
+2025-06-26 13:51:48,407 - [32mINFO[0m - Starting TWISSTNTERN analysis
+2025-06-26 13:51:48,407 - [32mINFO[0m - Input file: /home/hlifchit/projects/twissting_baby/csv files/gene_flow_sims/A_m0.csv
+2025-06-26 13:51:48,407 - [32mINFO[0m - Output directory: Results
+2025-06-26 13:51:48,407 - [32mINFO[0m - granularity: 0.1
+2025-06-26 13:51:48,407 - [32mINFO[0m - verbose: False
+2025-06-26 13:51:48,407 - [32mINFO[0m - Output directory: Results
+2025-06-26 13:51:48,407 - [32mINFO[0m - Detected file type: csv
+2025-06-26 13:51:48,407 - [32mINFO[0m - Using CSV file directly for analysis
+2025-06-26 13:51:48,407 - [32mINFO[0m - Loading data from: /home/hlifchit/projects/twissting_baby/csv files/gene_flow_sims/A_m0.csv
+2025-06-26 13:51:48,407 - [32mINFO[0m - No topology header row detected. Assuming columns are T1, T2, T3 (in order).
+2025-06-26 13:51:56,917 - [32mINFO[0m - Loaded data shape: (29654, 3)
+2025-06-26 13:51:56,918 - [32mINFO[0m - Downsampling: keeping every 100th row starting from index 0.
+2025-06-26 13:51:56,921 - [32mINFO[0m - Trimmed topology weights saved to: /home/hlifchit/projects/twissting_baby/csv files/gene_flow_sims/A_m0_trimmed.csv
+2025-06-26 13:51:56,921 - [32mINFO[0m - Number of data points after downsampling: 297
+2025-06-26 13:51:56,921 - [32mINFO[0m - Running triangle analysis...
+2025-06-26 13:51:56,953 - [32mINFO[0m - Triangle analysis completed. Results shape: (45, 7)
+2025-06-26 13:51:56,953 - [32mINFO[0m - Running fundamental asymmetry analysis...
+2025-06-26 13:51:56,954 - [32mINFO[0m - ============================================================
+2025-06-26 13:51:56,954 - [32mINFO[0m - FUNDAMENTAL ASYMMETRY RESULTS
+2025-06-26 13:51:56,954 - [32mINFO[0m - ============================================================
+2025-06-26 13:51:56,954 - [32mINFO[0m - Data file used: /home/hlifchit/projects/twissting_baby/csv files/gene_flow_sims/A_m0_trimmed.csv
+2025-06-26 13:51:56,954 - [32mINFO[0m - Total data points before downsampling: 29654
+2025-06-26 13:51:56,954 - [32mINFO[0m - Total data points after downsampling: 297
+2025-06-26 13:51:56,954 - [32mINFO[0m - Total data points used in symmetry analysis: 297 (n_right + n_left = 297)
+2025-06-26 13:51:56,954 - [32mINFO[0m - Note: 0 data points were filtered out (where T2 = T3, which fall exactly on the y-axis in ternary space)
+2025-06-26 13:51:56,954 - [32mINFO[0m - n_right: 152
+2025-06-26 13:51:56,954 - [32mINFO[0m - n_left: 145
+2025-06-26 13:51:56,954 - [32mINFO[0m - D_LR: 0.0236
+2025-06-26 13:51:56,954 - [32mINFO[0m - G-test: 0.1650
+2025-06-26 13:51:56,954 - [32mINFO[0m - p-value: 6.8460e-01
+2025-06-26 13:51:56,954 - [32mINFO[0m - ============================================================
+2025-06-26 13:51:56,954 - [32mINFO[0m - Generating visualizations...
+2025-06-26 13:51:58,544 - [32mINFO[0m - Saving results...
+2025-06-26 13:51:58,545 - [32mINFO[0m - Saved triangle analysis results to: Results/A_m0_triangle_analysis.csv
+2025-06-26 13:51:58,545 - [32mINFO[0m - Analysis pipeline completed successfully!
+2025-06-26 13:51:58,545 - [32mINFO[0m - ============================================================
+2025-06-26 13:51:58,545 - [32mINFO[0m - Analysis completed successfully!
+2025-06-26 13:51:58,545 - [32mINFO[0m - Total duration: 10.14 seconds
+2025-06-26 13:51:58,545 - [32mINFO[0m - Generated files:
+2025-06-26 13:51:58,545 - [32mINFO[0m -   ✓ Results/twisstntern_20250626_124245.log (5,004 bytes)
+2025-06-26 13:51:58,545 - [32mINFO[0m -   ✓ Results/twisstntern_20250626_133051.log (755 bytes)
+2025-06-26 13:51:58,545 - [32mINFO[0m -   ✓ Results/twisstntern_20250626_135016.log (1,714 bytes)
+2025-06-26 13:51:58,545 - [32mINFO[0m -   ✓ Results/twisstntern_20250626_133330.log (11,097 bytes)
+2025-06-26 13:51:58,545 - [32mINFO[0m -   ✓ Results/migration_topology_weights_fundamental_asymmetry.png (105,928 bytes)
+2025-06-26 13:51:58,545 - [32mINFO[0m -   ✓ Results/A_m0_heatmap_count.png (377,415 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/chromosome_fundamental_asymmetry.png (72,843 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/A_m0_analysis_granularity_0.1.png (311,711 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/twisstntern_20250626_133922.log (11,197 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/chromosome_granuality_0.1.png (420,716 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/migration_topology_weights_granuality_0.1.png (985,015 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/A_m0_index_granularity_0.1.png (288,097 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/A_m0_fundamental_asymmetry.png (100,069 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/twisstntern_20250626_135148.log (5,347 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/chromosome_topology_weights.csv (380,402 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/A_m0_triangle_analysis.csv (2,859 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/A_m0_granuality_0.1.png (306,763 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/chromosome_trees.newick (19,762,665 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/twisstntern_20250626_124212.log (4,525 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/migration_topology_weights_index_granularity_0.05.png (578,254 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/chromosome_triangle_analysis.csv (2,576 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/migration_topology_weights_heatmap_count.png (578,722 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/chromosome_analysis_granularity_0.1.png (258,842 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/migration_topology_weights_triangle_analysis.csv (11,962 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/migration_topology_weights_granuality_0.05.png (988,116 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/migration_topology_weights_index_granularity_0.1.png (288,097 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/migration_topology_weights_analysis_granularity_0.1.png (332,302 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/migration_topology_weights_analysis_granularity_0.05.png (558,074 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m -   ✓ Results/chromosome_index_granularity_0.1.png (288,097 bytes)
+2025-06-26 13:51:58,546 - [32mINFO[0m - ============================================================

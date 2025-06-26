@@ -115,8 +115,18 @@ def apply_config_overrides(config, overrides_list):
                 else:
                     raise ValueError(f"Unsupported nested override: {override_str}")
             else:
-                # Handle top-level overrides like 'ploidy=2', 'seed=1234'
-                if hasattr(config, key_path):
+                # Handle top-level overrides like 'ploidy=2', 'seed=1234', 'samplesize=20'
+                if key_path == 'samplesize':
+                    # Handle samplesize override: samplesize=20 (applies to all non-ancestral populations)
+                    logger.info(f"Overriding sample size for all populations: {value}")
+                    # Apply to all non-ancestral populations
+                    for pop in config.populations:
+                        if not pop.is_ancestral and pop.sample_size is not None:
+                            old_size = pop.sample_size
+                            pop.sample_size = value
+                            applied_overrides[f"samplesize.{pop.name}"] = f"{old_size} -> {value}"
+                            logger.info(f"  {pop.name}: {old_size} -> {value}")
+                elif hasattr(config, key_path):
                     old_value = getattr(config, key_path)
                     setattr(config, key_path, value)
                     applied_overrides[key_path] = f"{old_value} -> {value}"
@@ -146,8 +156,10 @@ def run_pipeline(
     verbose: bool = False,
     topology_mapping: Optional[str] = None,
     config_overrides: Optional[list] = None,
-    downsample: Optional[int] = None,
+    downsample_N: Optional[int] = None,
+    downsample_i: Optional[int] = None,
     downsample_kb: Optional[int] = None,
+    downsample_kb_i: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Run the complete twisstntern_simulate pipeline.
@@ -163,8 +175,10 @@ def run_pipeline(
         verbose: Enable verbose output
         topology_mapping: Custom topology mapping string for T1/T2/T3
         config_overrides: List of config override strings in format 'key=value'
-        downsample: Downsample factor for locus mode
-        downsample_kb: Downsample factor for chromosome mode in kb
+        downsample_N: Downsample interval (sample every Nth tree/locus)
+        downsample_i: Starting index for downsampling (offset)
+        downsample_kb: Downsample interval in kilobases (sample every N kb)
+        downsample_kb_i: Starting position in kilobases for KB-based downsampling (offset)
 
     Returns:
         Dictionary containing pipeline results and metadata
@@ -286,22 +300,39 @@ def run_pipeline(
         )
         results["topology_weights"] = topology_weights
 
-        # === Downsampling logic (after DataFrame is generated) ===
+        # === Enhanced downsampling logic (after DataFrame is generated) ===
         n_before_downsample = len(topology_weights)
         logger.info(f"Number of data points before downsampling: {n_before_downsample}")
         topology_weights_downsampled = topology_weights
         downsample_mode = None
-        if downsample is not None and downsample > 1:
-            topology_weights_downsampled = topology_weights.iloc[::downsample, :].reset_index(drop=True)
-            logger.info(f"Downsampled to every {downsample}th data point. {len(topology_weights_downsampled)} remain.")
-            downsample_mode = f"every {downsample}th"
+        
+        if downsample_N is not None and downsample_N > 1:
+            if downsample_i is None:
+                downsample_i = 0  # Default to starting from index 0
+                
+            logger.info(f"Downsampling: keeping every {downsample_N}th data point starting from index {downsample_i}.")
+            
+            # Create the downsampled indices: start from downsample_i, then every downsample_N
+            indices = list(range(downsample_i, len(topology_weights), downsample_N))
+            topology_weights_downsampled = topology_weights.iloc[indices, :].reset_index(drop=True)
+            
+            logger.info(f"Downsampled to every {downsample_N}th data point starting from index {downsample_i}. {len(topology_weights_downsampled)} remain.")
+            downsample_mode = f"every {downsample_N}th starting from index {downsample_i}"
+            
         elif downsample_kb is not None and downsample_kb > 0 and mode == "chromosome":
             if "position" in topology_weights.columns:
+                if downsample_kb_i is None:
+                    downsample_kb_i = 0  # Default to starting from position 0
+                    
                 n_kb = downsample_kb * 1000
+                start_pos = downsample_kb_i  # Already in base pairs from the new parser
                 max_pos = topology_weights["position"].max()
-                target_positions = list(range(0, int(max_pos) + 1, n_kb))
+                
+                # Generate target positions starting from the offset
+                target_positions = list(range(start_pos, int(max_pos) + 1, n_kb))
                 selected_indices = []
                 last_idx = -1
+                
                 for pos in target_positions:
                     candidates = topology_weights.index[topology_weights["position"] >= pos]
                     if len(candidates) > 0:
@@ -309,11 +340,22 @@ def run_pipeline(
                         if idx != last_idx:
                             selected_indices.append(idx)
                             last_idx = idx
+                            
                 topology_weights_downsampled = topology_weights.loc[selected_indices].reset_index(drop=True)
-                logger.info(f"Downsampled to one data point every {downsample_kb} kb. {len(topology_weights_downsampled)} remain.")
-                downsample_mode = f"every {downsample_kb} kb"
+                
+                # Format the starting position for display
+                if downsample_kb_i >= 1000000:
+                    start_display = f"{downsample_kb_i/1000000:.1f}mb"
+                elif downsample_kb_i >= 1000:
+                    start_display = f"{downsample_kb_i/1000:.0f}kb"
+                else:
+                    start_display = f"{downsample_kb_i}bp"
+                    
+                logger.info(f"Downsampled to one data point every {downsample_kb} kb starting from {start_display}. {len(topology_weights_downsampled)} remain.")
+                downsample_mode = f"every {downsample_kb} kb starting from {start_display}"
             else:
                 logger.warning("KB downsampling requested but no 'position' column found in topology weights. Skipping KB downsampling.")
+                
         n_after_downsample = len(topology_weights_downsampled)
         if downsample_mode:
             logger.info(f"Number of data points after downsampling ({downsample_mode}): {n_after_downsample}")

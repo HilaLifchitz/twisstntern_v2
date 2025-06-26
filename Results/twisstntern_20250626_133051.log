@@ -1,0 +1,7 @@
+2025-06-26 13:30:51,538 - [32mINFO[0m - ============================================================
+2025-06-26 13:30:51,538 - [32mINFO[0m - TWISSTNTERN Analysis Session
+2025-06-26 13:30:51,538 - [32mINFO[0m - ============================================================
+2025-06-26 13:30:51,538 - [32mINFO[0m - Python version: 3.11.13 (main, Jun  5 2025, 13:12:00) [GCC 11.2.0]
+2025-06-26 13:30:51,541 - [32mINFO[0m - Platform: Linux-6.11.0-26-generic-x86_64-with-glibc2.39
+2025-06-26 13:30:51,541 - [32mINFO[0m - Working directory: /home/hlifchit/projects/twissting_baby
+2025-06-26 13:30:51,541 - [31mERROR[0m - Invalid downsampleKB argument: Starting position (30mb = 30000000 bp) must be less than sampling interval (1000kb = 1000000 bp)

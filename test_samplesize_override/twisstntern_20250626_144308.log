@@ -1,0 +1,137 @@
+2025-06-26 14:43:08,131 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:146 - ============================================================
+2025-06-26 14:43:08,131 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:147 - TWISSTNTERN Analysis Session
+2025-06-26 14:43:08,131 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:148 - ============================================================
+2025-06-26 14:43:08,131 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:149 - Python version: 3.11.13 (main, Jun  5 2025, 13:12:00) [GCC 11.2.0]
+2025-06-26 14:43:08,135 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:150 - Platform: Linux-6.11.0-26-generic-x86_64-with-glibc2.39
+2025-06-26 14:43:08,135 - twisstntern.logger - [32mINFO[0m - logger.log_system_info:151 - Working directory: /home/hlifchit/projects/twissting_baby
+2025-06-26 14:43:08,135 - twisstntern.logger - [36mDEBUG[0m - logger.log_system_info:156 - NumPy version: 2.3.1
+2025-06-26 14:43:08,135 - twisstntern.logger - [36mDEBUG[0m - logger.log_system_info:162 - Pandas version: 2.3.0
+2025-06-26 14:43:08,135 - twisstntern.logger - [36mDEBUG[0m - logger.log_system_info:168 - Matplotlib version: 3.10.3
+2025-06-26 14:43:08,136 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:177 - Starting TWISSTNTERN analysis
+2025-06-26 14:43:08,136 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:178 - Input file: config_template.yaml
+2025-06-26 14:43:08,136 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:179 - Output directory: test_samplesize_override
+2025-06-26 14:43:08,136 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:184 - granularity: 0.1
+2025-06-26 14:43:08,136 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_start:184 - verbose: True
+2025-06-26 14:43:08,136 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:193 - ---------------------------------------------------------
+2025-06-26 14:43:08,136 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:194 - Starting twisstntern_simulate pipeline
+2025-06-26 14:43:08,136 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:195 - ---------------------------------------------------------
+2025-06-26 14:43:08,136 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:207 - Loading configuration...
+2025-06-26 14:43:08,141 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:225 - Configuration loaded - Mode: chromosome, Seed: 4576
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:210 - ============================================================
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:211 - SIMULATION CONFIGURATION
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:212 - ============================================================
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:215 - Simulation mode: chromosome
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:216 - Random seed: 4576
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:219 - Number of populations: 7
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:227 -   O (Outgroup): Ne=1000.0, samples=10
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:227 -   p1 (A): Ne=1000.0, samples=10
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:227 -   p2 (B): Ne=1000.0, samples=10
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:227 -   p3 (C): Ne=1000.0, samples=10
+2025-06-26 14:43:08,141 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:229 -   p23 (Ancestor AB): Ne=1000.0 (ancestral)
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:229 -   p123 (Ancestor ABC): Ne=1000.0 (ancestral)
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:229 -   ANC (Ancestral): Ne=1000.0 (ancestral)
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:233 - Migration rates:
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p1>p2 (A → B): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p2>p1 (B → A): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p1>p3 (A → C): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p3>p1 (C → A): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p2>p3 (B → C): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p3>p2 (C → B): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   O>p1 (Outgroup → A): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p1>O (A → Outgroup): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   O>p2 (Outgroup → B): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p2>O (B → Outgroup): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   O>p3 (Outgroup → C): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p3>O (C → Outgroup): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p23>p1 (Ancestor AB → A): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p1>p23 (A → Ancestor AB): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   O>p123 (Outgroup → Ancestor ABC): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:250 -   p123>O (Ancestor ABC → Outgroup): 0.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:254 - Chromosome length: 100000000.0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:255 - Recombination rate: 1e-08
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:257 - Mutation rate: 0
+2025-06-26 14:43:08,142 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:263 - Ploidy: 1
+2025-06-26 14:43:08,143 - twisstntern.logger - [32mINFO[0m - logger.log_simulation_config:278 - ============================================================
+2025-06-26 14:43:08,143 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:241 - Running msprime simulation...
+2025-06-26 14:43:09,312 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:248 - Simulation completed
+2025-06-26 14:43:09,312 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:252 - Trees saved to: test_samplesize_override/chromosome_trees.newick
+2025-06-26 14:43:09,312 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:258 - Checking twisst availability...
+2025-06-26 14:43:09,313 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:266 - Processing tree sequences...
+2025-06-26 14:43:09,313 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:278 - Chromosome mode: 11573 trees in simulated chromosome.
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:89 - TreeSequence topologies (default order)
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:93 - ==================================================
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:103 - Population Legend:
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:104 - --------------------
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:110 -   0 = Outgroup
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:110 -   1 = A
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:110 -   2 = B
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:110 -   3 = C
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:118 - 
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:121 - T1:
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:122 -   String: (0,(1,(2,3)));
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:128 -   ASCII Tree:
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -        /-0
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -     --|
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -       |   /-1
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -        \-|
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -          |   /-2
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -           \-|
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -              \-3
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:135 - 
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:121 - T2:
+2025-06-26 14:43:31,914 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:122 -   String: (0,(2,(1,3)));
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:128 -   ASCII Tree:
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -        /-0
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -     --|
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -       |   /-2
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -        \-|
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -          |   /-1
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -           \-|
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -              \-3
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:135 - 
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:121 - T3:
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:122 -   String: (0,(3,(1,2)));
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:128 -   ASCII Tree:
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -        /-0
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -     --|
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -       |   /-3
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -        \-|
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -          |   /-1
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -           \-|
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:131 -              \-2
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:135 - 
+2025-06-26 14:43:31,915 - twisstntern_simulate.ts_processing.topologies - INFO - tree_processing.log_topologies:137 - ==================================================
+2025-06-26 14:43:31,970 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:306 - Number of data points before downsampling: 11573
+2025-06-26 14:43:31,970 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:364 - No downsampling applied. Data points used: 11573
+2025-06-26 14:43:31,970 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:369 - Tree processing completed - weights saved to: test_samplesize_override/chromosome_topology_weights.csv
+2025-06-26 14:43:31,970 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:374 - Running triangle analysis...
+2025-06-26 14:43:32,021 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:376 - Running fundamental asymmetry analysis...
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:380 - ============================================================
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:381 - FUNDAMENTAL ASYMMETRY RESULTS
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:382 - ============================================================
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:383 - Data file used: test_samplesize_override/chromosome_topology_weights.csv
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:392 - Total trees computed: 11573 (n_right + n_left = 11559)
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:396 - Note: 14 trees were filtered out (trees where T2 = T3, which fall exactly on the y-axis in ternary space)
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:410 - n_right: 5736
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:411 - n_left: 5823
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:412 - D_LR: -0.0075
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:413 - G-test: 0.6548
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:414 - p-value: 4.1839e-01
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:415 - ============================================================
+2025-06-26 14:43:32,023 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:420 - Generating visualizations...
+2025-06-26 14:43:33,562 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:439 - Saved triangle analysis results to: test_samplesize_override/chromosome_triangle_analysis.csv
+2025-06-26 14:43:33,562 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:446 - Analysis pipeline completed successfully!
+2025-06-26 14:43:33,562 - twisstntern_simulate.pipeline - [32mINFO[0m - pipeline.run_pipeline:447 - Pipeline completed successfully - Results in: test_samplesize_override
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:191 - ============================================================
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:192 - Analysis completed successfully!
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:193 - Total duration: 25.43 seconds
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:194 - Generated files:
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ test_samplesize_override/twisstntern_20250626_144308.log (17,375 bytes)
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ test_samplesize_override/chromosome_fundamental_asymmetry.png (77,215 bytes)
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ test_samplesize_override/chromosome_granuality_0.1.png (1,346,019 bytes)
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ test_samplesize_override/chromosome_topology_weights.csv (380,402 bytes)
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ test_samplesize_override/chromosome_trees.newick (19,762,665 bytes)
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ test_samplesize_override/chromosome_triangle_analysis.csv (3,029 bytes)
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ test_samplesize_override/chromosome_analysis_granularity_0.1.png (279,789 bytes)
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:199 -   ✓ test_samplesize_override/chromosome_index_granularity_0.1.png (288,097 bytes)
+2025-06-26 14:43:33,563 - twisstntern.logger - [32mINFO[0m - logger.log_analysis_complete:203 - ============================================================

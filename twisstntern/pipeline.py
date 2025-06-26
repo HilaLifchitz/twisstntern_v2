@@ -157,7 +157,8 @@ def run_analysis( # add plot functions here 25.6
     outgroup=None,
     output_dir="Results",
     topology_mapping=None,
-    downsample=None,
+    downsample_N=None,
+    downsample_i=None,
 ):
     """
     Orchestrates the full analysis and visualization pipeline for both tree files and CSV files.
@@ -173,7 +174,8 @@ def run_analysis( # add plot functions here 25.6
         topology_mapping (str, optional): User-defined topology mapping for custom topology ordering.
                                          Format: 'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
                                          Ignored for CSV files.
-        downsample (int, optional): Downsample factor for topology weights
+        downsample_N (int, optional): Downsample interval (sample every Nth row)
+        downsample_i (int, optional): Starting index for downsampling (offset)
 
     Returns:
         tuple: (results, fundamental_results, csv_file_used)
@@ -264,11 +266,18 @@ def run_analysis( # add plot functions here 25.6
     logger.info(f"Loaded data shape: {data.shape}")
     logger.debug(f"Data columns: {list(data.columns)}")
 
-    # Downsample if requested
-    if downsample is not None and downsample > 1:
-        logger.info(f"Downsampling: keeping every {downsample}th row of topology weights.")
-        print(f"Downsampling: keeping every {downsample}th row of topology weights.")
-        data_trimmed = data.iloc[::downsample, :].reset_index(drop=True)
+    # Enhanced downsampling logic
+    if downsample_N is not None and downsample_N > 1:
+        if downsample_i is None:
+            downsample_i = 0  # Default to starting from index 0
+            
+        logger.info(f"Downsampling: keeping every {downsample_N}th row starting from index {downsample_i}.")
+        print(f"Downsampling: keeping every {downsample_N}th row starting from index {downsample_i}.")
+        
+        # Create the downsampled indices: start from downsample_i, then every downsample_N
+        indices = list(range(downsample_i, len(data), downsample_N))
+        data_trimmed = data.iloc[indices, :].reset_index(drop=True)
+        
         trimmed_csv_file = str(Path(csv_file).with_name(Path(csv_file).stem + "_trimmed.csv"))
         data_trimmed.to_csv(trimmed_csv_file, index=False)
         logger.info(f"Trimmed topology weights saved to: {trimmed_csv_file}")
@@ -298,7 +307,7 @@ def run_analysis( # add plot functions here 25.6
     logger.info("="*60)
     logger.info(f"Data file used: {csv_file}")
     logger.info(f"Total data points before downsampling: {n_before_trim}")
-    if downsample is not None and downsample > 1:
+    if downsample_N is not None and downsample_N > 1:
         logger.info(f"Total data points after downsampling: {n_after_trim}")
     logger.info(f"Total data points used in symmetry analysis: {n_used} (n_right + n_left = {n_used})")
     logger.info(f"Note: {n_filtered} data points were filtered out (where T2 = T3, which fall exactly on the y-axis in ternary space)")

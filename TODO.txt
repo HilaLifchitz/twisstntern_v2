@@ -5,14 +5,14 @@ missions for today and tmr
 - check that twisstntern yes understands the first line as topologies-
 (not super important)
 
-- finish the visualization: 1- color scheme prepared
-                            0 - add the empty subtriangle script from dasha
-                            2 - now the same for the subtriangles populations
-                            3 - plot function- play about
+- finish the visualization: 1- color scheme prepared DONE
+                            0 - add the empty subtriangle script from dasha DONE
+                            2 - now the same for the subtriangles populations DONE
+                            3 - plot function- play about DONE
 
-                            meanwhile everything just on twisstntern
+                            meanwhile everything just on twisstntern 
 
-  add the --downsample N+index thingy at both
+  add the --downsample N+index thingy at both DONE
 
 figure out the wasserstein distnace- seperate script
 do the data_copmare option - residuals
