@@ -22,12 +22,13 @@ import os
 import argparse
 import warnings
 from pathlib import Path
+import time
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.colors import ListedColormap, Normalize
+from matplotlib.colors import ListedColormap, Normalize, LinearSegmentedColormap
 import matplotlib.cm as cm
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import seaborn as sns
@@ -45,6 +46,8 @@ except ImportError:
     HAS_OT = True
 
 import math
+from matplotlib.patches import Polygon
+import matplotlib.patches as mpatches
 
 # Add the parent directory to the path to import twisstntern
 sys.path.append(str(Path(__file__).parent.parent))
@@ -73,6 +76,27 @@ plt.rcParams.update({
     "figure.facecolor": "white"
 })
 HAS_LATEX = False
+
+# Add import for compute_metrics
+from dataCompare.metrics import compute_metrics
+
+# ============================================================================
+# COLORMAP CONFIGURATION - EASY TO CHANGE!
+# ============================================================================
+# Colormap for Data and Model plots (sequential colormaps work best)
+DATA_MODEL_COLORMAP = "viridis"  # Options: "viridis", "plasma", "inferno", "magma", "cividis", "mako", "rocket", "flare"
+
+# Colormap for L2 Distance plot (sequential colormaps work best)  
+L2_COLORMAP = "mako_r"  # Options: "mako_r", "viridis", "plasma", "inferno", "magma", "cividis", "rocket", "flare"
+
+# Colormap for Residuals plot (diverging colormaps work best)
+RESIDUALS_COLORMAP = "RdBu_r"  # Options: "RdBu_r", "seismic", "coolwarm", "bwr", "PiYG", "PRGn"
+
+# Histogram color
+HISTOGRAM_COLOR = "#ffb347"  # Orange color for residuals histogram
+
+# KDE curve color  
+KDE_COLOR = "#22223b"  # Dark blue for KDE overlay
 
 
 def latex_format(text, bold=False):
@@ -178,51 +202,36 @@ def load_topology_data_twiss(filepath, sample_size=None):
 # ============================================================================
 
 def wasserstein_distance_euclidean(data1, data2):
-    """Wasserstein distance with Euclidean cost matrix from twisstCompareEx.py"""
-    # Convert to numpy arrays if needed
+    """Wasserstein distance with Euclidean cost matrix (using Sinkhorn for speed)."""
     if isinstance(data1, pd.DataFrame):
         data1 = data1[['T1', 'T2', 'T3']].values
     if isinstance(data2, pd.DataFrame):
         data2 = data2[['T1', 'T2', 'T3']].values
-    
-    # Uniform weights for each point
     a = np.ones((data1.shape[0],)) / data1.shape[0]
     b = np.ones((data2.shape[0],)) / data2.shape[0]
-    
-    # Cost matrix: Euclidean distance between all points
     M = ot.dist(data1, data2)
-    
-    # Compute the Wasserstein distance
-    dist = ot.emd2(a, b, M, numItermax=1000000)
-    
+    # Use Sinkhorn for speed (reg=0.01). Switch back to ot.emd2 for exact.
+    dist = ot.sinkhorn2(a, b, M, reg=0.01)
     return dist
 
 
 def simplex_wasserstein_distance_kl(data1, data2):
-    """Simplex Wasserstein distance with KL cost matrix from twisstCompareEx.py"""
-    # Convert to numpy arrays if needed
+    """Simplex Wasserstein distance with KL cost matrix (using Sinkhorn for speed)."""
     if isinstance(data1, pd.DataFrame):
         data1 = data1[['T1', 'T2', 'T3']].values
     if isinstance(data2, pd.DataFrame):
         data2 = data2[['T1', 'T2', 'T3']].values
-    
-    # Adding an epsilon value to avoid division by zero in the KL calculation
     data1_plus_eps = data1 + 1e-8
     data1_plus_eps = data1_plus_eps / data1_plus_eps.sum(1, keepdims=True)
-
     data2_plus_eps = data2 + 1e-8
     data2_plus_eps = data2_plus_eps / data2_plus_eps.sum(1, keepdims=True)
-
-    # Calculating the symmetric KL distance between each data point
     kl_pq = (data1_plus_eps[None, :, :] * (np.log(data1_plus_eps[None, :, :]) - np.log(data2_plus_eps[:, None, :]))).sum(-1)
     kl_qp = (data2_plus_eps[None, :, :] * (np.log(data2_plus_eps[None, :, :]) - np.log(data1_plus_eps[:, None, :]))).sum(-1)
     kl_symm = (kl_pq + kl_qp.T)
-
-    # Solve optimal transport problem
-    dist = ot.emd2(np.ones(data2_plus_eps.shape[0])/data2_plus_eps.shape[0], 
-            np.ones(data1_plus_eps.shape[0])/data1_plus_eps.shape[0],
-            M=kl_symm, numItermax=int(3e6))
-    
+    # Use Sinkhorn for speed (reg=0.01). Switch back to ot.emd2 for exact.
+    dist = ot.sinkhorn2(np.ones(data2_plus_eps.shape[0])/data2_plus_eps.shape[0], 
+                       np.ones(data1_plus_eps.shape[0])/data1_plus_eps.shape[0],
+                       kl_symm, reg=0.01)
     return dist
 
 
@@ -309,63 +318,28 @@ def create_triangular_grid_twiss(alpha):
 
 
 def perform_enhanced_grid_analysis(data1, data2, alpha):
-    """
-    Perform enhanced grid-based analysis using twisstntern and twisstCompareEx functions.
-    
-    Args:
-        data1 (pd.DataFrame): First dataset (reference/truth)
-        data2 (pd.DataFrame): Second dataset (model)
-        alpha (float): Grid granularity
-        
-    Returns:
-        tuple: (results_df, statistics_dict)
-    """
     print(f"Performing enhanced grid analysis with α = {alpha}")
-    
-    # Create triangular grid using twisstntern coordinate system
     triangles = create_triangular_grid_twiss(alpha)
-    
-    # Calculate Wasserstein distances first
-    print("Calculating Wasserstein distances...")
-    try:
-        wasserstein_euclidean = wasserstein_distance_euclidean(data1, data2)
-        print(f"✓ Wasserstein (Euclidean): {wasserstein_euclidean:.6f}")
-    except Exception as e:
-        print(f"Error calculating Wasserstein (Euclidean): {e}")
-        wasserstein_euclidean = np.nan
-    
-    try:
-        wasserstein_kl = simplex_wasserstein_distance_kl(data1, data2)
-        print(f"✓ Wasserstein (KL-divergence): {wasserstein_kl:.6f}")
-    except Exception as e:
-        print(f"Error calculating Wasserstein (KL): {e}")
-        wasserstein_kl = np.nan
-    
-    # Count points in each triangle using enhanced counting
+    # Count points in each triangle using enhanced counting (run only once)
     results_df = []
-    
     for triangle in triangles:
-        # Count points in this triangle for both datasets
         count_data = n_twisstcompare(
             triangle['T1'][0], triangle['T1'][1],
             triangle['T2'][0], triangle['T2'][1],
             triangle['T3'][0], triangle['T3'][1],
             data1
         )
-        
         count_model = n_twisstcompare(
             triangle['T1'][0], triangle['T1'][1],
             triangle['T2'][0], triangle['T2'][1],
             triangle['T3'][0], triangle['T3'][1],
             data2
         )
-        
-        # Calculate proportions
         prop_data = count_data / len(data1)
         prop_model = count_model / len(data2)
         prop_residual = prop_data - prop_model
         residual_squared = prop_residual ** 2
-        
+        count_residual = count_data - count_model
         results_df.append({
             'T1_bounds': triangle['T1'],
             'T2_bounds': triangle['T2'],
@@ -375,58 +349,39 @@ def perform_enhanced_grid_analysis(data1, data2, alpha):
             'prop_data': prop_data,
             'prop_model': prop_model,
             'prop_residual': prop_residual,
-            'residual_squared': residual_squared
+            'residual_squared': residual_squared,
+            'count_residual': count_residual
         })
-    
     results_df = pd.DataFrame(results_df)
-    
-    # Filter out triangles where both datasets have 0 points for statistics
-    # These are "empty vs empty" comparisons that don't provide meaningful information
     meaningful_triangles = (results_df['count_data'] > 0) | (results_df['count_model'] > 0)
     filtered_results = results_df[meaningful_triangles]
-    
-    print(f"Total triangles: {len(results_df)}")
-    print(f"Meaningful triangles (at least one dataset has points): {len(filtered_results)}")
-    print(f"Empty triangles (both datasets have 0 points): {len(results_df) - len(filtered_results)}")
-    
-    # Calculate L2 distance and chi-square statistics using only meaningful triangles
+    # Compute metrics from results_df (no double computation)
+    # L2 distance
+    prop1 = results_df['prop_data']
+    prop2 = results_df['prop_model']
+    l2 = np.linalg.norm(prop1 - prop2)
+    # Chi-square
+    counts1 = results_df['count_data']
+    counts2 = results_df['count_model']
+    with np.errstate(divide='ignore', invalid='ignore'):
+        chi2_stat = np.nansum((counts1 - counts2) ** 2 / (counts1 + counts2 + 1e-8))
+    dof = (prop1 != 0).sum() - 1
+    from scipy.stats import chi2
+    p_value = 1 - chi2.cdf(chi2_stat, dof)
     if len(filtered_results) > 0:
-        L2_distance = np.sqrt(filtered_results['residual_squared'].sum() / len(filtered_results))
-        
-        # Chi-square test (only for triangles with non-zero expected counts)
-        # Corrected: degrees of freedom should be number of meaningful triangles - 1
-        non_zero_expected = filtered_results['count_data'] > 0
-        if non_zero_expected.sum() > 0:
-            chi_squared_components = filtered_results.loc[non_zero_expected, 'residual_squared'] * (len(data1) ** 2) / filtered_results.loc[non_zero_expected, 'count_data']
-            chi_statistic = chi_squared_components.sum()
-            degrees_freedom = len(filtered_results) - 1  # Corrected: meaningful triangles - 1
-            p_value = chi2.sf(chi_statistic, degrees_freedom) if degrees_freedom > 0 else 1.0
-        else:
-            chi_statistic = np.nan
-            p_value = np.nan
-        
-        # Calculate summary statistics using filtered data
         mean_residual = filtered_results['prop_residual'].mean()
         std_residual = filtered_results['prop_residual'].std()
         max_residual = filtered_results['prop_residual'].abs().max()
         mean_squared_residual = filtered_results['residual_squared'].mean()
     else:
-        # Fallback if no meaningful triangles (shouldn't happen in practice)
-        L2_distance = 0.0
-        chi_statistic = np.nan
-        p_value = np.nan
         mean_residual = 0.0
         std_residual = 0.0
         max_residual = 0.0
         mean_squared_residual = 0.0
-    
-    # Calculate summary statistics
     statistics = {
-        'L2_distance': L2_distance,
-        'chi2_statistic': chi_statistic,
+        'L2_distance': l2,
+        'chi2_statistic': chi2_stat,
         'p_value': p_value,
-        'wasserstein_euclidean': wasserstein_euclidean,
-        'wasserstein_kl': wasserstein_kl,
         'total_data_points': len(data1),
         'total_model_points': len(data2),
         'num_triangles': len(results_df),
@@ -438,16 +393,12 @@ def perform_enhanced_grid_analysis(data1, data2, alpha):
         'max_residual': max_residual,
         'mean_squared_residual': mean_squared_residual
     }
-    
-    # Print comprehensive comparison metrics
     print("\n" + "="*70)
-    print("COMPREHENSIVE COMPARISON METRICS")
+    print("COMPREHENSIVE GRID-BASED METRICS (no Wasserstein)")
     print("="*70)
     print(f"L² Distance:              {statistics['L2_distance']:.6f}")
     print(f"χ² Statistic:             {statistics['chi2_statistic']:.6f}")
     print(f"χ² p-value:               {statistics['p_value']:.6e}")
-    print(f"Wasserstein (Euclidean):  {statistics['wasserstein_euclidean']:.6f}")
-    print(f"Wasserstein (KL):         {statistics['wasserstein_kl']:.6f}")
     print(f"Mean Residual:            {statistics['mean_residual']:.6f}")
     print(f"Std Residual:             {statistics['std_residual']:.6f}")
     print(f"Max |Residual|:           {statistics['max_residual']:.6f}")
@@ -459,7 +410,6 @@ def perform_enhanced_grid_analysis(data1, data2, alpha):
     print(f"Empty Triangles:          {statistics['num_empty_triangles']}")
     print(f"Degrees of Freedom:       {statistics['degrees_freedom']}")
     print("="*70)
-    
     return results_df, statistics
 
 
@@ -467,135 +417,135 @@ def perform_enhanced_grid_analysis(data1, data2, alpha):
 # ENHANCED PLOTTING FUNCTIONS USING TWISSTNTERN
 # ============================================================================
 
+def draw_empty_triangle(ax, trianglex, triangley):
+    triangle_coords = list(zip(trianglex, triangley))
+    empty_triangle = Polygon(
+        triangle_coords,
+        closed=True,
+        facecolor='white',
+        edgecolor='grey',
+        hatch='///',
+        linewidth=0.5
+    )
+    ax.add_patch(empty_triangle)
+
+
 def plot_ternary_base_twiss(ax, alpha):
     """
-    Create ternary plot base using twisstntern functions.
-    
+    Create ternary plot base using twisstntern functions, with all gridlines in grey.
     Args:
         ax: Matplotlib axis
         alpha: Grid granularity
     """
     h = math.sqrt(3) / 2
-    
     # Plot triangle outline
     x_side_T2 = np.linspace(0, 0.5, 100)
     x_side_T3 = np.linspace(-0.5, 0, 100)
-    
-    ax.plot(x_side_T2, twisstntern.utils.T2(0, x_side_T2), "k", linewidth=1)
-    ax.plot(x_side_T3, twisstntern.utils.T3(0, x_side_T3), "k", linewidth=1)
-    ax.hlines(y=0, xmin=-0.5, xmax=0.5, color="k", linewidth=1)
-    
+    ax.plot(x_side_T2, twisstntern.utils.T2(0, x_side_T2), color="grey", linewidth=1)
+    ax.plot(x_side_T3, twisstntern.utils.T3(0, x_side_T3), color="grey", linewidth=1)
+    ax.hlines(y=0, xmin=-0.5, xmax=0.5, color="grey", linewidth=1)
     # Remove ticks
     ax.set_xticks([])
     ax.set_yticks([])
-    
-    # Draw grid lines using twisstntern functions
+    # Draw grid lines using twisstntern functions (all grey)
     for i in range(1, int(1 / alpha)):
         y = i * alpha
-        
         # T1 lines (horizontal)
         ax.hlines(y=y * h, xmin=twisstntern.utils.T1_lim(y)[0], 
-                 xmax=twisstntern.utils.T1_lim(y)[1], color="#C74375", linewidth=1)
-        
+                 xmax=twisstntern.utils.T1_lim(y)[1], color="grey", linewidth=1)
         # T2 lines
         x2 = np.linspace(twisstntern.utils.T2_lim(y)[0], twisstntern.utils.T2_lim(y)[1], 100)
-        ax.plot(x2, twisstntern.utils.T2(y, x2), color="#3182BD", linewidth=1)
-        
+        ax.plot(x2, twisstntern.utils.T2(y, x2), color="grey", linewidth=1)
         # T3 lines
         x3 = np.linspace(twisstntern.utils.T3_lim(y)[0], twisstntern.utils.T3_lim(y)[1], 100)
-        ax.plot(x3, twisstntern.utils.T3(y, x3), color="#D4A017", linewidth=1)
-    
+        ax.plot(x3, twisstntern.utils.T3(y, x3), color="grey", linewidth=1)
     # Central vertical line
-    ax.vlines(x=0, ymin=0, ymax=h, colors="#888888", ls=':')
-    
-    # Labels
-    ax.text(-0.02, 0.88, 'T₁', size=12, color="#C74375", fontweight='bold')
-    ax.text(0.54, -0.01, 'T₃', size=12, color="#D4A017", fontweight='bold')
-    ax.text(-0.58, -0.01, 'T₂', size=12, color="#3182BD", fontweight='bold')
-    
+    ax.vlines(x=0, ymin=0, ymax=h, colors="grey", ls=':')
+    # Labels (closer to triangle)
+    ax.text(0.0, -0.07, 'T₁', size=13, color="black", fontweight='bold', ha='center', va='top')
+    ax.text(0.52, 0.03, 'T₂', size=13, color="black", fontweight='bold', ha='left', va='center')
+    ax.text(-0.52, 0.03, 'T₃', size=13, color="black", fontweight='bold', ha='right', va='center')
     # Remove spines
     for spine in ax.spines.values():
         spine.set_visible(False)
 
 
-def create_heatmap_colormap():
-    """Create consistent colormap for heatmaps with vibrant yellow ending."""
-    # Create a custom colormap from dark purple to vibrant yellow
-    colors = ['#1a0033', '#4a0080', '#8000ff', '#bf40ff', '#ff8000', '#ffff00']
-    return sns.blend_palette(colors, as_cmap=True)
+def plot_ternary_with_colorbar(ax, results_df, alpha, data_type, title, vmin, vmax, cmap, cbar_label, cbar_title=None):
+    plot_heatmap_data_twiss(ax, results_df, alpha, data_type, title, vmax=vmax, vmin=vmin, override_cmap=cmap)
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    import matplotlib.pyplot as plt
+    norm = Normalize(vmin=vmin, vmax=vmax)
+    cax = inset_axes(ax, width="3%", height="60%", loc='right', borderpad=2)
+    cb = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax)
+    cb.ax.set_title(cbar_label, fontsize=12, fontweight='normal', pad=10)
+    return cb
 
 
-def plot_heatmap_data_twiss(ax, results_df, alpha, data_type='prop_data', title='Data', vmax=None):
-    """
-    Plot heatmap data using twisstntern coordinate functions.
-    
-    Args:
-        ax: Matplotlib axis
-        results_df: Results dataframe
-        alpha: Grid granularity
-        data_type: Column to plot ('prop_data', 'prop_model', 'prop_residual')
-        title: Plot title
-        vmax: Maximum value for colormap scaling
-    """
+def plot_heatmap_data_twiss(ax, results_df, alpha, data_type='prop_data', title='Data', vmax=None, vmin=None, override_cmap=None):
     plot_ternary_base_twiss(ax, alpha)
-    
-    # Determine colormap and normalization
-    if 'residual' in data_type:
-        # Use diverging colormap for residuals
-        cmap = sns.color_palette("RdBu_r", as_cmap=True)
+    import matplotlib.pyplot as plt
+    if data_type == 'count_residual':
+        cmap = sns.color_palette(RESIDUALS_COLORMAP, as_cmap=True) if override_cmap is None else override_cmap
         vmax_val = results_df[data_type].abs().max()
         vmin_val = -vmax_val
         norm = Normalize(vmin=vmin_val, vmax=vmax_val)
-    else:
-        # Use sequential colormap for data/model
-        cmap = create_heatmap_colormap()
-        if vmax is None:
-            vmax_val = results_df[data_type].max()
-        else:
-            vmax_val = vmax
-        vmin_val = 0
+        values = results_df[data_type]
+        empty_logic = lambda row: row['count_data'] == 0 and row['count_model'] == 0
+    elif data_type == 'count_data':
+        cmap = plt.get_cmap(DATA_MODEL_COLORMAP) if override_cmap is None else override_cmap
+        vmax_val = vmax if vmax is not None else results_df[data_type].max()
+        vmin_val = vmin if vmin is not None else results_df[data_type].min()
         norm = Normalize(vmin=vmin_val, vmax=vmax_val)
-    
-    # Plot filled triangles using twisstntern coordinate functions
+        values = results_df[data_type]
+        empty_logic = lambda row: row['count_data'] == 0
+    elif data_type == 'count_model':
+        cmap = plt.get_cmap(DATA_MODEL_COLORMAP) if override_cmap is None else override_cmap
+        vmax_val = vmax if vmax is not None else results_df[data_type].max()
+        vmin_val = vmin if vmin is not None else results_df[data_type].min()
+        norm = Normalize(vmin=vmin_val, vmax=vmax_val)
+        values = results_df[data_type]
+        empty_logic = lambda row: row['count_model'] == 0
+    elif data_type == 'l2':
+        cmap = override_cmap if override_cmap is not None else plt.get_cmap(L2_COLORMAP)
+        l2_per_triangle = np.sqrt(results_df['residual_squared'].values)
+        vmax_val = vmax if vmax is not None else np.max(l2_per_triangle)
+        vmin_val = vmin if vmin is not None else 0
+        norm = Normalize(vmin=vmin_val, vmax=vmax_val)
+        values = l2_per_triangle
+        empty_logic = lambda row: (row['count_data'] == 0 and row['count_model'] == 0)
+    elif 'residual' in data_type:
+        cmap = sns.color_palette(RESIDUALS_COLORMAP, as_cmap=True) if override_cmap is None else override_cmap
+        vmax_val = results_df[data_type].abs().max()
+        vmin_val = -vmax_val
+        norm = Normalize(vmin=vmin_val, vmax=vmax_val)
+        values = results_df[data_type]
+        empty_logic = lambda row: row['count_data'] == 0 and row['count_model'] == 0
+    else:
+        if data_type == 'prop_data':
+            data_type = 'count_data'
+            title = title.replace('Proportion', 'Count')
+        elif data_type == 'prop_model':
+            data_type = 'count_model'
+            title = title.replace('Proportion', 'Count')
+        cmap = plt.get_cmap(DATA_MODEL_COLORMAP) if override_cmap is None else override_cmap
+        vmax_val = vmax if vmax is not None else results_df[data_type].max()
+        vmin_val = vmin if vmin is not None else results_df[data_type].min()
+        norm = Normalize(vmin=vmin_val, vmax=vmax_val)
+        values = results_df[data_type]
+        empty_logic = lambda row: row['count_data'] == 0
     for idx, row in results_df.iterrows():
-        value = row[data_type]
-        
-        # Get triangle coordinates
+        value = values[idx]
         trianglex, triangley, direction = twisstntern.utils.return_triangle_coord(
             row['T1_bounds'][0], row['T1_bounds'][1],
             row['T2_bounds'][0], row['T2_bounds'][1],
             row['T3_bounds'][0], row['T3_bounds'][1]
         )
-        
-        # Determine if we should plot this triangle
-        should_plot = False
-        
-        if data_type in ['prop_data', 'prop_model']:
-            # For data/model plots: only plot if there are points in this dataset
-            count_key = 'count_data' if data_type == 'prop_data' else 'count_model'
-            should_plot = row[count_key] > 0
-        elif data_type == 'prop_residual':
-            # For residuals: only plot if at least one dataset has points
-            should_plot = (row['count_data'] > 0) or (row['count_model'] > 0)
+        if empty_logic(row):
+            draw_empty_triangle(ax, trianglex, triangley)
         else:
-            # Default behavior for other data types
-            should_plot = not np.isnan(value) and abs(value) > 1e-10
-        
-        if should_plot:
             color = cmap(norm(value))
             ax.fill(trianglex, triangley, color=color, edgecolor='none', alpha=0.8)
-    
     ax.set_title(title, fontsize=12, fontweight='bold')
-    
-    # Add colorbar
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-    sm.set_array([])
-    cax = inset_axes(ax, width="3%", height="80%", loc='center right',
-                     bbox_to_anchor=(0.05, 0, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
-    cbar = plt.colorbar(sm, cax=cax)
-    cbar.set_label('Proportion', fontsize=10)
-    
-    # Clean up spines
     sns.despine(ax=ax, top=True, right=True)
     ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.8)
 
@@ -644,11 +594,12 @@ def plot_residual_histogram_enhanced(ax, results_df, statistics):
     ax.legend(fontsize=9)
     
     # Add statistics text
-    stats_text = (f'μ = {statistics["mean_residual"]:.4f}\n'
-                  f'σ = {statistics["std_residual"]:.4f}\n'
-                  f'Wasserstein (Eucl): {statistics["wasserstein_euclidean"]:.4f}\n'
-                  f'Wasserstein (KL): {statistics["wasserstein_kl"]:.4f}')
-    
+    stats_text = (
+        f'μ = {statistics["mean_residual"]:.4f}\n'
+        f'σ = {statistics["std_residual"]:.4f}\n'
+        f'Wasserstein (Eucl): {statistics["wasserstein_euclidean"]:.4f}\n'
+        f'Wasserstein (KL): {statistics["wasserstein_kl"]:.4f}'
+    )
     ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=9,
            verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', 
            facecolor='lightblue', alpha=0.7))
@@ -659,135 +610,100 @@ def plot_residual_histogram_enhanced(ax, results_df, statistics):
 
 
 def plot_l2_distances_twiss(ax, results_df, alpha):
-    """
-    Plot L2 distances per triangle using twisstntern functions.
-    
-    Args:
-        ax: Matplotlib axis
-        results_df: Results dataframe
-        alpha: Grid granularity
-    """
+    import matplotlib.pyplot as plt
     plot_ternary_base_twiss(ax, alpha)
-    
-    # Calculate L2 per triangle (square root of squared residuals)
     l2_per_triangle = np.sqrt(results_df['residual_squared'].values)
-    
-    # Use vibrant colormap for L2 distances
     vmax = np.max(l2_per_triangle) if len(l2_per_triangle) > 0 else 1
     vmin = 0
-    cmap = sns.color_palette("magma", as_cmap=True)  # Vibrant purple-to-yellow
+    cmap = plt.get_cmap("viridis")
     norm = Normalize(vmin=vmin, vmax=vmax)
-    
-    # Plot filled triangles using twisstntern functions
     for idx, row in results_df.iterrows():
-        # Only plot if at least one dataset has points and L2 distance > 0
         has_meaningful_data = (row['count_data'] > 0) or (row['count_model'] > 0)
-        
-        if has_meaningful_data and l2_per_triangle[idx] > 0:
-            # Get triangle coordinates using twisstntern
-            trianglex, triangley, direction = twisstntern.utils.return_triangle_coord(
-                row['T1_bounds'][0], row['T1_bounds'][1],
-                row['T2_bounds'][0], row['T2_bounds'][1],
-                row['T3_bounds'][0], row['T3_bounds'][1]
-            )
-            
+        trianglex, triangley, direction = twisstntern.utils.return_triangle_coord(
+            row['T1_bounds'][0], row['T1_bounds'][1],
+            row['T2_bounds'][0], row['T2_bounds'][1],
+            row['T3_bounds'][0], row['T3_bounds'][1]
+        )
+        if not has_meaningful_data:
+            draw_empty_triangle(ax, trianglex, triangley)
+        elif l2_per_triangle[idx] > 0:
             color = cmap(norm(l2_per_triangle[idx]))
             ax.fill(trianglex, triangley, color=color, edgecolor='none')
-    
     ax.set_title('L² Distance per Triangle', fontsize=12, fontweight='bold')
-    
-    # Add colorbar
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cax = inset_axes(ax, width="3%", height="80%", loc='center right',
-                     bbox_to_anchor=(0.05, 0, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
-    cbar = plt.colorbar(sm, cax=cax)
-    cbar.set_label('L2 Distance', fontsize=10)
+    # No colorbar here
 
 
 def create_enhanced_comparison_plot(data1, data2, results_df, statistics, alpha, output_path=None):
-    """
-    Create the main enhanced comparison plot with five subplots.
-    
-    Args:
-        data1, data2: Input datasets
-        results_df: Analysis results
-        statistics: Statistics dictionary
-        alpha: Grid granularity
-        output_path: Optional path to save the plot
-        
-    Returns:
-        matplotlib.figure.Figure: The created figure
-    """
-    fig = plt.figure(figsize=(18, 12))
-    
-    # Create layout: 3x4 grid with statistics box beneath residuals plot
-    gs = fig.add_gridspec(3, 4, hspace=0.35, wspace=0.25, 
-                         height_ratios=[1, 1, 0.6])  # Third row shorter for statistics
-    ax1 = fig.add_subplot(gs[0, 0])  # Data
-    ax2 = fig.add_subplot(gs[0, 1])  # Model  
-    ax3 = fig.add_subplot(gs[0, 2])  # Residuals
-    ax4 = fig.add_subplot(gs[1, 0])  # L2 distances
-    ax5 = fig.add_subplot(gs[1, 1])  # Histogram
-    # Statistics box will go in gs[2, 2] (beneath residuals)
-    
-    # Determine consistent scale for data and model plots
-    max_prop = max(results_df['prop_data'].max(), results_df['prop_model'].max())
-    
-    # Plot 1: Data (reference/truth)
-    plot_heatmap_data_twiss(ax1, results_df, alpha, 'prop_data', 'Data', vmax=max_prop)
-    
-    # Plot 2: Model
-    plot_heatmap_data_twiss(ax2, results_df, alpha, 'prop_model', 'Model', vmax=max_prop)
-    
-    # Plot 3: Residuals
-    plot_heatmap_data_twiss(ax3, results_df, alpha, 'prop_residual', 'Residuals')
-    
-    # Plot 4: L2 distances per triangle
-    plot_l2_distances_twiss(ax4, results_df, alpha)
-    
-    # Plot 5: Enhanced residual histogram
-    plot_residual_histogram_enhanced(ax5, results_df, statistics)
-    
-    # Add enhanced overall title with better blue color
-    title_text = f'Enhanced Topology Weights Residual Analysis (α = {alpha})'
-    fig.suptitle(title_text, fontsize=17, y=0.96, color='#2E5090', fontweight='bold')
-    
-    # Create statistics box directly beneath the residuals plot
-    ax_stats = fig.add_subplot(gs[2, 2])  # Third row, third column (beneath residuals)
-    ax_stats.axis('off')  # Hide axes
-    
-    # Create more compact statistics text for the box beneath residuals
-    stats_text = ('Statistical Metrics\n' + '─'*18 + '\n'
-                  f'L² distance: {statistics["L2_distance"]:.5f}\n'
-                  f'χ² statistic: {statistics["chi2_statistic"]:.1f}\n'
-                  f'Degrees freedom: {statistics["degrees_freedom"]}\n'
-                  f'p-value: {statistics["p_value"]:.2e}\n'
-                  f'Wasserstein (Eucl): {statistics["wasserstein_euclidean"]:.5f}\n'
-                  f'Wasserstein (KL): {statistics["wasserstein_kl"]:.5f}\n\n'
-                  'Data Summary\n' + '─'*12 + '\n'
-                  f'Data points: {statistics["total_data_points"]:,}\n'
-                  f'Model points: {statistics["total_model_points"]:,}\n'
-                  f'Meaningful triangles: {statistics["num_meaningful_triangles"]}\n'
-                  f'Empty triangles: {statistics["num_empty_triangles"]}')
-    
-    # Place the statistics box beneath residuals plot
-    ax_stats.text(0.05, 0.95, stats_text, fontsize=10, verticalalignment='top',
-                 horizontalalignment='left', transform=ax_stats.transAxes,
-                 bbox=dict(boxstyle='round,pad=0.4', facecolor='#f8f9fa', 
-                          alpha=0.95, edgecolor='#2E5090', linewidth=1.5),
-                 family='monospace')
-    
-    # Use tight layout for automatic spacing
-    plt.tight_layout(pad=1.8)
-    
-    # Fine-tune layout
-    plt.subplots_adjust(top=0.93, bottom=0.05, left=0.05, right=0.98)
-    
+    import matplotlib.pyplot as plt
+    import matplotlib.gridspec as gridspec
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    import seaborn as sns
+    import numpy as np
+    fig = plt.figure(figsize=(20, 10))
+    gs = gridspec.GridSpec(2, 3, height_ratios=[1, 1.1], hspace=0.25, wspace=0.25)
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax3 = fig.add_subplot(gs[0, 2])
+    ax4 = fig.add_subplot(gs[1, 0])
+    ax5 = fig.add_subplot(gs[1, 1:])
+    min_count = min(results_df['count_data'].min(), results_df['count_model'].min())
+    max_count = max(results_df['count_data'].max(), results_df['count_model'].max())
+    cmap_seq = plt.get_cmap(DATA_MODEL_COLORMAP)
+    # Data plot
+    plot_ternary_with_colorbar(ax1, results_df, alpha, 'count_data', 'Data', min_count, max_count, cmap_seq, "Count")
+    # Model plot
+    plot_ternary_with_colorbar(ax2, results_df, alpha, 'count_model', 'Model', min_count, max_count, cmap_seq, "Count")
+    # Residuals plot
+    plot_heatmap_data_twiss(ax3, results_df, alpha, 'count_residual', 'Residuals')
+    vmax_resid = results_df['count_residual'].abs().max()
+    norm_resid = Normalize(vmin=-vmax_resid, vmax=vmax_resid)
+    cmap_resid = sns.color_palette(RESIDUALS_COLORMAP, as_cmap=True)
+    cax3 = inset_axes(ax3, width="3%", height="60%", loc='right', borderpad=2)
+    cb3 = plt.colorbar(cm.ScalarMappable(norm=norm_resid, cmap=cmap_resid), cax=cax3)
+    cb3.ax.set_title("Count", fontsize=12, fontweight='normal', pad=10)
+    # L2 plot
+    cmap_l2 = plt.get_cmap(L2_COLORMAP)
+    l2_per_triangle = np.sqrt(results_df['residual_squared'].values)
+    vmax_l2 = np.max(l2_per_triangle) if len(l2_per_triangle) > 0 else 1
+    plot_ternary_with_colorbar(ax4, results_df, alpha, 'l2', 'L2 Distance', 0, vmax_l2, cmap_l2, "L2 Distance")
+    # Residuals histogram
+    meaningful_triangles = (results_df['count_data'] > 0) | (results_df['count_model'] > 0)
+    residuals = results_df.loc[meaningful_triangles, 'count_residual'].values
+    # Histogram in configured color
+    ax5.hist(residuals, bins=30, color=HISTOGRAM_COLOR, alpha=0.7, edgecolor='white', density=True)
+    # Overlay KDE
+    from scipy.stats import gaussian_kde
+    x_grid = np.linspace(residuals.min(), residuals.max(), 200)
+    kde = gaussian_kde(residuals)
+    ax5.plot(x_grid, kde(x_grid), color=KDE_COLOR, linewidth=2, label="KDE fit")
+    ax5.set_title('Residuals Distribution (Count)', fontsize=13, fontweight='bold')
+    ax5.set_xlabel('Count Residual (Data - Model)', fontsize=12)
+    ax5.set_ylabel('Density', fontsize=12)
+    stats_text = (
+        f"L2: {statistics['L2_distance']:.4f}\n"
+        f"Chi2: {statistics['chi2_statistic']:.1f}\n"
+        f"p-value: {statistics['p_value']:.2e}\n"
+        f"Mean Residual: {statistics['mean_residual']:.4f}\n"
+        f"Std Residual: {statistics['std_residual']:.4f}\n"
+        f"Max |Residual|: {statistics['max_residual']:.4f}\n"
+        f"Data Points: {statistics['total_data_points']}\n"
+        f"Model Points: {statistics['total_model_points']}\n"
+        f"Triangles: {statistics['num_triangles']}\n"
+        f"Meaningful: {statistics['num_meaningful_triangles']}\n"
+        f"Empty: {statistics['num_empty_triangles']}\n"
+        f"DoF: {statistics['degrees_freedom']}"
+    )
+    ax5.text(0.02, 0.98, stats_text, transform=ax5.transAxes, fontsize=11, va='top', ha='left',
+             bbox=dict(boxstyle='round,pad=0.5', facecolor='lightyellow', alpha=0.8, edgecolor='gray'))
+    ax5.legend(loc='upper right', fontsize=11)
+    sns.despine(ax=ax5)
+    fig.suptitle(f'Residual Analysis (α = {alpha})', fontsize=18, y=0.98, color='#2E5090', fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     if output_path:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         print(f"Enhanced plot saved to: {output_path}")
-    
     return fig
 
 
@@ -808,6 +724,8 @@ def main():
                        help='Second dataset filename (default: NoMigration_topology_weights.csv)')
     parser.add_argument('--sample_size', type=int, default=None,
                        help='Sample size for large datasets (default: use all data)')
+    parser.add_argument('--skip_wasserstein', action='store_true',
+                       help='Skip Wasserstein calculations for faster execution')
     
     args = parser.parse_args()
     
@@ -840,19 +758,51 @@ def main():
         print(f"Sample size: {args.sample_size}")
     print()
     
-    # Load data using enhanced loader
+    # Timing: Data loading
+    t0 = time.time()
     print("Loading datasets with twisstntern functions...")
     data1 = load_topology_data_twiss(data1_path, sample_size=args.sample_size)
     data2 = load_topology_data_twiss(data2_path, sample_size=args.sample_size)
+    t1 = time.time()
+    print(f"Data loading took {t1-t0:.2f} seconds.")
     
-    # Perform enhanced analysis
+    # Timing: Grid analysis
+    t2 = time.time()
     results_df, statistics = perform_enhanced_grid_analysis(data1, data2, args.granularity)
+    t3 = time.time()
+    print(f"Grid analysis took {t3-t2:.2f} seconds.")
+
+    # Import and print metrics from metrics.py
+    if not args.skip_wasserstein:
+        print("\nImporting and computing full metrics (including Wasserstein) from metrics.py...")
+        t4 = time.time()
+        metrics = compute_metrics(data1, data2, args.granularity)
+        t5 = time.time()
+        print(f"Metrics computation took {t5-t4:.2f} seconds.")
+        print(f"L2_distance: {metrics['l2']:.8f}")
+        print(f"chi2_statistic: {metrics['chi2_stat']:.8f}")
+        print(f"p_value: {metrics['p_value']:.8e}")
+        print(f"wasserstein_euclidean: {metrics['wasserstein_euclidean']:.8f}")
+        print(f"wasserstein_kl: {metrics['wasserstein_kl']:.8f}")
+        
+        # Add Wasserstein metrics to statistics for plotting
+        statistics['wasserstein_euclidean'] = metrics['wasserstein_euclidean']
+        statistics['wasserstein_kl'] = metrics['wasserstein_kl']
+    else:
+        print("\nSkipping Wasserstein calculations for faster execution.")
+        print("Grid-based metrics only:")
+        print(f"L2_distance: {statistics['L2_distance']:.8f}")
+        print(f"chi2_statistic: {statistics['chi2_statistic']:.8f}")
+        print(f"p_value: {statistics['p_value']:.8e}")
     
-    # Create enhanced visualization
+    # Timing: Plotting
+    t4 = time.time()
     print("\nCreating enhanced visualizations...")
     output_plot = output_dir / f'enhanced_residual_analysis_granularity_{args.granularity}.png'
     fig = create_enhanced_comparison_plot(data1, data2, results_df, statistics, 
                                         args.granularity, output_plot)
+    t5 = time.time()
+    print(f"Plotting took {t5-t4:.2f} seconds.")
     
     # Save detailed results
     results_csv = output_dir / f'enhanced_residual_results_granularity_{args.granularity}.csv'

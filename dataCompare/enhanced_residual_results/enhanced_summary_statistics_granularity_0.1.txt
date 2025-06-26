@@ -8,11 +8,9 @@ Sample size: All data
 
 COMPREHENSIVE METRICS:
 ------------------------------
-L2_distance: 1.581051e-02
-chi2_statistic: 2.617828e+04
+L2_distance: 1.483157e-01
+chi2_statistic: 3.645094e+03
 p_value: 0.000000e+00
-wasserstein_euclidean: 1.362980e-02
-wasserstein_kl: 4.065722e-02
 total_data_points: 11303
 total_model_points: 11559
 num_triangles: 100
