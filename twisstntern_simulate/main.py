@@ -362,6 +362,9 @@ Examples:
     )
 
     start_time = time.time()
+    
+    # Track files created during this run
+    created_files = []
 
     try:
         # Run the pipeline
@@ -385,13 +388,18 @@ Examples:
         # Calculate duration
         duration = time.time() - start_time
         
-        # Collect output files
-        output_files = []
+        # Collect files created during this run
         if output_dir.exists():
-            output_files.extend([str(f) for f in output_dir.glob("*.*")])
+            # Get the timestamp when we started (approximate)
+            start_timestamp = start_time - 1  # Subtract 1 second to be safe
+            
+            # Only include files created during this run
+            for file_path in output_dir.glob("*.*"):
+                if file_path.stat().st_mtime >= start_timestamp:
+                    created_files.append(str(file_path))
         
-        # Log completion
-        log_analysis_complete(duration, output_files)
+        # Log completion with only the files created in this run
+        log_analysis_complete(duration, created_files)
         
         # Print summary to console (like main twisstntern)
         print("----------------------------------------------------------")

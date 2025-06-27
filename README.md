@@ -181,7 +181,7 @@ TWISSTNTERN generates a comprehensive set of output files saved to the specified
 **Analysis Files:**
 
 - `[prefix]_topology_weights.csv` - Raw topology weight data for each genomic window. In chromosome mode, this file will always include a `position` column indicating the start position of each tree along the chromosome (in base pairs), which is used for KB-based downsampling and genome position-aware analyses.
-- `[prefix]_triangle_analysis.csv` - Triangle-based sub-analysis results with statistics
+- `[prefix]_triangle_analysis_[granularity].csv` - Triangle-based sub-analysis results with statistics
 - `twisstntern_YYYYMMDD_HHMMSS.log` - Detailed log file with complete analysis record
 
 **Visualization Files:**
@@ -190,22 +190,26 @@ TWISSTNTERN generates a comprehensive set of output files saved to the specified
 - `[prefix]_analysis_granularity_[value].png` - Ternary plot with data points colored by triangle regions
 - `[prefix]_granuality_[value].png` - Main ternary plot with density visualization and statistical overlays
 - `[prefix]_index_granularity_[value].png` - Triangle index visualization showing region boundaries
+- `[prefix]_heatmap_count_granularity_[value].png` - Ternary heatmap showing data point density in each subtriangle
 
 **File Naming:**
 
 - `[prefix]` is derived from the input filename (e.g., `data.trees` → `data_`)
-- `[value]` represents the granularity setting used (e.g., `0.1`, `0.05`)
+- `[value]` and `[granularity]` represent the granularity setting used (e.g., `0.1`, `0.05`, `superfine`, `fine`, `coarse`)
+  - **Granularity values**: `superfine` = 0.05, `fine` = 0.1, `coarse` = 0.25, or custom float values
+  - **All output files** now include the granularity value in their names for easy identification
 
 **Example Output (granularity 0.1):**
 
 ```
 Results/
 ├── data_topology_weights.csv
-├── data_triangle_analysis.csv
+├── data_triangle_analysis_0.1.csv
 ├── data_fundamental_asymmetry.png
 ├── data_analysis_granularity_0.1.png
 ├── data_granuality_0.1.png
 ├── data_index_granularity_0.1.png
+├── data_heatmap_count_granularity_0.1.png
 └── twisstntern_20250618_151932.log
 ```
 

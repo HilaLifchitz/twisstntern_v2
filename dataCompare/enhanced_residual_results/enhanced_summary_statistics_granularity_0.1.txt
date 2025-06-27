@@ -4,20 +4,22 @@ Enhanced Topology Weights Residual Analysis Summary
 Data 1: /home/hlifchit/projects/twissting_baby/dataCompare/migration_topology_weights.csv
 Data 2: /home/hlifchit/projects/twissting_baby/dataCompare/NoMigration_topology_weights.csv
 Granularity: 0.1
-Sample size: All data
+Sample size: 1000
 
 COMPREHENSIVE METRICS:
 ------------------------------
-L2_distance: 1.483157e-01
-chi2_statistic: 3.645094e+03
+L2_distance: 1.770480e-03
+chi2_statistic: 7.400000e+10
 p_value: 0.000000e+00
-total_data_points: 11303
-total_model_points: 11559
+total_data_points: 1000
+total_model_points: 1000
 num_triangles: 100
-num_meaningful_triangles: 88
-num_empty_triangles: 12
-degrees_freedom: 87
-mean_residual: 3.154043e-19
-std_residual: 1.590111e-02
-max_residual: 7.356046e-02
-mean_squared_residual: 2.499722e-04
+num_meaningful_triangles: 64
+num_empty_triangles: 36
+degrees_freedom: 63
+mean_residual: 5.421011e-20
+std_residual: 2.230595e-02
+max_residual: 1.040000e-01
+mean_squared_residual: 4.897812e-04
+wasserstein_euclidean: 2.253860e-02
+wasserstein_kl: 5.205818e-02

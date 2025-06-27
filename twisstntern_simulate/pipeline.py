@@ -433,7 +433,17 @@ def run_pipeline(
         triangles_results = pd.concat([new_row, triangles_results])
 
         # Save results as CSV (exactly like main twisstntern naming)
-        triangles_csv = output_dir / f"{mode}_triangle_analysis.csv"
+        # Convert granularity to float for filename
+        if granularity == "superfine":
+            alpha = 0.05
+        elif granularity == "fine":
+            alpha = 0.1
+        elif granularity == "coarse":
+            alpha = 0.25
+        else:
+            alpha = float(granularity)
+        
+        triangles_csv = output_dir / f"{mode}_triangle_analysis_{alpha}.csv"
         triangles_results.to_csv(triangles_csv, index=False, float_format="%.3f")
         logger.info(f"Saved triangle analysis results to: {triangles_csv}")
         

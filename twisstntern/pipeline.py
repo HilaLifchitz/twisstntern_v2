@@ -365,7 +365,18 @@ def run_analysis( # add plot functions here 25.6
     # save plots and results
     ##################################
     logger.info("Saving results...")
-    results_csv = results_dir / f"{Path(file).stem}_triangle_analysis.csv"
+    
+    # Convert granularity to float for filename
+    if granularity == "superfine":
+        alpha = 0.05
+    elif granularity == "fine":
+        alpha = 0.1
+    elif granularity == "coarse":
+        alpha = 0.25
+    else:
+        alpha = float(granularity)
+    
+    results_csv = results_dir / f"{Path(file).stem}_triangle_analysis_{alpha}.csv"
     results.to_csv(results_csv, index=False, float_format="%.3f")
     logger.info(f"Saved triangle analysis results to: {results_csv}")
     print(f"Saved triangle analysis results to: {results_csv}")

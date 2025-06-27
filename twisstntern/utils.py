@@ -249,36 +249,6 @@ def dump_data(file, logger=None):
 
     print(f"\nAttempting to read file: {file}")
 
-    # First, read the first 10 non-comment lines to analyze
-    with open(file, "r", encoding="utf-8") as f:
-        lines = []
-        for line in f:
-            if not line.strip().startswith("#"):
-                lines.append(line)
-                if len(lines) >= 10:
-                    break
-
-    # Try to detect if the first row contains Newick-like tree strings
-    topology_row = None
-    if lines:
-        first_row = lines[0].strip().split(",")
-        # Heuristic: look for parentheses and semicolon (Newick format)
-        if all(re.match(r"^\s*\(?[\w,()]+\)?;?\s*$", s) and ("(" in s and ")" in s and ";" in s) for s in first_row):
-            topology_row = first_row
-
-    if topology_row:
-        print("\nDetected topology header row (Newick strings):")
-        for i, topo in enumerate(topology_row):
-            print(f"  T{i+1}: {topo.strip()}")
-        if logger:
-            logger.info("Detected topology header row (Newick strings):")
-            for i, topo in enumerate(topology_row):
-                logger.info(f"  T{i+1}: {topo.strip()}")
-    else:
-        # Only log this message, do not print
-        if logger:
-            logger.info("No topology header row detected. Assuming columns are T1, T2, T3 (in order).")
-
     # Try each delimiter and find the one that gives us 3 numeric columns
     best_delimiter = None
     best_skiprows = 0
@@ -381,6 +351,10 @@ def dump_data(file, logger=None):
     print(
         f"\nData loaded and normalized. Points with T2 == T3 removed. Remaining rows: {len(data)}"
     )
+
+    # Log that we're assuming standard column order
+    if logger:
+        logger.info("Assuming columns are T1, T2, T3 (in order).")
 
     return data
 

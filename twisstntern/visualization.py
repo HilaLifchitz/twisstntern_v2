@@ -32,19 +32,87 @@ from twisstntern.utils import (
 )
 from twisstntern.analysis import fundamental_asymmetry, triangles_analysis
 
+# ============================================================================
+# GLOBAL STYLE SETTINGS - TWEAK THESE FOR VISUAL CUSTOMIZATION
+# ============================================================================
 
 # Colors for the isoclines of T1, T2, T3 in the index
-T1_color = "#7B1E1E"
-T2_color = "#277DA1"
-T3_color = "#F4A261"
+T1_color = "#7B1E1E" # for index plot
+T2_color = "#277DA1" # for index plot
+T3_color = "#F4A261" # for index plot
 
-T1_color_data = "lightgrey"
-T2_color_data = "lightgrey"
-T3_color_data = "lightgrey"
+T1_color_data = "lightgrey" # for the data plot
+T2_color_data = "lightgrey" # for the data plot
+T3_color_data = "lightgrey" # for the data plot
 
 
-style = "RdBu_r"
-style_heatmap = "Blues"
+style = "RdBu_r" # for D-LR plots (=plot results + plot_fundamental_asymmetry)- the colormap
+style_heatmap = "plasma" # for heatmap (=plot_ternary_heatmap_data)- the colormap
+truncate = False # for heatmap -whether to chop off the edges of the gradient map
+
+# ============================================================================
+# More extensive visual customization guide:
+# ============================================================================
+# 
+# QUICK REFERENCE FOR VISUAL TWEAKING:
+# 
+# === COLORMAPS ===
+# style = "RdBu_r"              # Main diverging colormap for D-LR plots (red-blue)
+# style_heatmap = "Blues"       # Sequential colormap for heatmaps (white to blue)
+# 
+# Popular colormap options:
+# - "RdBu_r", "coolwarm", "seismic" (diverging - good for D-LR values)
+# - "viridis", "plasma", "inferno", "magma" (sequential - good for heatmaps)
+# - "Blues", "Reds", "Greens", "Purples" (sequential - clean and professional)
+# 
+# === GRID LINE COLORS === in the index plot
+# T1_color = "#7B1E1E"          # Color for T1 isoclines and labels (crimson)
+# T2_color = "#277DA1"          # Color for T2 isoclines and labels (blue)
+# T3_color = "#F4A261"          # Color for T3 isoclines and labels (orange)
+# 
+# T1_color_data = "lightgrey"   # Grid color for T1 in data plots
+# T2_color_data = "lightgrey"   # Grid color for T2 in data plots  
+# T3_color_data = "lightgrey"   # Grid color for T3 in data plots
+# 
+# === COMMON COLOR OPTIONS ===
+# - "black", "white", "grey", "lightgrey"
+# - "#7B1E1E" (crimson), "#277DA1" (blue), "#F4A261" (orange)
+# - "#A2C5F2" (light blue), "#ffb347" (orange), "#22223b" (dark blue)
+# 
+# === FIGURE SIZES (in functions) ===
+# - plot(): figsize=(8, 6)
+# - plot_fundamental_asymmetry(): figsize=(7, 5) 
+# - plot_results(): figsize=(6, 8)
+# - plot_ternary_heatmap_data(): figsize=(8, 6)
+# 
+# === DATA POINT STYLING (in plot function) ===
+# - points_color = "#A2C5F2"    # Main data point color
+# - alpha = 0.4                 # Transparency (0=invisible, 1=opaque)
+# - s = 25                      # Point size
+# - edgecolors = "gray"         # Edge color
+# - linewidths = 0.2            # Edge line width
+# 
+# === LABEL STYLING ===
+# - label_color = "black"       # Corner label color
+# - label_size = 12             # Corner label font size
+# 
+# === MARKER STYLING (for significance) ===
+# - marker = "*"                # Star marker for p-values
+# - s = 9, 22, 25              # Small, medium, large sizes
+# - alpha = 0.4, 0.9, 1.0      # Transparency levels
+# 
+# === EMPTY TRIANGLE STYLING ===
+# - facecolor = 'white'         # Background color
+# - edgecolor = 'grey'          # Border color  
+# - hatch = '///'               # Hatch pattern
+# - linewidth = 0.5             # Border width
+# 
+# === COLORBAR STYLING ===
+# - fontsize = 10               # Title font size
+# - pad = 6                     # Title padding
+# - width = "3%", height = "60%" # Colorbar size
+# 
+# ============================================================================
 
 def save_figure(fig, filename, dpi=300):
     """
@@ -55,12 +123,16 @@ def save_figure(fig, filename, dpi=300):
         filename: str — output filename (including .png or .pdf)
         dpi: int — resolution in dots per inch (default: 300)
     """
-    # Check if figure has 3D subplots
-    has_3d = any(hasattr(ax, "zaxis") for ax in fig.get_axes())
-
-    if not has_3d:
-        fig.tight_layout()  # Only use tight_layout for 2D plots
-
+    import warnings
+    
+    # Suppress tight_layout warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*tight_layout.*")
+        try:
+            fig.tight_layout()  # Try tight_layout, but don't fail if incompatible
+        except:
+            pass  # Skip tight_layout if not compatible (e.g., with inset axes)
+    
     fig.savefig(filename, dpi=dpi, bbox_inches="tight")
 
 
@@ -69,13 +141,14 @@ def plot(data, granularity, file_name):
     """
     Plot ternary coordinate grid and data points with coordinate lines.
 
-    Args:
-        data: Dictionary with keys "T1", "T2", "T3" containing ternary coordinates.
-        alpha: Step size for plotting coordinate isoclines.
-        file_name: Name prefix for saving the output plot image.
-
-    Returns:
-        matplotlib.figure.Figure object
+    VISUAL TWEAKING GUIDE:
+    - Change the triangle border color/width: see `ax.plot(triangle_x, triangle_y, ...)`
+    - Change grid line colors: T1, T2, T3 use T1_color_data, T2_color_data, T3_color_data
+    - Change data point color, size, alpha: see `points_color`, `plt.scatter(...)`
+    - Change label font, color, and position: see `label_color`, `label_size`, and `plt.text(...)`
+    - To show/hide axis coordinate labels, uncomment the relevant block below.
+    - To change figure size, edit `fig = plt.figure(figsize=(8, 6))`
+    - To change output file name, edit the `title = ...` line at the end.
     """
     # Map granularity names to alpha values, or parse user-provided float
     if granularity == "superfine":
@@ -180,15 +253,16 @@ def plot_fundamental_asymmetry(data, file_name):
     """
     Visualizes fundamental asymmetry between left and right subtriangles in ternary space.
 
-    This plot colors the left and right triangle based on the D_LR statistic, and annotates
-    the statistical significance of the asymmetry using p-value thresholds (with star markers).
-
-    Args:
-        data (pd.DataFrame): DataFrame with columns T1, T2, T3 (ternary coordinates).
-        file_name (str): Output filename prefix for the saved PNG figure.
-
-    Returns:
-        tuple: (D_LR value, G-test statistic, p-value)
+    VISUAL TWEAKING GUIDE:
+    - Change triangle border color/width: see `ax.plot(triangle_x, triangle_y, ...)`
+    - Change colormap for D_LR values: see `get_professional_colormap(style=style, ...)`
+    - Change colorbar style, ticks, and label: see the colorbar section
+    - Change alpha (transparency) of filled triangles: see `ax.fill(..., alpha=0.8)`
+    - Change marker style, color, and size for significance: see `ax.scatter(...)`
+    - Change legend position, text, and style: see legend section
+    - Change label font, color, and position: see `ax.text(...)`
+    - To change figure size, edit `fig, ax = plt.subplots(figsize=(7, 5))`
+    - To change output file name, edit the `title = ...` line at the end.
     """
     fig, ax = plt.subplots(figsize=(7, 5))  # Increased width to accommodate colorbar
 
@@ -387,10 +461,17 @@ def plot_results(res, granularity, file_name):
     Plot results from triangles_analysis by color-coding subtriangles by D-LR values
     and marking significant p-values.
 
-    Parameters:
-        res (DataFrame): Output of triangles_analysis(data, granularity)
-        granularity (str or float): One of {"coarse", "fine", "superfine"} or a float
-        file_name (str): Base name to save the plot
+    VISUAL TWEAKING GUIDE:
+    - Change the triangle border color/width: see `ax.plot(...)` and `ax.hlines(...)`
+    - Change grid line colors: T1, T2, T3 use T1_color, T2_color, T3_color
+    - Change the colormap for D-LR values: see `get_professional_colormap(style=style, ...)`
+    - Change the colorbar style, ticks, and label: see the colorbar section
+    - Change the alpha (transparency) of filled triangles: see `plt.fill(..., alpha=0.8)`
+    - Change the marker style, color, and size for significant p-values: see `ax.scatter(...)`
+    - Change legend position, text, and style: see legend section
+    - To show/hide axis coordinate labels, uncomment the relevant block below.
+    - To change figure size, edit `fig = plt.figure(figsize=(6, 8))`
+    - To change output file name, edit the `title = ...` line at the end.
     """
     # Map granularity names to alpha values, or parse user-provided float
     if granularity == "superfine":
@@ -608,402 +689,19 @@ def plot_genome_position_2d(data, file_name, genome_positions=None, colormap="in
     return fig
 
 
-def plot_toblerone_3D(
-    data, file_name, genome_positions=None, colormap="viridis", subsample=500
-):
-    """
-    Create 3D ternary prism with genome position as the X-axis (horizontal).
-    T1 at top (Y-axis), ternary triangle in Y-Z plane, genome extends along X-axis.
-
-    Args:
-        data: Dictionary or DataFrame with keys/columns "T1", "T2", "T3" containing ternary coordinates.
-        file_name: Name prefix for saving the output plot image.
-        genome_positions: Array-like of genome positions. If None, uses row indices as positions.
-        colormap: Colormap name for genome position coloring (default: 'viridis').
-        subsample: Number of points to show (default: 500). Use None for all points.
-
-    Returns:
-        matplotlib.figure.Figure object
-    """
-    from mpl_toolkits.mplot3d import Axes3D
-    import matplotlib.colors as mcolors
-
-    fig = plt.figure(figsize=(20, 8))
-
-    # Extract coordinates
-    if isinstance(data, dict):
-        t1, t2, t3 = data["T1"], data["T2"], data["T3"]
-        n_points = len(data["T1"])
-    else:  # DataFrame
-        t1, t2, t3 = data["T1"], data["T2"], data["T3"]
-        n_points = len(data)
-
-    # Convert to numpy arrays
-    t1, t2, t3 = np.array(t1), np.array(t2), np.array(t3)
-
-    # Set up genome positions
-    if genome_positions is None:
-        genome_positions = np.linspace(2.7, 25.0, n_points)
-
-    # Subsample data for performance
-    if subsample is not None and n_points > subsample:
-        indices = np.linspace(0, n_points - 1, subsample, dtype=int)
-        t1_sub, t2_sub, t3_sub = t1[indices], t2[indices], t3[indices]
-        genome_pos_sub = np.array(genome_positions)[indices]
-        print(
-            f"Subsampling {n_points} points to {subsample} for ternary prism visualization"
-        )
-    else:
-        t1_sub, t2_sub, t3_sub = t1, t2, t3
-        genome_pos_sub = genome_positions
-
-    # Normalize genome positions to X-axis (horizontal length)
-    genome_normalized = (genome_pos_sub - np.min(genome_pos_sub)) / (
-        np.max(genome_pos_sub) - np.min(genome_pos_sub)
-    )
-    genome_x = genome_normalized * 25  # Length along X-axis
-
-    # Color setup
-    normalize = mcolors.Normalize(
-        vmin=np.min(genome_pos_sub), vmax=np.max(genome_pos_sub)
-    )
-    try:
-        colormap_obj = plt.colormaps[colormap]
-    except AttributeError:
-        colormap_obj = plt.cm.get_cmap(colormap)
-
-    # Define ternary triangle vertices in Y-Z plane
-    # T1 at top (high Y), T2 and T3 at bottom left/right (in Z direction)
-    triangle_vertices = np.array(
-        [
-            [h, 0],  # T1 vertex (top, Y-Z coordinates)
-            [0, -0.5],  # T2 vertex (bottom-left in Z)
-            [0, 0.5],  # T3 vertex (bottom-right in Z)
-        ]
-    )
-
-    # Create three different viewing angles
-    views = [
-        {"elev": 15, "azim": 30, "title": "Perspective View"},
-        {"elev": 0, "azim": 0, "title": "Side View"},
-        {"elev": 0, "azim": 90, "title": "Front View"},
-    ]
-
-    for view_idx, view in enumerate(views):
-        ax = fig.add_subplot(1, 3, view_idx + 1, projection="3d")
-
-        # Draw the triangular prism frame
-        # Front triangle (at x=0)
-        front_triangle = np.column_stack([np.zeros(3), triangle_vertices])
-        # Back triangle (at x=max_genome)
-        back_triangle = np.column_stack(
-            [np.full(3, np.max(genome_x)), triangle_vertices]
-        )
-
-        # Draw front triangle edges
-        front_edges = [[0, 1], [1, 2], [2, 0]]
-        for edge in front_edges:
-            points = front_triangle[edge]
-            ax.plot(
-                points[:, 0], points[:, 1], points[:, 2], "k-", linewidth=2, alpha=0.8
-            )
-
-        # Draw back triangle edges
-        for edge in front_edges:
-            points = back_triangle[edge]
-            ax.plot(
-                points[:, 0], points[:, 1], points[:, 2], "k-", linewidth=2, alpha=0.8
-            )
-
-        # Draw connecting edges between front and back
-        for i in range(3):
-            ax.plot(
-                [front_triangle[i, 0], back_triangle[i, 0]],
-                [front_triangle[i, 1], back_triangle[i, 1]],
-                [front_triangle[i, 2], back_triangle[i, 2]],
-                "k-",
-                linewidth=2,
-                alpha=0.8,
-            )
-
-        # Convert ternary coordinates to Y-Z plane coordinates
-        # For each point: X = genome position, Y = T1, Z = (T3-T2)/2
-        x_points = genome_x  # Genome position along X-axis
-        y_points = t1_sub * h  # T1 scaled to triangle height
-        z_points = (t3_sub - t2_sub) / 2  # T2-T3 difference scaled
-
-        # Plot all points in the 3D ternary prism
-        scatter = ax.scatter(
-            x_points,
-            y_points,
-            z_points,
-            c=genome_pos_sub,
-            cmap=colormap,
-            s=25,
-            alpha=0.8,
-            edgecolors="black",
-            linewidths=0.3,
-        )
-
-        # Set viewing angle
-        ax.view_init(elev=view["elev"], azim=view["azim"])
-
-        # Add vertex labels
-        ax.text(0, h + 0.1, 0, "T1", fontsize=12, color=T1_color, weight="bold")
-        ax.text(
-            np.max(genome_x),
-            -0.1,
-            -0.6,
-            "T2",
-            fontsize=12,
-            color=T2_color,
-            weight="bold",
-        )
-        ax.text(
-            np.max(genome_x),
-            -0.1,
-            0.6,
-            "T3",
-            fontsize=12,
-            color=T3_color,
-            weight="bold",
-        )
-
-        # Add genome position labels along X-axis
-        for i, frac in enumerate([0, 0.25, 0.5, 0.75, 1]):
-            pos_idx = int(frac * (len(genome_pos_sub) - 1))
-            x_pos = frac * np.max(genome_x)
-            ax.text(
-                x_pos,
-                -0.3,
-                0,
-                f"{genome_pos_sub[pos_idx]:.1f}kb",
-                fontsize=8,
-                alpha=0.8,
-                ha="center",
-            )
-
-        ax.set_title(view["title"], fontsize=12)
-
-        # Set axis limits
-        ax.set_xlim(-2, np.max(genome_x) + 2)
-        ax.set_ylim(-0.4, h + 0.3)
-        ax.set_zlim(-0.8, 0.8)
-
-        # Clean up axes
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
-        ax.set_xlabel("")
-        ax.set_ylabel("")
-        ax.set_zlabel("")
-
-    # Add colorbar
-    cbar = fig.colorbar(scatter, ax=fig.get_axes(), shrink=0.8, aspect=40, pad=0.1)
-    cbar.set_label("Genome Position (kb)", rotation=270, labelpad=20, fontsize=12)
-
-    # Add genome position scale at bottom
-    ax_bottom = fig.add_axes([0.1, 0.02, 0.8, 0.03])
-    gradient = np.linspace(0, 1, 256).reshape(1, -1)
-    ax_bottom.imshow(gradient, aspect="auto", cmap=colormap)
-    ax_bottom.set_xlim(0, 256)
-    ax_bottom.set_xticks([0, 64, 128, 192, 256])
-    ax_bottom.set_xticklabels(
-        [
-            f"{genome_pos_sub[0]:.1f}kb",
-            f"{genome_pos_sub[len(genome_pos_sub)//4]:.1f}kb",
-            f"{genome_pos_sub[len(genome_pos_sub)//2]:.1f}kb",
-            f"{genome_pos_sub[3*len(genome_pos_sub)//4]:.1f}kb",
-            f"{genome_pos_sub[-1]:.1f}kb",
-        ]
-    )
-    ax_bottom.set_yticks([])
-    ax_bottom.set_xlabel("Genome Position", fontsize=12)
-
-    plt.suptitle(
-        "Ternary Coordinates in 3D Prism Along Genome (X-axis)", fontsize=16, y=0.95
-    )
-
-    # Save the plot
-    title = f"{file_name}_genome_ternary_prism_x.png"
-    save_figure(fig, title)
-    return fig
-
-
-def plot_toblerone_single_3D(
-    data,
-    file_name,
-    genome_positions=None,
-    colormap="viridis",
-    subsample=1000,
-    view_angle="perspective",
-):
-    """
-    Create single-view 3D ternary prism with genome as X-axis for better detail.
-
-    Args:
-        data: Dictionary or DataFrame with keys/columns "T1", "T2", "T3" containing ternary coordinates.
-        file_name: Name prefix for saving the output plot image.
-        genome_positions: Array-like of genome positions. If None, uses row indices as positions.
-        colormap: Colormap name for genome position coloring (default: 'viridis').
-        subsample: Number of points to show (default: 1000). Use None for all points.
-        view_angle: One of 'perspective', 'side', 'front' for viewing angle.
-
-    Returns:
-        matplotlib.figure.Figure object
-    """
-    from mpl_toolkits.mplot3d import Axes3D
-    import matplotlib.colors as mcolors
-
-    fig = plt.figure(figsize=(15, 10))
-    ax = fig.add_subplot(111, projection="3d")
-
-    # Extract coordinates
-    if isinstance(data, dict):
-        t1, t2, t3 = data["T1"], data["T2"], data["T3"]
-        n_points = len(data["T1"])
-    else:  # DataFrame
-        t1, t2, t3 = data["T1"], data["T2"], data["T3"]
-        n_points = len(data)
-
-    # Convert to numpy arrays
-    t1, t2, t3 = np.array(t1), np.array(t2), np.array(t3)
-
-    # Set up genome positions
-    if genome_positions is None:
-        genome_positions = np.linspace(2.7, 25.0, n_points)
-
-    # Subsample data for performance
-    if subsample is not None and n_points > subsample:
-        indices = np.linspace(0, n_points - 1, subsample, dtype=int)
-        t1_sub, t2_sub, t3_sub = t1[indices], t2[indices], t3[indices]
-        genome_pos_sub = np.array(genome_positions)[indices]
-        print(
-            f"Subsampling {n_points} points to {subsample} for ternary prism visualization"
-        )
-    else:
-        t1_sub, t2_sub, t3_sub = t1, t2, t3
-        genome_pos_sub = genome_positions
-
-    # Normalize genome positions to X-axis
-    genome_normalized = (genome_pos_sub - np.min(genome_pos_sub)) / (
-        np.max(genome_pos_sub) - np.min(genome_pos_sub)
-    )
-    genome_x = genome_normalized * 30  # Length along X-axis
-
-    # Define ternary triangle vertices in Y-Z plane
-    triangle_vertices = np.array(
-        [
-            [h, 0],  # T1 vertex (top in Y-Z plane)
-            [0, -0.5],  # T2 vertex (bottom-left in Z)
-            [0, 0.5],  # T3 vertex (bottom-right in Z)
-        ]
-    )
-
-    # Draw the triangular prism frame
-    front_triangle = np.column_stack([np.zeros(3), triangle_vertices])
-    back_triangle = np.column_stack([np.full(3, np.max(genome_x)), triangle_vertices])
-
-    # Draw front and back triangle edges
-    edges = [[0, 1], [1, 2], [2, 0]]
-    for edge in edges:
-        # Front triangle
-        points = front_triangle[edge]
-        ax.plot(points[:, 0], points[:, 1], points[:, 2], "k-", linewidth=2)
-        # Back triangle
-        points = back_triangle[edge]
-        ax.plot(points[:, 0], points[:, 1], points[:, 2], "k-", linewidth=2)
-
-    # Draw connecting edges
-    for i in range(3):
-        ax.plot(
-            [front_triangle[i, 0], back_triangle[i, 0]],
-            [front_triangle[i, 1], back_triangle[i, 1]],
-            [front_triangle[i, 2], back_triangle[i, 2]],
-            "k-",
-            linewidth=2,
-        )
-
-    # Convert ternary to 3D coordinates with genome as X-axis
-    x_points = genome_x  # Genome position along X-axis
-    y_points = t1_sub * h  # T1 scaled to triangle height (Y-axis)
-    z_points = (t3_sub - t2_sub) / 2  # T2-T3 difference (Z-axis)
-
-    scatter = ax.scatter(
-        x_points,
-        y_points,
-        z_points,
-        c=genome_pos_sub,
-        cmap=colormap,
-        s=30,
-        alpha=0.8,
-        edgecolors="black",
-        linewidths=0.3,
-    )
-
-    # Set viewing angle
-    if view_angle == "perspective":
-        ax.view_init(elev=15, azim=30)
-    elif view_angle == "side":
-        ax.view_init(elev=0, azim=0)
-    elif view_angle == "front":
-        ax.view_init(elev=0, azim=90)
-
-    # Add labels
-    ax.text(0, h + 0.15, 0, "T1", fontsize=16, color=T1_color, weight="bold")
-    ax.text(
-        np.max(genome_x), -0.15, -0.7, "T2", fontsize=16, color=T2_color, weight="bold"
-    )
-    ax.text(
-        np.max(genome_x), -0.15, 0.7, "T3", fontsize=16, color=T3_color, weight="bold"
-    )
-
-    # Add genome position markers along X-axis
-    for i, frac in enumerate([0, 0.25, 0.5, 0.75, 1]):
-        pos_idx = int(frac * (len(genome_pos_sub) - 1))
-        x_pos = frac * np.max(genome_x)
-        ax.text(
-            x_pos,
-            -0.5,
-            0,
-            f"{genome_pos_sub[pos_idx]:.1f}kb",
-            fontsize=10,
-            alpha=0.8,
-            ha="center",
-        )
-
-    # Set limits and clean up
-    ax.set_xlim(-3, np.max(genome_x) + 3)
-    ax.set_ylim(-0.6, h + 0.4)
-    ax.set_zlim(-1.0, 1.0)
-
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_zticks([])
-    ax.set_xlabel("")
-    ax.set_ylabel("")
-    ax.set_zlabel("")
-
-    # Add colorbar
-    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=20)
-    cbar.set_label("Genome Position (kb)", rotation=270, labelpad=20, fontsize=12)
-
-    plt.title(
-        f"3D Ternary Prism (Genome as X-axis) - {view_angle.title()} View", fontsize=16
-    )
-
-    # Save the plot
-    title = f"{file_name}_ternary_prism_x_{view_angle}.png"
-    save_figure(fig, title)
-    return fig
-
 
 def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"):
     """
     Plot a ternary heatmap: each subtriangle is colored by the number of data points it contains.
-    - Uses the global 'style' variable for colormap selection
-    - grid_color: color for grid lines (default: dark grey)
-    - Empty triangles (count = 0) are shown with striped pattern
+
+    VISUAL TWEAKING GUIDE:
+    - Change the colormap for the heatmap: see `get_professional_colormap(style=style_heatmap, ...)`
+    - Change the color and alpha of grid lines: see `grid_color` and the grid drawing section
+    - Change the color, width, and hatch pattern for empty triangles: see the Polygon creation for empty triangles
+    - Change the colorbar style, ticks, and label: see the colorbar section
+    - To show/hide axis coordinate labels, uncomment the relevant block below.
+    - To change figure size, edit `fig = plt.figure(figsize=(8, 6))`
+    - To change output file name, edit the `title = ...` line at the end.
     """
     import matplotlib as mpl
     from matplotlib.colors import LinearSegmentedColormap
@@ -1082,7 +780,7 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     vmax = np.max(values) if np.any(values > 0) else 1
 
     # Use the heatmap-specific style variable for colormap
-    cmap = get_professional_colormap(style=style_heatmap, truncate=False)
+    cmap = get_professional_colormap(style=style_heatmap, truncate=truncate)
 
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -1163,7 +861,7 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
 
 
     #plt.title(style_heatmap)
-    title = file_name + "_heatmap_count.png"
+    title = f"{file_name}_heatmap_count_granularity_{alpha}.png"
     save_figure(fig, title)
     return fig
 

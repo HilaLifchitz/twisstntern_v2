@@ -63,8 +63,8 @@ def compute_metrics(data1, data2, granularity):
         dict: metrics with keys 'l2', 'chi2_stat', 'p_value', 'wasserstein_euclidean', 'wasserstein_kl'
     """
     # Run grid analysis on full datasets
-    grid1 = triangles_analysis(data1, granularity)
-    grid2 = triangles_analysis(data2, granularity)
+    grid1 = triangles_analysis(data1, granularity) # grid1 is the grid of the first dataset (data1) "data"
+    grid2 = triangles_analysis(data2, granularity) # grid2 is the grid of the second dataset (data2) "model"
 
     # Match triangles by index
     merged = pd.merge(grid1, grid2, on="index", suffixes=("_1", "_2"))
@@ -76,10 +76,23 @@ def compute_metrics(data1, data2, granularity):
     prop2 = counts2 / counts2.sum()
 
     # L2 distance
+        # NOTICE: L2 distance under uniform measure: sqrt( (1 / len(I)) * sum over i of (f[i] - g[i])**2 ), I= index of partition of the simplex
+    # This is the TRUE L2 distance between the two distributions
+    # It treats your discrete space as a probability space with uniform measure.
+    # It makes our norm stable under changes to partition granularity-- i.e. different alpha
+   
     l2 = np.linalg.norm(prop1 - prop2)
+    l2 = l2* 1/len(grid1) 
+
+
     # Chi-square
+    # Standard Chi-square test statistic:
+    #     chi2 = sum( (O_i - E_i)**2 / E_i )
+    # where:
+    #     O_i = observed count (e.g. from data)
+    #     E_i = expected count (e.g. from model)
     with np.errstate(divide='ignore', invalid='ignore'):
-        chi2_stat = np.nansum((counts1 - counts2) ** 2 / (counts1 + counts2 + 1e-8))
+        chi2_stat = np.nansum((counts1 - counts2) ** 2 / (counts1 + 1e-8))
     dof = (prop1 != 0).sum() - 1
     p_value = 1 - chi2.cdf(chi2_stat, dof)
 
