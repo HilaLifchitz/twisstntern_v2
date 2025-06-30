@@ -12,7 +12,8 @@ from twisstntern.visualization import ( # add the plot functions here 25.6
     plotting_triangle_index,
     plot_fundamental_asymmetry,
     plot_ternary_heatmap_data,
-    plot_genome_position_2d
+    plot_genome_position_2d,
+    plot_density_colored
 )
 from twisstntern.tree_processing import (
     detect_and_read_trees,
@@ -47,49 +48,13 @@ def detect_file_type(file_path):
 
 
 def ensure_twisst_available():
-    """
-    Ensure twisst is available for tree processing. Download if necessary.
-
-    Returns:
-        bool: True if twisst is available, False otherwise
-    """
+    """Ensure twisst is available for use."""
     try:
-        # Try importing twisst to check if it's available
-        import sys
-        from pathlib import Path
-
-        # Add external directory to path
-        external_dir = Path(__file__).parent / "external"
-        sys.path.append(str(external_dir))
-
-        from twisst import weightTrees  # twisst might be in users direct directory
-
-        print("✓ twisst is already available")
+        from twisstntern.tree_processing import weightTrees
         return True
-
     except ImportError:
-        print("⚠️  twisst not found. Downloading automatically...")
-
-        try:
-            # Import and run the download function
-            from twisstntern.download_twisst import (
-                ensure_twisst_available as download_twisst,
-            )
-
-            success = download_twisst()  # download twisst to external directory
-
-            if success:
-                print("✓ twisst downloaded successfully")
-                return True
-            else:
-                print("✗ Failed to download twisst automatically")
-                print("Please run: python -m twisstntern.download_twisst")
-                return False
-
-        except Exception as e:
-            print(f"✗ Error downloading twisst: {e}")
-            print("Please run: python -m twisstntern.download_twisst")
-            return False
+        print("✗ twisst not available in the package")
+        return False
 
 
 def process_tree_file(
@@ -334,13 +299,16 @@ def run_analysis( # add plot functions here 25.6
     # the ternary plot with data points
     plot(data, granularity, output_prefix)
     logger.debug("Generated ternary plot")
+    # NEW: Density-colored ternary plot
+    plot_density_colored(data, granularity, output_prefix)
+    logger.debug("Generated density-colored ternary plot")
 
     # the hat maps
     # plot_genome_position_2d(data, output_prefix, genome_positions=None, colormap=colormap)
     # logger.debug("Generated genome position plot")
-    # New: Ternary heatmap (count, dark grey grid)
-    plot_ternary_heatmap_data(data, granularity, output_prefix)
-    logger.debug("Generated ternary heatmap (count, dark grey grid)")
+    # New: Ternary heatmap (count, no grid) - always uses 0.02 granularity
+    plot_ternary_heatmap_data(data, 0.02, output_prefix)
+    logger.debug("Generated ternary heatmap (count, no grid) - fixed 0.02 granularity")
 
     
     plot_results(results, granularity, output_prefix)

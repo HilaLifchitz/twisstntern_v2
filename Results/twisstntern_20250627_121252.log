@@ -1,7 +1,0 @@
-2025-06-27 12:12:52,109 - [32mINFO[0m - ============================================================
-2025-06-27 12:12:52,109 - [32mINFO[0m - TWISSTNTERN Analysis Session
-2025-06-27 12:12:52,109 - [32mINFO[0m - ============================================================
-2025-06-27 12:12:52,109 - [32mINFO[0m - Python version: 3.11.13 (main, Jun  5 2025, 13:12:00) [GCC 11.2.0]
-2025-06-27 12:12:52,112 - [32mINFO[0m - Platform: Linux-6.11.0-26-generic-x86_64-with-glibc2.39
-2025-06-27 12:12:52,112 - [32mINFO[0m - Working directory: /home/hlifchit/projects/twissting_baby
-2025-06-27 12:12:52,112 - [31mERROR[0m - Input file not found: /home/hlifchit/projects/twissting_baby/csv

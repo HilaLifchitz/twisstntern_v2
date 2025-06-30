@@ -14,8 +14,8 @@ missions for today and tmr
 
   add the --downsample N+index thingy at both DONE
 
-figure out the wasserstein distnace- seperate script
-do the data_copmare option - residuals
+figure out the wasserstein distnace- seperate script KINDA DONE- havent implemented real optimization
+do the data_copmare option - residuals HALF- DONE-- need to figure styles
 produce the examples compare again
 
 --------------------------------------------------------------------
@@ -24,7 +24,6 @@ produce the examples compare again
                               
 10.6
 
-3. write a script that compares two toplogy weights distributions like the pic that Sean sent to DIscord
 
 4. write a script for hypothesis.compare -- for all 4 of our metrics!
 

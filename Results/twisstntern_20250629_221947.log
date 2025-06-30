@@ -1,0 +1,50 @@
+2025-06-29 22:19:47,471 - [32mINFO[0m - ============================================================
+2025-06-29 22:19:47,471 - [32mINFO[0m - TWISSTNTERN Analysis Session
+2025-06-29 22:19:47,471 - [32mINFO[0m - ============================================================
+2025-06-29 22:19:47,471 - [32mINFO[0m - Python version: 3.11.13 (main, Jun  5 2025, 13:12:00) [GCC 11.2.0]
+2025-06-29 22:19:47,473 - [32mINFO[0m - Platform: Linux-6.11.0-28-generic-x86_64-with-glibc2.39
+2025-06-29 22:19:47,473 - [32mINFO[0m - Working directory: /home/hlifchit/projects/twissting_baby
+2025-06-29 22:19:47,474 - [32mINFO[0m - Starting TWISSTNTERN analysis
+2025-06-29 22:19:47,474 - [32mINFO[0m - Input file: /home/hlifchit/projects/twissting_baby/csv files/samples_14.6_testing_NN/ne0.27.csv
+2025-06-29 22:19:47,474 - [32mINFO[0m - Output directory: Results
+2025-06-29 22:19:47,474 - [32mINFO[0m - granularity: 0.1
+2025-06-29 22:19:47,474 - [32mINFO[0m - verbose: False
+2025-06-29 22:19:47,474 - [32mINFO[0m - Output directory: Results
+2025-06-29 22:19:47,474 - [32mINFO[0m - Detected file type: csv
+2025-06-29 22:19:47,474 - [32mINFO[0m - Using CSV file directly for analysis
+2025-06-29 22:19:47,474 - [32mINFO[0m - Loading data from: /home/hlifchit/projects/twissting_baby/csv files/samples_14.6_testing_NN/ne0.27.csv
+2025-06-29 22:19:56,000 - [32mINFO[0m - Assuming columns are T1, T2, T3 (in order).
+2025-06-29 22:19:56,000 - [32mINFO[0m - Loaded data shape: (29454, 3)
+2025-06-29 22:19:56,000 - [32mINFO[0m - Running triangle analysis...
+2025-06-29 22:19:56,116 - [32mINFO[0m - Triangle analysis completed. Results shape: (45, 7)
+2025-06-29 22:19:56,116 - [32mINFO[0m - Running fundamental asymmetry analysis...
+2025-06-29 22:19:56,121 - [32mINFO[0m - ============================================================
+2025-06-29 22:19:56,122 - [32mINFO[0m - FUNDAMENTAL ASYMMETRY RESULTS
+2025-06-29 22:19:56,122 - [32mINFO[0m - ============================================================
+2025-06-29 22:19:56,122 - [32mINFO[0m - Data file used: /home/hlifchit/projects/twissting_baby/csv files/samples_14.6_testing_NN/ne0.27.csv
+2025-06-29 22:19:56,122 - [32mINFO[0m - Total data points before downsampling: 29454
+2025-06-29 22:19:56,122 - [32mINFO[0m - Total data points used in symmetry analysis: 29454 (n_right + n_left = 29454)
+2025-06-29 22:19:56,122 - [32mINFO[0m - Note: 0 data points were filtered out (where T2 = T3, which fall exactly on the y-axis in ternary space)
+2025-06-29 22:19:56,122 - [32mINFO[0m - n_right: 14808
+2025-06-29 22:19:56,122 - [32mINFO[0m - n_left: 14646
+2025-06-29 22:19:56,122 - [32mINFO[0m - D_LR: 0.0055
+2025-06-29 22:19:56,122 - [32mINFO[0m - G-test: 0.8910
+2025-06-29 22:19:56,122 - [32mINFO[0m - p-value: 3.4520e-01
+2025-06-29 22:19:56,122 - [32mINFO[0m - ============================================================
+2025-06-29 22:19:56,122 - [32mINFO[0m - Generating visualizations...
+2025-06-29 22:20:29,863 - [32mINFO[0m - Saving results...
+2025-06-29 22:20:29,864 - [32mINFO[0m - Saved triangle analysis results to: Results/ne0.27_triangle_analysis_0.1.csv
+2025-06-29 22:20:29,864 - [32mINFO[0m - Analysis pipeline completed successfully!
+2025-06-29 22:20:29,864 - [32mINFO[0m - ============================================================
+2025-06-29 22:20:29,865 - [32mINFO[0m - Analysis completed successfully!
+2025-06-29 22:20:29,865 - [32mINFO[0m - Total duration: 42.39 seconds
+2025-06-29 22:20:29,865 - [32mINFO[0m - Generated files:
+2025-06-29 22:20:29,865 - [32mINFO[0m -   ✓ Results/ne0.27_granuality_0.1.png (2,479,817 bytes)
+2025-06-29 22:20:29,865 - [32mINFO[0m -   ✓ Results/ne0.27_triangle_analysis_0.1.csv (3,165 bytes)
+2025-06-29 22:20:29,865 - [32mINFO[0m -   ✓ Results/ne0.27_density_kde_granularity_0.1.png (1,724,849 bytes)
+2025-06-29 22:20:29,865 - [32mINFO[0m -   ✓ Results/twisstntern_20250629_221947.log (3,866 bytes)
+2025-06-29 22:20:29,865 - [32mINFO[0m -   ✓ Results/ne0.27_fundamental_asymmetry.png (104,270 bytes)
+2025-06-29 22:20:29,865 - [32mINFO[0m -   ✓ Results/ne0.27_analysis_granularity_0.1.png (296,408 bytes)
+2025-06-29 22:20:29,865 - [32mINFO[0m -   ✓ Results/ne0.27_heatmap.png (584,374 bytes)
+2025-06-29 22:20:29,865 - [32mINFO[0m -   ✓ Results/ne0.27_index_granularity_0.1.png (288,097 bytes)
+2025-06-29 22:20:29,865 - [32mINFO[0m - ============================================================

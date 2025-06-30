@@ -57,10 +57,7 @@ pip install -e .[dev]
 
 You **do not need to manually install or download `twisst.py`** to use this package!
 
-Both the main analysis (`twisstntern`) and simulation (`twisstntern_simulate`) pipelines will:
-- **Automatically check for the required `twisst.py` script** (used for topology weighting).
-- **Download and patch it if missing or outdated**—no manual steps required.
-- **Work out-of-the-box** in any fresh environment, as long as you install this package and its dependencies.
+Both the main analysis (`twisstntern`) and simulation (`twisstntern_simulate`) packages include `twisst.py` directly as part of the package. The required `twisst.py` script (used for topology weighting) is bundled with the installation and will work out-of-the-box in any environment.
 
 ### How it works
 - When you run:
@@ -69,21 +66,11 @@ Both the main analysis (`twisstntern`) and simulation (`twisstntern_simulate`) p
   # or
   python -m twisstntern_simulate -c config_template.yaml
   ```
-  The pipeline will ensure `twisst.py` is present and compatible before starting the analysis.
-
-- If you want to **force a fresh download** (e.g., if you suspect a corrupted file), use:
-  ```bash
-  python -m twisstntern_simulate -c config_template.yaml --force-download
-  ```
-
-- If you want to **skip the check** (not recommended unless you know what you're doing), use:
-  ```bash
-  python -m twisstntern_simulate -c config_template.yaml --skip-twisst-check
-  ```
+  The pipeline will use the bundled `twisst.py` script automatically.
 
 ### Why is this needed?
 - `twisst.py` is a third-party script not available on PyPI.
-- This package bundles and manages it for you, so you never have to worry about missing dependencies.
+- This package bundles it for you, so you never have to worry about missing dependencies.
 
 ---
 

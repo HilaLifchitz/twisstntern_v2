@@ -40,13 +40,8 @@ import logging
 EXTERNAL_DIR = Path(__file__).parent / "external"
 sys.path.append(str(EXTERNAL_DIR))
 
-# Import twisst functions
-try:
-    from twisst import weightTrees, summary  # type: ignore
-except ImportError:
-    # This will be handled by the pipeline calling download_twisst
-    weightTrees = None
-    summary = None
+# Import twisst functions directly from local external directory
+from twisst import weightTrees, summary  # type: ignore
 
 # Import logger
 from twisstntern.logger import get_logger
@@ -300,14 +295,6 @@ def ts_chromosome_to_twisst_weights(
     Returns:
         pd.DataFrame: Normalized weights ready for dump_data function, first row is the simplified topologies, the rest are the weights
     """
-
-    # Check if twisst is available
-    if weightTrees is None:
-        raise ImportError(
-            "twisst is not available. Please ensure twisst.py is in the "
-            "twisstntern/external directory. You can download it from: "
-            "https://github.com/simonhmartin/twisst"
-        )
 
     # Debug info about the TreeSequence
     if verbose:
@@ -702,14 +689,6 @@ def newick_to_twisst_weights(
     Returns:
         pd.DataFrame: Normalized weights ready for analysis
     """
-
-    # Check if twisst is available
-    if weightTrees is None:
-        raise ImportError(
-            "twisst is not available. Please ensure twisst.py is in the "
-            "twisstntern/external directory. You can download it from: "
-            "https://github.com/simonhmartin/twisst"
-        )
 
     # Handle single tree string
     if isinstance(newick_trees, str):

@@ -14,7 +14,6 @@ from typing import Dict, Any, Optional
 # Import simulation components
 from twisstntern_simulate.config import Config
 from twisstntern_simulate.simulation import run_simulation
-from twisstntern_simulate.download_twisst import ensure_twisst_available
 from twisstntern_simulate.ts_processing import ts_to_twisst_weights
 from twisstntern_simulate.analysis import triangles_analysis, fundamental_asymmetry
 from twisstntern_simulate.visualization import (
@@ -23,6 +22,8 @@ from twisstntern_simulate.visualization import (
     plot_results,
     plotting_triangle_index,
 )
+# Import density plotting from main visualization module
+from twisstntern.visualization import plot_density_colored
 
 # Import logging from twisstntern
 from twisstntern.logger import get_logger, log_analysis_start, log_analysis_complete, log_simulation_config
@@ -148,8 +149,6 @@ def apply_config_overrides(config, overrides_list):
 def run_pipeline(
     config_path: str,
     output_dir: str,
-    skip_twisst_check: bool = False,
-    force_download: bool = False,
     seed_override: Optional[int] = None,
     mode_override: Optional[str] = None,
     granularity: float = 0.1,
@@ -167,8 +166,6 @@ def run_pipeline(
     Args:
         config_path: Path to configuration YAML file
         output_dir: Directory for output files
-        skip_twisst_check: If True, skip checking/downloading twisst
-        force_download: If True, force re-download of twisst
         seed_override: Override random seed from config file
         mode_override: Override simulation mode from config file
         granularity: Granularity for ternary analysis
@@ -249,15 +246,6 @@ def run_pipeline(
         # Log tree saving
         if "newick_file" in simulation_results:
             logger.info(f"Trees saved to: {simulation_results['newick_file']}")
-
-        # ====================================================================
-        # STEP 3: Ensure twisst is available (unless skipped)
-        # ====================================================================
-        if not skip_twisst_check:
-            logger.info("Checking twisst availability...")
-            twisst_path = ensure_twisst_available()
-        else:
-            logger.info("Skipped twisst check")
 
         # ====================================================================
         # STEP 4: Process tree sequences to generate topology weights
@@ -404,7 +392,7 @@ def run_pipeline(
             # Also show if loci were filtered during processing
             if n_total_trees < config.n_loci:
                 n_loci_filtered = config.n_loci - n_total_trees
-                logger.info(f"Additional note: {n_loci_filtered} loci were filtered out during processing (e.g., loci with insufficient topology information)")
+                logger.info(f"Additional note: {n_loci_filtered} loci were filtered out during processing.")
         
         logger.info(f"n_right: {fundamental_results[0]}")
         logger.info(f"n_left: {fundamental_results[1]}")
@@ -420,6 +408,8 @@ def run_pipeline(
         # Generate all plots (exactly like main twisstntern - always generate)
         plot_fundamental_asymmetry(topology_weights, output_prefix)
         plot(topology_weights, granularity, output_prefix)
+        # NEW: Density-colored ternary plot
+        plot_density_colored(topology_weights, granularity, output_prefix)
         plot_results(triangles_results, granularity, output_prefix)
         plotting_triangle_index(granularity, output_prefix)
 

@@ -96,16 +96,8 @@ import msprime
 EXTERNAL_DIR = Path(__file__).parent / "external"
 sys.path.append(str(EXTERNAL_DIR))
 
-# Import twisst functions
-try:
-    from twisst import weightTrees
-except ImportError:
-    # This will be handled by the pipeline calling download_twisst
-    weightTrees = None
-
-# Import logging from twisstntern
-from twisstntern.logger import get_logger
-from twisstntern.tree_processing import log_topologies
+# Import twisst functions directly from local external directory
+from twisst import weightTrees
 
 # Import logging from twisstntern
 from twisstntern.logger import get_logger
@@ -162,14 +154,6 @@ def ts_chromosome_to_twisst_weights(
         pd.DataFrame: Normalized weights ready for dump_data function, first row is the simplified topologies, the rest are the weights
     """
   
-    # Check if twisst is available
-    if weightTrees is None:
-        raise ImportError(
-            "twisst is not available. Please ensure twisst.py is in the "
-            "twisstntern/external directory. You can download it from: "
-            "https://github.com/simonhmartin/twisst"
-        )
-
     # Debug info about the TreeSequence
     if verbose:
         print("=== TreeSequence Info ===")
@@ -234,11 +218,11 @@ def ts_chromosome_to_twisst_weights(
         ) = reorder_weights_by_topology_preference(weightsData, topology_mapping, population_labels)
     else:  # if no topology mapping
         # we just print the default topologies order by twisst
-        print("No topology mapping was provided; displaying the default topology axis")
-        topos = weightsData["topos"]
-        for i, topo in enumerate(topos):
-            print(f"Topology {i+1}")
-            print(topo)
+        # print("No topology mapping was provided; displaying the default topology axis")
+        # topos = weightsData["topos"]
+        # for i, topo in enumerate(topos):
+        #     print(f"Topology {i+1}")
+        #     print(topo)
 
         # Extract normalized weights
         if "weights_norm" in weightsData:
@@ -329,14 +313,6 @@ def ts_to_twisst_weights(
     Returns:
         pd.DataFrame: Normalized weights ready for analysis, with consistent topology ordering
     """
-
-    # Check if twisst is available
-    if weightTrees is None:
-        raise ImportError(
-            "twisst is not available. Please ensure twisst.py is in the "
-            "twisstntern/external directory. You can download it from: "
-            "https://github.com/simonhmartin/twisst"
-        )
 
     # Check if input is a generator or single TreeSequence
     is_generator = hasattr(input_data, "__iter__") and not isinstance(
@@ -539,9 +515,7 @@ def ts_to_twisst_weights(
             print(f"Topology {i+1}")
             print(topo)
         
-        # Log topologies to file
-        logger = get_logger(__name__)
-        log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)", population_labels)
+        # Topologies already logged during first iteration, no need to log again
 
     if verbose:
         print(f"\nCombined Results:")

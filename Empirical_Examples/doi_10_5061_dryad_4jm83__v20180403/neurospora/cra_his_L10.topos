@@ -1,3 +1,0 @@
-((cras,hisp),tet_A,tet_a);
-((cras,tet_A),hisp,tet_a);
-((cras,tet_a),hisp,tet_A);

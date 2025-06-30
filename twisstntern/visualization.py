@@ -7,6 +7,7 @@ from ete3 import Tree  # Tree object from ete3 to parse and pretty-print Newick 
 os.environ["QT_QPA_PLATFORM"] = "xcb"  # Force XCB backend instead of Wayland
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # Add 3D plotting capability
 from pathlib import Path
 import pandas as pd
 from math import sqrt
@@ -47,8 +48,29 @@ T3_color_data = "lightgrey" # for the data plot
 
 
 style = "RdBu_r" # for D-LR plots (=plot results + plot_fundamental_asymmetry)- the colormap
-style_heatmap = "plasma" # for heatmap (=plot_ternary_heatmap_data)- the colormap
+style_heatmap = "viridis" # for heatmap (=plot_ternary_heatmap_data)- the colormap
 truncate = False # for heatmap -whether to chop off the edges of the gradient map
+
+# =============================================================================
+# 🎨 DENSITY PLOT COLORMAP - CHANGE THIS TO EXPERIMENT WITH DIFFERENT COLORS!
+# =============================================================================
+kde_style = "magma"  # 🎨 CHANGE THIS LINE TO EXPERIMENT!
+# 
+# 🌈 Popular options to try:
+# kde_style = "viridis"    # Classic green-blue (includes that #21918c green!)
+# kde_style = "plasma"     # Purple-pink-yellow  
+# kde_style = "inferno"    # Black-red-yellow
+# kde_style = "magma"      # Black-purple-white
+# kde_style = "coolwarm"   # Blue-white-red (diverging)
+# kde_style = "RdBu_r"     # Red-white-blue (diverging)
+# kde_style = "Blues"      # White to dark blue
+# kde_style = "Reds"       # White to dark red
+# kde_style = "Greens"     # White to dark green
+# kde_style = "Oranges"    # White to dark orange
+# kde_style = "rocket"     # Seaborn: dark to light red
+# kde_style = "mako"       # Seaborn: dark to light teal
+# kde_style = "crest"      # Seaborn: cool gradient
+# =============================================================================
 
 # ============================================================================
 # More extensive visual customization guide:
@@ -192,17 +214,23 @@ def plot(data, granularity, file_name):
     x_data, y_data = cartizian(
         data["T1"], data["T2"], data["T3"]
     )  # coordinates of the data points to be plotted
-    # plt.scatter(x_data, y_data, color="lightsteelblue", alpha=0.5, s=9)
-    points_color = "#A2C5F2"
-    #points_color= "green"
+    #points_color = "#A2C5F2" #"my" blue
+    # Position 0.4: #2a788e (more blue-green)
+    # Position 0.45: #25848e (slightly more blue)
+    # Position 0.5: #21918c (the mid-range green you asked about)
+    # Position 0.55: #1e9c89 (slightly more green)
+    # Position 0.6: #22a884 (more vibrant green)
+
+
+    points_color= "#1e9c89"
     plt.scatter(
         x_data,
         y_data,
         facecolors=points_color,
         edgecolors="gray",
         alpha=0.4,
-        linewidths=0.2,
-        s=25,
+        linewidths=0.4,
+        s=15,
     )
     label_color = "black" # 25.6    tweek with locations of labels
     label_size = 12
@@ -211,30 +239,6 @@ def plot(data, granularity, file_name):
     plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color)
     plt.text(-0.55, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
 
-    # # printing the coordinates
-    # coord = np.arange(0, 1 + alpha, alpha)
-    # T_1 = np.arange(0, 0.5 + alpha / 2, alpha / 2)
-    # T_2 = np.arange(-0.5, 0 + alpha / 2, alpha / 2)
-    # T_3 = np.arange(-0.5, 0.5 + alpha, alpha)
-
-    # for i in range(len(coord)):
-    #     c = coord[i]
-    #     label = str(round(c, 2))
-    #     label_complement = str(round(1 - c, 2))
-
-    #     # T1 label (crimson, offset right)
-    #     x1 = T_1[i]
-    #     y1 = T2(0, x1)
-    #     plt.text(x1 + 0.01, y1, label_complement, size=7, color=T1_color)
-
-    #     # T2 label (dodgerblue, offset left)
-    #     x2 = T_2[i]
-    #     y2 = T3(0, x2)
-    #     plt.text(x2 - 0.04, y2, label_complement, size=7, color=T2_color)
-
-    #     # T3 label (darkgoldenrod, on x-axis)
-    #     x3 = T_3[i]
-    #     plt.text(x3, -0.03, label, size=7, color=T3_color)
 
     # removing the box lines around the plot
     ax.spines["right"].set_color("none")
@@ -776,11 +780,12 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
         counts.append(count)
     counts = np.array(counts)
     values = counts  # Always use count, not proportion
-    vmin = 0  # Include zero in the range
+    vmin = 1  # Start from 1 instead of 0
     vmax = np.max(values) if np.any(values > 0) else 1
 
-    # Use the heatmap-specific style variable for colormap
-    cmap = get_professional_colormap(style=style_heatmap, truncate=truncate)
+    # Use a custom colormap for better visibility
+    # Custom rocket_truncated colormap - removes darkest 1/3 for brighter appearance
+    cmap = get_professional_colormap(style=style_heatmap, truncate=False)
 
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -790,31 +795,7 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     triangle_y = [h, 0, 0, h]
     ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
 
-    # Grid lines
-    if grid_color is None:
-        steps = np.arange(alpha, 1, alpha)
-        for y in steps:
-            x1_l, x1_r = T1_lim(y)
-            ax.hlines(y=y * h, xmin=x1_l, xmax=x1_r, color=T1_color, linewidth=1)
-            x2_l, x2_r = T2_lim(y)
-            x2 = np.linspace(x2_l, x2_r, 100)
-            ax.plot(x2, T2(y, x2), color=T2_color, linewidth=1)
-            x3_l, x3_r = T3_lim(y)
-            x3 = np.linspace(x3_l, x3_r, 100)
-            ax.plot(x3, T3(y, x3), color=T3_color, linewidth=1)
-        ax.vlines(x=0, ymin=0, ymax=h, colors="#3E3E3E", linestyles=":")
-    else:
-        steps = np.arange(alpha, 1, alpha)
-        for y in steps:
-            x1_l, x1_r = T1_lim(y)
-            ax.hlines(y=y * h, xmin=x1_l, xmax=x1_r, color=grid_color, linewidth=0.8, alpha=0.6)
-            x2_l, x2_r = T2_lim(y)
-            x2 = np.linspace(x2_l, x2_r, 100)
-            ax.plot(x2, T2(y, x2), color=grid_color, linewidth=0.8, alpha=0.6)
-            x3_l, x3_r = T3_lim(y)
-            x3 = np.linspace(x3_l, x3_r, 100)
-            ax.plot(x3, T3(y, x3), color=grid_color, linewidth=0.8, alpha=0.6)
-        ax.vlines(x=0, ymin=0, ymax=h, colors=grid_color, linestyles=":", linewidth=1.0, alpha=0.7)
+    # No grid lines - completely removed for clean heatmap appearance
 
     # Plot filled triangles (only for nonzero bins)
     for idx, triangle in enumerate(triangles):
@@ -822,15 +803,14 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
         trianglex, triangley, _ = return_triangle_coord(a1, b1, a2, b2, a3, b3)
         
         if values[idx] == 0:
-            # Create striped pattern for empty triangles using Polygon with hatch
+            # Create plain white triangles for empty regions
             triangle_coords = list(zip(trianglex, triangley))
             empty_triangle = Polygon(
                 triangle_coords,
                 closed=True,
                 facecolor='white',
-                edgecolor='grey',
-                hatch='///',
-                linewidth=0.5
+                edgecolor='none',
+                linewidth=0
             )
             ax.add_patch(empty_triangle)
         else:
@@ -849,7 +829,7 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    # Colorbar (now includes zero values)
+    # Colorbar (starts from 1)
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     cax = inset_axes(ax, width="3%", height="80%", loc='center right',
@@ -861,7 +841,7 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
 
 
     #plt.title(style_heatmap)
-    title = f"{file_name}_heatmap_count_granularity_{alpha}.png"
+    title = f"{file_name}_heatmap.png"
     save_figure(fig, title)
     return fig
 
@@ -886,7 +866,7 @@ def get_professional_colormap(style="RdBu_r", truncate=True):
             - "magma": Magma - dark to light
             - "inferno": Inferno - dark to bright
             - "inferno_r": Reversed inferno
-            - "inferno_r_soft": Reversed inferno with subtle yellow start
+            - "inferno_r_soft": Reversed inferno with much brighter, softer start
             - "inferno_midrange": Custom inferno with mid-range center instead of white
             - "inferno_midrange_r": Reversed inferno_midrange
             - "vlag": Violet-Light Blue diverging
@@ -916,6 +896,12 @@ def get_professional_colormap(style="RdBu_r", truncate=True):
             - "BuMagenta": Blue to magenta - vibrant gradient
             - "BuPi": Blue to pink - starts exactly like BuGn, ends in pink
             - "BuPu": Blue to purple - starts exactly like BuGn, ends in dark dramatic purple
+            - "Greys_dark": Custom darker grey colormap - starts from lighter grey and goes to black
+            - "grey_1": Custom grey colormap - starts very light and goes to pure black
+            - "rocket_truncated": Rocket colormap with darkest 1/3 removed for brighter appearance
+            - "rocket_truncated_r": Reversed rocket_truncated - starts dark and goes to bright
+            - "rocket_bottom_third": Rocket colormap using only the bottom 1/3 of the spectrum
+            - "viridis_r_soft": Reversed viridis with softer yellow start
         truncate (bool): Whether to truncate the colormap to avoid extreme colors
     
     Returns:
@@ -964,8 +950,14 @@ def get_professional_colormap(style="RdBu_r", truncate=True):
         "BuGn_r": "BuGn_r",  # Blue-green reversed - light to dark cyan
         "BuViolet": "BuViolet",  # Custom light blue to violet colormap (starts light like BuGn)
         "BuMagenta": "BuMagenta",  # Custom light blue to magenta colormap (starts light like BuGn)
-        "BuPi": "BuPi",  # Custom light blue to pink colormap (starts light like BuGn, ends in pink)
-        "BuPu": "BuPu",  # Custom light blue to purple colormap (starts light like BuGn, ends in dark dramatic purple)
+        "BuPi": "BuPi",  # Custom light blue to pink colormap (starts exactly like BuGn, ends in pink)
+        "BuPu": "BuPu",  # Custom light blue to dark dramatic purple colormap (starts exactly like BuGn, ends in dark purple)
+        "Greys_dark": "Greys_dark",  # Custom darker grey colormap - starts from lighter grey and goes to black
+        "grey_1": "grey_1",  # Custom grey colormap - starts very light and goes to pure black
+        "rocket_truncated": "rocket_truncated",  # Rocket colormap with darkest 1/3 removed for brighter appearance
+        "rocket_truncated_r": "rocket_truncated_r",  # Reversed rocket_truncated - starts dark and goes to bright
+        "rocket_bottom_third": "rocket_bottom_third",  # Rocket colormap using only the bottom 1/3 of the spectrum
+        "viridis_r_soft": "viridis_r_soft",  # Reversed viridis with softer yellow start
     }
     
     # Handle custom seismic variants
@@ -1133,6 +1125,69 @@ def get_professional_colormap(style="RdBu_r", truncate=True):
             colors.append([r, g, b, 1.0])
         return plt.cm.colors.LinearSegmentedColormap.from_list('BuPu', colors)
     
+    elif style == "Greys_dark":
+        # Custom darker grey colormap - starts from lighter grey and goes to black
+        colors = []
+        for i in range(256):
+            # Light grey to black transition
+            ratio = i / 255.0
+            # Start with very light grey (approximately RGB 0.8, 0.8, 0.8) - subtle but distinct from white
+            # End with pure black (RGB 0, 0, 0)
+            grey_value = 0.8 - ratio * 0.8  # 0.8 to 0.0
+            colors.append([grey_value, grey_value, grey_value, 1.0])
+        return plt.cm.colors.LinearSegmentedColormap.from_list('Greys_dark', colors)
+    
+    elif style == "grey_1":
+        # Custom grey colormap - starts very light and goes to pure black
+        colors = []
+        for i in range(256):
+            # Very light grey to black transition
+            ratio = i / 255.0
+            # Start with very light grey (approximately RGB 0.85, 0.85, 0.85) - just a tad lighter than Greys_dark
+            # End with pure black (RGB 0, 0, 0)
+            grey_value = 0.85 - ratio * 0.85  # 0.85 to 0.0
+            colors.append([grey_value, grey_value, grey_value, 1.0])
+        return plt.cm.colors.LinearSegmentedColormap.from_list('grey_1', colors)
+    
+    elif style == "rocket_truncated":
+        # Rocket colormap with darkest 1/3 removed for brighter appearance
+        base_rocket = sns.color_palette("rocket", as_cmap=True)
+        # Use only the top 2/3 of the rocket colormap (cut off the darkest 1/3)
+        colors = base_rocket(np.linspace(0.33, 1.0, 256))  # 0.33 to 1.0 = top 2/3
+        return plt.cm.colors.LinearSegmentedColormap.from_list('rocket_truncated', colors)
+    
+    elif style == "rocket_truncated_r":
+        # Reversed rocket_truncated - starts dark and goes to bright
+        base_rocket = sns.color_palette("rocket", as_cmap=True)
+        # Use a smaller range from the rocket colormap for darker appearance
+        # Start from 0.5 (darker) and go to 0.9 (still dark but not the darkest)
+        colors = base_rocket(np.linspace(0.35, 0.99, 256))  # 0.5 to 0.9 = middle-dark range
+        colors = colors[::-1]  # Reverse the colors
+        return plt.cm.colors.LinearSegmentedColormap.from_list('rocket_truncated_r', colors)
+    
+    elif style == "rocket_bottom_third":
+        # Rocket colormap using only the bottom 1/3 of the spectrum
+        base_rocket = sns.color_palette("rocket", as_cmap=True)
+        # Use only the bottom 1/3 of the rocket colormap (0.0 to 0.33)
+        colors = base_rocket(np.linspace(0.0, 0.87, 256))  # 0.0 to 0.33 = bottom 1/3
+        return plt.cm.colors.LinearSegmentedColormap.from_list('rocket_bottom_third', colors)
+    
+    elif style == "viridis_r_soft":
+        # Reversed viridis with softer yellow start
+        base_viridis = plt.cm.viridis
+        # Use full viridis range but reverse it
+        colors = base_viridis(np.linspace(0.0, 1.0, 256))  # Full range
+        colors = colors[::-1]  # Reverse the colors
+        
+        # Blend the first portion with a softer yellow to make the start less bright
+        soft_yellow = np.array([0.95, 0.9, 0.7, 1.0])  # RGBA for soft, pastel yellow
+        n_blend = int(0.15 * len(colors))  # Blend first 15% of the colormap
+        for i in range(n_blend):
+            blend_ratio = 1 - (i / n_blend)  # More blending at the start, less as we go
+            colors[i, :3] = blend_ratio * soft_yellow[:3] + (1 - blend_ratio) * colors[i, :3]
+        
+        return plt.cm.colors.LinearSegmentedColormap.from_list('viridis_r_soft', colors)
+    
     # Custom inferno_r_soft: reversed inferno with much brighter, softer start
     if style == "inferno_r_soft":
         base = plt.cm.get_cmap("inferno_r")
@@ -1159,3 +1214,119 @@ def get_professional_colormap(style="RdBu_r", truncate=True):
         )
     
     return cmap
+
+def plot_density_colored(data, granularity, file_name, density_method="kde", colormap=kde_style, bandwidth=0.05):
+    """
+    Plot ternary coordinate grid with data points colored by local density.
+    
+    Parameters:
+        data: DataFrame with columns "T1", "T2", "T3" containing ternary coordinates
+        granularity: str or float - one of {"superfine", "fine", "coarse"} or a float value
+        file_name: str - prefix for output filename
+        density_method: str - "kde" (kernel density estimation) or "neighbors" (neighbor counting)
+        colormap: str - colormap name (default: "viridis")
+        bandwidth: float - bandwidth for KDE or radius for neighbor counting (default: 0.05)
+    
+    Returns:
+        matplotlib.figure.Figure object
+    
+    VISUAL TWEAKING GUIDE:
+    - Change colormap: modify `colormap` parameter (try "viridis", "plasma", "inferno", "magma")
+    - Change density calculation: modify `density_method` ("kde" or "neighbors")  
+    - Change density sensitivity: modify `bandwidth` (smaller = more sensitive to local variations)
+    - Change point size, alpha, edges: see `plt.scatter(...)` parameters
+    - Change grid colors: T1_color_data, T2_color_data, T3_color_data (defined globally)
+    - Change figure size: edit `figsize=(8, 6)`
+    """
+    from scipy.stats import gaussian_kde
+    from sklearn.neighbors import NearestNeighbors
+    
+    # Map granularity names to alpha values, or parse user-provided float
+    if granularity == "superfine":
+        alpha = 0.05
+    elif granularity == "fine":
+        alpha = 0.1
+    elif granularity == "coarse":
+        alpha = 0.25
+    else:
+        alpha = float(granularity)  # if the user provides a float value for granularity
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = plt.axes()
+
+    # Draw triangle by connecting vertices A (top), B (left), and C (right)
+    triangle_x = [0, -0.5, 0.5, 0]  # A → B → C → A
+    triangle_y = [h, 0, 0, h]
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
+
+    # Hide X and Y axes tick marks
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Draw coordinate grid lines
+    steps = np.arange(alpha, 1, alpha)
+    for y in steps:
+        x1_l, x1_r = T1_lim(y)
+        ax.hlines(y=y * h, xmin=x1_l, xmax=x1_r, color=T1_color_data, linewidth=1)
+
+        x2_l, x2_r = T2_lim(y)
+        x2 = np.linspace(x2_l, x2_r, 100)
+        ax.plot(x2, T2(y, x2), color=T2_color_data, linewidth=1)
+
+        x3_l, x3_r = T3_lim(y)
+        x3 = np.linspace(x3_l, x3_r, 100)
+        ax.plot(x3, T3(y, x3), color=T3_color_data, linewidth=1)
+
+    ax.vlines(x=0, ymin=0, ymax=h, colors="#3E3E3E", linestyles=":")
+
+    # Convert data points from ternary to cartesian coordinates
+    x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
+    
+    # Calculate density for each point
+    if density_method == "kde":
+        # Kernel Density Estimation
+        points = np.vstack([x_data, y_data])
+        kde = gaussian_kde(points, bw_method=bandwidth)
+        density = kde(points)
+    elif density_method == "neighbors":
+        # Nearest neighbor density (count neighbors within radius)
+        points = np.column_stack([x_data, y_data])
+        nn = NearestNeighbors(radius=bandwidth)
+        nn.fit(points)
+        density = nn.radius_neighbors(points, return_distance=False)
+        density = np.array([len(neighbors) for neighbors in density])
+    else:
+        raise ValueError("density_method must be 'kde' or 'neighbors'")
+    
+    # Create scatter plot colored by density
+    scatter = plt.scatter(
+        x_data,
+        y_data,
+        c=density,
+        cmap=colormap,
+        alpha=0.5,
+        s=15,
+        edgecolors="none",
+    )
+    
+    # Add colorbar
+    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=20)
+    cbar.set_label("Density", rotation=270, labelpad=15, fontsize=10)
+    
+    # Label triangle corners
+    label_color = "black"
+    label_size = 12
+    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)
+    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color)
+    plt.text(-0.55, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
+
+    # Remove the box lines around the plot
+    ax.spines["right"].set_color("none")
+    ax.spines["left"].set_color("none")
+    ax.spines["bottom"].set_color("none")
+    ax.spines["top"].set_color("none")
+
+    # Save the plot
+    title = f"{file_name}_density_{density_method}_granularity_{alpha}.png"
+    save_figure(fig, title)
+    return fig

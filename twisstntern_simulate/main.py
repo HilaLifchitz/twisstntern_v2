@@ -20,7 +20,6 @@ import re
 from pathlib import Path
 
 from twisstntern_simulate.pipeline import run_pipeline
-from twisstntern_simulate.download_twisst import ensure_twisst_available
 
 # Import twisstntern logging
 from twisstntern.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
@@ -218,22 +217,8 @@ Examples:
         "-o",
         "--output",
         type=str,
-        required=False,
         default="Results",
         help="Output directory for results. Defaults to 'Results' if not specified. Will be created if it doesn't exist.",
-    )
-
-    parser.add_argument(
-        "--skip-twisst-check",
-        action="store_true",
-        help="Skip checking/downloading twisst (assume it's already available).",
-    )
-
-    # Twisst-related options
-    parser.add_argument(
-        "--force-download",
-        action="store_true",
-        help="Force re-download of twisst even if it already exists.",
     )
 
     # Output and logging options
@@ -301,12 +286,15 @@ Examples:
              "Examples: '100kb' (every 100kb starting from 0), '100kb+50kb' (every 100kb starting from 50kb), "
              "'50kb+25kb' (every 50kb starting from 25kb). Constraint: i < N. This option is ignored in locus mode.",
     )
+    parser.add_argument(
+        "--density-colormap",
+        type=str,
+        default="viridis",
+        help="Colormap for density-colored ternary plot. Options: 'viridis', 'plasma', 'inferno', "
+             "'magma', 'coolwarm', 'RdBu_r', 'Blues', 'Reds', 'Greens', etc. Default: 'viridis'",
+    )
 
     args = parser.parse_args()
-
-    # Ensure twisst.py is available unless --skip-twisst-check is set
-    if not getattr(args, 'skip_twisst_check', False):
-        ensure_twisst_available(force_download=getattr(args, 'force_download', False))
 
     # Create output directory if it doesn't exist
     output_dir = Path(args.output)
@@ -371,8 +359,6 @@ Examples:
         results = run_pipeline(
             config_path=str(config_path),
             output_dir=str(output_dir),
-            skip_twisst_check=args.skip_twisst_check,
-            force_download=args.force_download,
             seed_override=args.seed,
             mode_override=None,
             granularity=granularity,
@@ -405,13 +391,6 @@ Examples:
         print("----------------------------------------------------------")
         print("Summary of the analysis:")
         print(f"Data file used: {results['csv_file_used']}")
-        print("\nFundamental asymmetry results:")
-        fundamental_results = results["fundamental_results"]
-        print(f"n_right: {fundamental_results[0]}")
-        print(f"n_left: {fundamental_results[1]}")
-        print(f"D_LR: {fundamental_results[2]:.4f}")
-        print(f"G-test: {fundamental_results[3]:.4f}")
-        print(f"p-value: {fundamental_results[4]:.4e}")
         print(f"\nResults and plots have been saved to the '{output_dir}' directory.")
         
         if log_file_path:
