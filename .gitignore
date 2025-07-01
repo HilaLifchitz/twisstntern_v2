@@ -160,3 +160,6 @@ Thumbs.db
 temp_results/
 draft_plots/
 scratch/
+
+# Environment setup files
+miniconda.sh
