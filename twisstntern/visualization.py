@@ -48,29 +48,10 @@ T3_color_data = "lightgrey" # for the data plot
 
 
 style = "RdBu_r" # for D-LR plots (=plot results + plot_fundamental_asymmetry)- the colormap
-style_heatmap = "viridis" # for heatmap (=plot_ternary_heatmap_data)- the colormap
+style_heatmap = "viridis_r" # for heatmap (=plot_ternary_heatmap_data)- the colormap
 truncate = False # for heatmap -whether to chop off the edges of the gradient map
 
-# =============================================================================
-# 🎨 DENSITY PLOT COLORMAP - CHANGE THIS TO EXPERIMENT WITH DIFFERENT COLORS!
-# =============================================================================
-kde_style = "magma"  # 🎨 CHANGE THIS LINE TO EXPERIMENT!
-# 
-# 🌈 Popular options to try:
-# kde_style = "viridis"    # Classic green-blue (includes that #21918c green!)
-# kde_style = "plasma"     # Purple-pink-yellow  
-# kde_style = "inferno"    # Black-red-yellow
-# kde_style = "magma"      # Black-purple-white
-# kde_style = "coolwarm"   # Blue-white-red (diverging)
-# kde_style = "RdBu_r"     # Red-white-blue (diverging)
-# kde_style = "Blues"      # White to dark blue
-# kde_style = "Reds"       # White to dark red
-# kde_style = "Greens"     # White to dark green
-# kde_style = "Oranges"    # White to dark orange
-# kde_style = "rocket"     # Seaborn: dark to light red
-# kde_style = "mako"       # Seaborn: dark to light teal
-# kde_style = "crest"      # Seaborn: cool gradient
-# =============================================================================
+
 
 # ============================================================================
 # More extensive visual customization guide:
@@ -222,22 +203,22 @@ def plot(data, granularity, file_name):
     # Position 0.6: #22a884 (more vibrant green)
 
 
-    points_color= "#1e9c89"
+    points_color= "#22a884"
     plt.scatter(
         x_data,
         y_data,
         facecolors=points_color,
         edgecolors="gray",
-        alpha=0.4,
+        alpha=0.3,
         linewidths=0.4,
         s=15,
     )
     label_color = "black" # 25.6    tweek with locations of labels
     label_size = 12
     # Label triangle corners
-    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)
-    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color)
-    plt.text(-0.55, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
+    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color) #T1
+    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color) #T3
+    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color) #T2
 
 
     # removing the box lines around the plot
@@ -310,9 +291,9 @@ def plot_fundamental_asymmetry(data, file_name):
     # Annotate p-value significance stars
     x, y = 0.15, 0.4 * h
     if 0.001 <= main_p_value < 0.05:
-        ax.scatter(x, y, color="darkgoldenrod", marker="*", alpha=0.4, s=9)
+        ax.scatter(x, y, color="#fde724", marker="*", alpha=1.0, s=15)  # Brightest yellow from viridis
     elif 1e-5 <= main_p_value < 0.001:
-        ax.scatter(x, y, color="darkslateblue", marker="*", alpha=0.9, s=22)
+        ax.scatter(x, y, color="#5ec961", marker="*", alpha=1.0, s=22)  # Super bright green from viridis
     elif main_p_value < 1e-5:
         ax.scatter(x, y, color="black", marker="*", alpha=1, s=25)
 
@@ -329,8 +310,8 @@ def plot_fundamental_asymmetry(data, file_name):
     # Add star marker legend - moved to left side to avoid overlap with colorbar
     legend_items = [
         (0.8, "black", "$p < 10^{-5}$", 25, 1.0),
-        (0.77, "darkslateblue", "$p < 0.001$", 22, 0.9),
-        (0.74, "darkgoldenrod", "$p < 0.05$", 9, 0.4),
+        (0.77, "#5ec961", "$p < 0.001$", 22, 1.0),  # Super bright green from viridis
+        (0.74, "#fde724", "$p < 0.05$", 18, 1.0),   # Brightest yellow from viridis
     ]
     for y_pos, color, label, size, alpha in legend_items:
         ax.scatter(-0.45, y_pos, color=color, marker="*", alpha=alpha, s=size)
@@ -420,9 +401,10 @@ def plotting_triangle_index(granularity, file_name):
         plt.text(x - 0.01, y, str(index), size=font_size)
 
     # === Triangle corner labels ===
-    plt.text(-0.02, 0.88, "T1", size=12, color=T1_color)
-    plt.text(-0.03, -0.01, "T2", size=12, color=T2_color)
-    plt.text(0.54, -0.01, "T3", size=12, color=T3_color)
+    label_size = 12
+    plt.text(-0.02, 0.88, r"$\mathbf{T}_1$", size=label_size, color=T1_color) #T1
+    plt.text(-0.03, -0.01, r"$\mathbf{T}_2$", size=label_size, color=T2_color) #T2
+    plt.text(0.54, -0.01, r"$\mathbf{T}_3$", size=label_size, color=T3_color) #T3
 
     # === Axis coordinate labels ===
     coord = np.arange(0, 1 + alpha, alpha)
@@ -547,9 +529,9 @@ def plot_results(res, granularity, file_name):
             x, y = mid_point_triangle(a1, b1, a2, b2, a3, b3)
             p = row["p-value(g-test)"]
             if 0.05 > p >= 0.001:
-                ax.scatter(x, y, color="yellow", marker="*", alpha=0.4, s=9)
+                ax.scatter(x, y, color="#fde724", marker="*", alpha=1.0, s=15)  # Brightest yellow from viridis
             elif 0.001 > p >= 1e-5:
-                ax.scatter(x, y, color="darkslateblue", marker="*", alpha=0.9, s=22)
+                ax.scatter(x, y, color="#5ec961", marker="*", alpha=1.0, s=22)  # Super bright green from viridis
             elif p < 1e-5:
                 ax.scatter(x, y, color="black", marker="*", alpha=1, s=25)
 
@@ -569,9 +551,9 @@ def plot_results(res, granularity, file_name):
     # Legend for p-values - positioned in middle between triangle and colorbar
     ax.scatter(0.3, 0.8, color="black", marker="*", alpha=1, s=25)
     plt.text(0.32, 0.8, "$p < 10^{-5}$", size=10)
-    ax.scatter(0.3, 0.77, color="darkslateblue", marker="*", alpha=0.9, s=22)
+    ax.scatter(0.3, 0.77, color="#5ec961", marker="*", alpha=1.0, s=22)  # Super bright green from viridis
     plt.text(0.32, 0.77, "$p < 0.001$", size=10)
-    ax.scatter(0.3, 0.74, color="darkgoldenrod", marker="*", alpha=0.4, s=9)
+    ax.scatter(0.3, 0.74, color="#fde724", marker="*", alpha=1.0, s=18)  # Brightest yellow from viridis
     plt.text(0.32, 0.74, "$p < 0.05$", size=10)
 
     # Add colorbar for D-LR values
@@ -624,77 +606,11 @@ def plot_results(res, granularity, file_name):
     return fig
 
 
-def plot_genome_position_2d(data, file_name, genome_positions=None, colormap="inferno"):
-    """
-    Plot ternary diagram with points colored by genome position.
-
-    Args:
-        data: Dictionary or DataFrame with keys/columns "T1", "T2", "T3" containing ternary coordinates.
-        file_name: Name prefix for saving the output plot image.
-        genome_positions: Array-like of genome positions. If None, uses row indices as positions.
-        colormap: Colormap name for genome position coloring (default: 'viridis').
-
-    Returns:
-        matplotlib.figure.Figure object
-    """
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    # Draw triangle by connecting vertices A (top), B (left), and C (right)
-    triangle_x = [0, -0.5, 0.5, 0]  # A → B → C → A
-    triangle_y = [h, 0, 0, h]
-    ax.plot(triangle_x, triangle_y, color="k", linewidth=2)
-
-    # Hide X and Y axes tick marks
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    # Convert data points from ternary to cartesian coordinates
-    if isinstance(data, dict):
-        x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
-        n_points = len(data["T1"])
-    else:  # DataFrame
-        x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
-        n_points = len(data)
-
-    # Set up genome positions
-    if genome_positions is None:
-        genome_positions = np.arange(n_points)
-
-    # Create scatter plot colored by genome position
-    scatter = ax.scatter(
-        x_data,
-        y_data,
-        c=genome_positions,
-        cmap=colormap,
-        alpha=0.7,
-        s=15,
-        edgecolors="none",
-    )
-
-    # Add colorbar
-    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=20)
-    cbar.set_label("Genome position", rotation=270, labelpad=20, fontsize=12)
-
-    # Label triangle corners
-    plt.text(-0.02, 0.88, "T1", size=14, color=T1_color, weight="bold")
-    plt.text(0.54, -0.01, "T3", size=14, color=T3_color, weight="bold")
-    plt.text(-0.58, -0.01, "T2", size=14, color=T2_color, weight="bold")
-
-    # Remove the box lines around the plot
-    for spine in ax.spines.values():
-        spine.set_color("none")
-
-    # Set title
-    plt.title("Ternary Coordinates Along Genome", fontsize=14, pad=20)
-
-    # Save the plot
-    title = f"{file_name}_genome_position_2d.png"
-    save_figure(fig, title)
-    return fig
 
 
 
-def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"):
+
+def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E", heatmap_colormap="viridis_r"):
     """
     Plot a ternary heatmap: each subtriangle is colored by the number of data points it contains.
 
@@ -783,9 +699,14 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     vmin = 1  # Start from 1 instead of 0
     vmax = np.max(values) if np.any(values > 0) else 1
 
-    # Use a custom colormap for better visibility
-    # Custom rocket_truncated colormap - removes darkest 1/3 for brighter appearance
-    cmap = get_professional_colormap(style=style_heatmap, truncate=False)
+    # Validate colormap parameter
+    allowed_colormaps = ["viridis", "viridis_r", "plasma", "inferno", "Blues", "Greys"]
+    if heatmap_colormap not in allowed_colormaps:
+        print(f"Warning: Unknown colormap '{heatmap_colormap}', using 'viridis_r'")
+        heatmap_colormap = "viridis_r"
+    
+    # Use the specified colormap for the heatmap
+    cmap = get_professional_colormap(style=heatmap_colormap, truncate=False)
 
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -818,11 +739,14 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
             color = cmap(norm(values[idx]))
             ax.fill(trianglex, triangley, color=color, edgecolor='none')
 
-    # Corner labels
-    # Removed coordinate labels to avoid overlay on heatmap
-    # plt.text(-0.02, 0.88, "T1", size=12, color=T1_color)
-    # plt.text(-0.03, -0.01, "T2", size=12, color=T2_color)
-    # plt.text(0.54, -0.01, "T3", size=12, color=T3_color)
+    
+    # === Use EXACT same labeling and cleanup code as plot() function ===
+    label_color = "black" # 25.6    tweek with locations of labels
+    label_size = 12
+    # Label triangle corners
+    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)
+    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color) #T3
+    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
 
     ax.set_xticks([])
     ax.set_yticks([])
@@ -1215,118 +1139,4 @@ def get_professional_colormap(style="RdBu_r", truncate=True):
     
     return cmap
 
-def plot_density_colored(data, granularity, file_name, density_method="kde", colormap=kde_style, bandwidth=0.05):
-    """
-    Plot ternary coordinate grid with data points colored by local density.
-    
-    Parameters:
-        data: DataFrame with columns "T1", "T2", "T3" containing ternary coordinates
-        granularity: str or float - one of {"superfine", "fine", "coarse"} or a float value
-        file_name: str - prefix for output filename
-        density_method: str - "kde" (kernel density estimation) or "neighbors" (neighbor counting)
-        colormap: str - colormap name (default: "viridis")
-        bandwidth: float - bandwidth for KDE or radius for neighbor counting (default: 0.05)
-    
-    Returns:
-        matplotlib.figure.Figure object
-    
-    VISUAL TWEAKING GUIDE:
-    - Change colormap: modify `colormap` parameter (try "viridis", "plasma", "inferno", "magma")
-    - Change density calculation: modify `density_method` ("kde" or "neighbors")  
-    - Change density sensitivity: modify `bandwidth` (smaller = more sensitive to local variations)
-    - Change point size, alpha, edges: see `plt.scatter(...)` parameters
-    - Change grid colors: T1_color_data, T2_color_data, T3_color_data (defined globally)
-    - Change figure size: edit `figsize=(8, 6)`
-    """
-    from scipy.stats import gaussian_kde
-    from sklearn.neighbors import NearestNeighbors
-    
-    # Map granularity names to alpha values, or parse user-provided float
-    if granularity == "superfine":
-        alpha = 0.05
-    elif granularity == "fine":
-        alpha = 0.1
-    elif granularity == "coarse":
-        alpha = 0.25
-    else:
-        alpha = float(granularity)  # if the user provides a float value for granularity
 
-    fig = plt.figure(figsize=(8, 6))
-    ax = plt.axes()
-
-    # Draw triangle by connecting vertices A (top), B (left), and C (right)
-    triangle_x = [0, -0.5, 0.5, 0]  # A → B → C → A
-    triangle_y = [h, 0, 0, h]
-    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
-
-    # Hide X and Y axes tick marks
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    # Draw coordinate grid lines
-    steps = np.arange(alpha, 1, alpha)
-    for y in steps:
-        x1_l, x1_r = T1_lim(y)
-        ax.hlines(y=y * h, xmin=x1_l, xmax=x1_r, color=T1_color_data, linewidth=1)
-
-        x2_l, x2_r = T2_lim(y)
-        x2 = np.linspace(x2_l, x2_r, 100)
-        ax.plot(x2, T2(y, x2), color=T2_color_data, linewidth=1)
-
-        x3_l, x3_r = T3_lim(y)
-        x3 = np.linspace(x3_l, x3_r, 100)
-        ax.plot(x3, T3(y, x3), color=T3_color_data, linewidth=1)
-
-    ax.vlines(x=0, ymin=0, ymax=h, colors="#3E3E3E", linestyles=":")
-
-    # Convert data points from ternary to cartesian coordinates
-    x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
-    
-    # Calculate density for each point
-    if density_method == "kde":
-        # Kernel Density Estimation
-        points = np.vstack([x_data, y_data])
-        kde = gaussian_kde(points, bw_method=bandwidth)
-        density = kde(points)
-    elif density_method == "neighbors":
-        # Nearest neighbor density (count neighbors within radius)
-        points = np.column_stack([x_data, y_data])
-        nn = NearestNeighbors(radius=bandwidth)
-        nn.fit(points)
-        density = nn.radius_neighbors(points, return_distance=False)
-        density = np.array([len(neighbors) for neighbors in density])
-    else:
-        raise ValueError("density_method must be 'kde' or 'neighbors'")
-    
-    # Create scatter plot colored by density
-    scatter = plt.scatter(
-        x_data,
-        y_data,
-        c=density,
-        cmap=colormap,
-        alpha=0.5,
-        s=15,
-        edgecolors="none",
-    )
-    
-    # Add colorbar
-    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=20)
-    cbar.set_label("Density", rotation=270, labelpad=15, fontsize=10)
-    
-    # Label triangle corners
-    label_color = "black"
-    label_size = 12
-    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)
-    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color)
-    plt.text(-0.55, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
-
-    # Remove the box lines around the plot
-    ax.spines["right"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["top"].set_color("none")
-
-    # Save the plot
-    title = f"{file_name}_density_{density_method}_granularity_{alpha}.png"
-    save_figure(fig, title)
-    return fig

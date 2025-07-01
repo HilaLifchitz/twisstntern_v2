@@ -28,6 +28,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     python_requires=">=3.8",
     install_requires=[
@@ -35,6 +36,7 @@ setup(
         "pandas>=1.3.0",
         "scipy>=1.7.0",
         "matplotlib>=3.4.0",
+        "scikit-learn>=1.0.0",
         "tskit>=0.4.0",
         "msprime>=1.0.0",
         "ete3>=3.1.0",
@@ -51,10 +53,12 @@ setup(
     entry_points={
         "console_scripts": [
             "twisstntern=twisstntern.__main__:main",
+            "twisstntern-simulate=twisstntern_simulate.__main__:main",
         ],
     },
     include_package_data=True,
     package_data={
         "twisstntern": ["external/*"],
+        "twisstntern_simulate": ["external/*"],
     },
 )

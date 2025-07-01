@@ -5,24 +5,25 @@
 ## Table of Contents
 - [What does TWISSTNTERN do?](#what-does-twisstntern-do)
 - [Installation](#installation)
-- [Automatic twisst.py Handling](#automatic-twisstpy-handling)
+- [Quick Start](#quick-start)
 - [Input](#input)
-- [Command-Line Usage](#command-line-usage)
-- [Topology Mapping](#topology-mapping)
-- [Granularity Settings](#granularity-settings)
+- [Command-Line Usage](#-command-line-usage)
+- [Python Interface](#-python-interface)
+- [Heatmap Colormap Customization](#-heatmap-colormap-customization)
 - [Output](#output)
-- [Simulating Data with twisstntern_simulate](#simulating-data-with-twisstntern_simulate)
-- [twisstntern_simulate Input](#input-1)
-- [twisstntern_simulate Command-Line Usage](#command-line-usage-1)
-- [twisstntern_simulate Configuration Overrides](#configuration-overrides)
-- [twisstntern_simulate Output](#output-1)
+- [Simulating Data with twisstntern_simulate](#-simulating-data-with-twisstntern_simulate)
+- [twisstntern_simulate Usage](#-twisstntern_simulate-command-line-usage)
+- [twisstntern_simulate Python Interface](#-twisstntern_simulate-python-interface)
+- [Advanced Features](#-advanced-features)
 - [Citation](#citation)
 - [Dependencies](#dependencies)
 - [Contributing](#contributing)
 
+---
+
 ## A method for analysing topology weights in a ternary framework
 
-TWISSTNTERN is an analytical framework for visualising and analysing topology weights in a ternary plot. This is a modernized, command-line version that can calculate topology weights directly from tree files or analyze pre-computed weights from CSV files.
+**TWISSTNTERN** is a modern analytical framework for visualizing and analyzing topology weights in ternary plots. This command-line package can calculate topology weights directly from tree files or analyze pre-computed weights from CSV files.
 
 ## What does TWISSTNTERN do?
 
@@ -34,159 +35,239 @@ In an idealized four population model (3 splits with no migration), we expect th
 
 <img src="images/method_overview.png" height="450pt" align="bottom">
 
+---
+
 ## Installation
 
-You can install the package in one of the following ways:
-
-### 🛠️ Option 1: Install from GitHub
+### 🛠️ Option 1: Install from GitHub (Recommended)
 
 ```bash
 pip install git+https://github.com/HilaLifchitz/twisstntern_v2
 ```
 
-### 🛠️ Option 2: Development Mode (recommended for contributors)
+### 🛠️ Option 2: Development Mode (for contributors)
 
 ```bash
+git clone https://github.com/HilaLifchitz/twisstntern_v2.git
+cd twisstntern_v2
 pip install -r requirements.txt
 pip install -e .[dev]
 ```
 
----
+### 🔧 Getting the Configuration Template
+
+For simulation workflows, easily download the latest configuration template:
+
+```bash
+# Download to current directory
+python -m twisstntern_simulate --get-config
+
+# Download to specific location
+python -m twisstntern_simulate --get-config /path/to/my_config.yaml
+```
+
+**Or use the Python interface:**
+
+```python
+import twisstntern_simulate.utils as utils
+
+# Download to current directory
+config_path = utils.download_config_template()
+
+# Download to specific location  
+config_path = utils.download_config_template("my_simulation_config.yaml")
+```
+
+This automatically downloads the latest `config_template.yaml` from GitHub, ensuring you always have the most up-to-date configuration options.
 
 ### 🧬 Automatic twisst.py Handling
 
-You **do not need to manually install or download `twisst.py`** to use this package!
+You **do not need to manually install or download `twisst.py`**! Both packages (`twisstntern` and `twisstntern_simulate`) include the required `twisst.py` script automatically. No external dependencies or manual setup required.
 
-Both the main analysis (`twisstntern`) and simulation (`twisstntern_simulate`) packages include `twisst.py` directly as part of the package. The required `twisst.py` script (used for topology weighting) is bundled with the installation and will work out-of-the-box in any environment.
+---
 
-### How it works
-- When you run:
-  ```bash
-  python -m twisstntern treeSfiles/CHROM.trees
-  # or
-  python -m twisstntern_simulate -c config_template.yaml
-  ```
-  The pipeline will use the bundled `twisst.py` script automatically.
+## Quick Start
 
-### Why is this needed?
-- `twisst.py` is a third-party script not available on PyPI.
-- This package bundles it for you, so you never have to worry about missing dependencies.
+### 🚀 Analyze Existing Data
+
+```bash
+# Analyze CSV topology weights
+python -m twisstntern your_data.csv
+
+# Analyze tree sequence file
+python -m twisstntern your_data.trees
+
+# Analyze Newick trees with custom settings
+python -m twisstntern trees.newick --taxon-names O P1 P2 P3 --outgroup O --granularity fine
+```
+
+### 🧬 Simulate and Analyze Data
+
+```bash
+# Get configuration template
+python -m twisstntern_simulate --get-config
+
+# Edit config_template.yaml to your needs, then run:
+python -m twisstntern_simulate -c config_template.yaml -o my_simulation
+```
 
 ---
 
 ## Input
 
-**Tree File Options:**
-
+### 📊 **Tree File Formats**
 - **TreeSequence** (`.trees`, `.ts`): TSKit tree sequence files
-- **Newick** (`.newick`, `.nwk`, `.tree`): Single or multiple Newick format trees
+- **Newick** (`.newick`, `.nwk`, `.tree`): Single or multiple Newick format trees  
 - **Nexus** (`.nexus`): Nexus format files
 
-**Weights Data Files:**
-
-- **CSV** (`.csv`): Pre-computed topology weights (no normalization required)
+### 📈 **Pre-computed Data**
+- **CSV** (`.csv`): Topology weights data (T1, T2, T3 columns)
 
 ---
 
 ## 🔧 Command-Line Usage
-**TWISSTNTERN** accepts both tree files and pre-computed topology weights. The input file can be specified either as a positional argument or using the `--input` flag.
 
 ```bash
-python -m twisstntern INPUT [GRANULARITY] [OPTIONS]
+python -m twisstntern INPUT [OPTIONS]
 ```
 
-#### **Parameters**
+### **Essential Parameters**
 
-- `INPUT`: **(Required)** Input file path - tree file (`.trees`, `.newick`, `.nwk`, `.tree`, `.nexus`) or topology weights CSV `.csv`.
-- `--granularity`: _(Optional, default: `0.1`)_  
-  Sets the resolution of the ternary triangle analysis. Accepts either a float (e.g., `0.05`) or a keyword (`coarse`, `fine`, `superfine`).  
-  Smaller values produce finer subdivisions of the triangle and more detailed results.
-- `-i`, `--input`: Alternative way to specify input file
+- `INPUT`: **(Required)** Input file path - tree file or CSV weights
 - `-o`, `--output`: Output directory (default: `Results/`)
-- `--taxon-names`: Space-separated taxon names for Newick/Nexus files (e.g., `O P1 P2 P3`)
-- `--outgroup`: Outgroup taxon name for Newick/Nexus files
-- `--topology-mapping`: _(Optional)_  
-  Manually specify which topology corresponds to each axis label (T1, T2, T3) in the ternary plot.  
-  Useful for ensuring consistency across runs or datasets. Format:  
-  `'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'`
-- `--downsample N` or `--downsample "N+i"`: Downsample the data by keeping only every Nth tree/locus. 
-  - **Format**: `N` (every Nth starting from index 0) or `"N+i"` (every Nth starting from index i< N)
-- `--verbose`: Enable verbose logging (DEBUG level)
-- `--help`: Show help message
+- `--granularity`: Analysis resolution - `coarse` (0.25), `fine` (0.1), `superfine` (0.05), or custom float
+- `--verbose`: Enable detailed logging
+
+### **Tree-Specific Parameters**
+
+- `--taxon-names`: Space-separated taxon names (e.g., `O P1 P2 P3`)
+- `--outgroup`: Outgroup taxon name
+- `--topology-mapping`: Custom topology assignment (see [Advanced Features](#-advanced-features))
+
+### **Data Processing**
+
+- `--downsample N`: Keep every Nth data point
+- `--downsample "N+i"`: Keep every Nth starting from index i
+
+### **Examples**
+
+```bash
+# Basic analysis
+python -m twisstntern data.csv
+
+# Tree analysis with custom granularity
+python -m twisstntern trees.newick --taxon-names O P1 P2 P3 --outgroup O --granularity 0.05
+
+# Downsampled analysis
+python -m twisstntern large_dataset.csv --downsample "100+5" --verbose
+```
 
 ---
 
-#### 🌳 Topology Mapping
+## 🐍 Python Interface
 
-**TWISSTNTERN** now supports **custom topology ordering** for phylogenetic analyses. By default, topologies are labeled T1, T2, T3 based on the order they are discovered by twisst. However, you can specify which topology should be assigned to each label using the `--topology-mapping` argument.
+### **Basic Usage**
 
-#### **Format**
+```python
+from twisstntern import run_analysis
 
-```bash
---topology-mapping 'T1="(topology1)"; T2="(topology2)"; T3="(topology3)";'
+# Analyze CSV data
+results, fundamental_results, csv_file = run_analysis(
+    file="data.csv",
+    granularity=0.1,
+    output_dir="results"
+)
+
+# Analyze tree data
+results, fundamental_results, csv_file = run_analysis(
+    file="trees.newick",
+    taxon_names=["O", "P1", "P2", "P3"],
+    outgroup="O",
+    granularity=0.1
+)
 ```
 
-#### **Examples**
+### **Advanced Usage**
 
-**For TreeSequence files** (population IDs: 0, 1, 2, 3):
-
-```bash
-python -m twisstntern data.trees \
-  --topology-mapping 'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
+```python
+# Custom colormap and topology mapping
+results, fundamental_results, csv_file = run_analysis(
+    file="data.trees",
+    granularity=0.1,
+    heatmap_colormap="plasma",
+    topology_mapping='T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
+)
 ```
-
-**For Newick files** (population names: O, P1, P2, P3):
-
-```bash
-python -m twisstntern data.newick \
-  --taxon-names O P1 P2 P3 --outgroup O \
-  --topology-mapping 'T1="(O,(P3,(P1,P2)))"; T2="(O,(P1,(P2,P3)))"; T3="(O,(P2,(P1,P3)))";'
-```
-
-#### 🧪 Granularity Settings
-
-Control the resolution of the triangle-based analysis using the `--granularity` argument. Supported predefined values:
-
-| Keyword     | Value  |
-| ----------- | ------ |
-| `coarse`    | `0.25` |
-| `fine`      | `0.1`  |
-| `superfine` | `0.05` |
-
-You can also provide a **custom float value** for granularity (alpha), e.g. `--granularity 0.01`.  
-**Note:** `1 / alpha` must be an **even integer**.
-
-- ✅ Valid example: `0.01` → `1 / 0.01 = 100`
-- ❌ Invalid example: `0.2` → `1 / 0.2 = 5`
 
 ---
 
-## **Output**
+## 🎨 Heatmap Colormap Customization
 
-TWISSTNTERN generates a comprehensive set of output files saved to the specified output directory (default: `Results/`):
+Customize ternary heatmap colors through the Python interface:
 
-**Analysis Files:**
+### **Available Colormaps**
 
-- `[prefix]_topology_weights.csv` - Raw topology weight data for each genomic window. In chromosome mode, this file will always include a `position` column indicating the start position of each tree along the chromosome (in base pairs), which is used for KB-based downsampling and genome position-aware analyses.
-- `[prefix]_triangle_analysis_[granularity].csv` - Triangle-based sub-analysis results with statistics
-- `twisstntern_YYYYMMDD_HHMMSS.log` - Detailed log file with complete analysis record
+| Colormap      |  Best For |
+|---------------|---------|
+| `"viridis_r"` |  Reversed viridis (default) | General use, colorblind-friendly |
+| `"viridis"`   | Modern purple-to-yellow | Scientific publications |
+| `"plasma"`    | Vibrant purple-pink-yellow | Eye-catching presentations |
+| `"inferno"`   | Dark dramatic gradient | High contrast needed |
+| `"Blues"`     |  Classic sequential blue | Publication-ready, minimal |
+| `"Greys"`     |  Clean grayscale | Print-friendly, minimal |
 
-**Visualization Files:**
+### **Usage Examples**
 
-- `[prefix]_fundamental_asymmetry.png` - Fundamental asymmetry bar chart showing left vs right bias
-- `[prefix]_analysis_granularity_[value].png` - Ternary plot with data points colored by triangle regions
-- `[prefix]_granuality_[value].png` - Main ternary plot with density visualization and statistical overlays
-- `[prefix]_index_granularity_[value].png` - Triangle index visualization showing region boundaries
-- `[prefix]_heatmap_count_granularity_[value].png` - Ternary heatmap showing data point density in each subtriangle
+```python
+# Compare different colormaps
+colormaps = ["viridis_r", "plasma", "inferno", "Blues"]
 
-**File Naming:**
+for colormap in colormaps:
+    run_analysis(
+        file="data.csv",
+        heatmap_colormap=colormap,
+        output_dir=f"results_{colormap}"
+    )
+```
 
-- `[prefix]` is derived from the input filename (e.g., `data.trees` → `data_`)
-- `[value]` and `[granularity]` represent the granularity setting used (e.g., `0.1`, `0.05`, `superfine`, `fine`, `coarse`)
-  - **Granularity values**: `superfine` = 0.05, `fine` = 0.1, `coarse` = 0.25, or custom float values
-  - **All output files** now include the granularity value in their names for easy identification
+### **Colormap Demo Script**
 
-**Example Output (granularity 0.1):**
+Generate side-by-side comparisons:
+
+```bash
+# Create heatmaps with all colormaps
+python colormap_demo.py your_data.csv
+
+# Specify output directory
+python colormap_demo.py your_data.csv --output-dir comparison
+```
+
+**Note**: Colormap customization is available only through the Python interface to keep the CLI focused on core parameters.
+
+---
+
+## Output
+
+### **Generated Files**
+
+**📊 Analysis Data:**
+- `[prefix]_topology_weights.csv` - Raw topology weight data
+- `[prefix]_triangle_analysis_[granularity].csv` - Triangle-based statistics
+- `twisstntern_YYYYMMDD_HHMMSS.log` - Detailed analysis log
+
+**📈 Visualizations:**
+- `[prefix]_fundamental_asymmetry.png` - Left vs right asymmetry bar chart
+- `[prefix]_analysis_granularity_[value].png` - Ternary plot with triangle coloring
+- `[prefix]_granuality_[value].png` - Main ternary plot with density visualization
+- `[prefix]_index_granularity_[value].png` - Triangle index boundaries
+- `[prefix]_heatmap.png` - **Ternary heatmap with customizable colormap**
+
+### **File Naming Convention**
+
+- `[prefix]` = Input filename (e.g., `data.trees` → `data_`)
+- `[granularity]` = Analysis resolution (e.g., `0.1`, `fine`, `superfine`)
+
+### **Example Output Structure**
 
 ```
 Results/
@@ -196,238 +277,210 @@ Results/
 ├── data_analysis_granularity_0.1.png
 ├── data_granuality_0.1.png
 ├── data_index_granularity_0.1.png
-├── data_heatmap_count_granularity_0.1.png
-└── twisstntern_20250618_151932.log
-```
-
----
-
-#### 📝 Logging
-
-**TWISSTNTERN** includes comprehensive logging to track analysis progress and results. Every analysis automatically generates a detailed log file saved to the output directory.
-
-#### **Log File Creation**
-
-- **Automatic**: Log files are created for every analysis run
-- **Location**: Saved in the output directory (default: `Results/`)
-- **Format**: `twisstntern_YYYYMMDD_HHMMSS.log`
-
-#### **Logging Levels**
-
-```bash
-# Standard logging (INFO level)
-python -m twisstntern input.csv
-
-# Verbose logging (DEBUG level) for detailed technical information
-python -m twisstntern input.newick --taxon-names O P1 P2 P3 --outgroup O --verbose
-```
-
-#### **What Gets Logged**
-
-- **System Information**: Python version, platform, package versions
-- **Analysis Parameters**: Input file, granularity, taxon names, topology mapping
-- **Processing Steps**: File format detection, tree processing, statistical analysis
-- **Topology Information**: Complete topology details with both string representations and ASCII tree diagrams
-- **Results Summary**: Fundamental asymmetry values, file generation, timing
-- **Error Context**: Detailed error messages with helpful suggestions
-<!--
-
-#### **Console vs File Output**
-
-- **Console**: Clean, colored progress messages for real-time feedback
-- **Log File**: Complete technical details with timestamps and module context, including detailed topology logging -->
-
-<!-- #### **Topology Logging**
-
-When processing tree files (Newick, TreeSequence), TWISSTNTERN automatically logs detailed topology information to the log file, including:
-
-- **Topology Strings**: Simplified Newick format for each topology (e.g., `(O,((P1,P2),P3));`)
-- **ASCII Tree Diagrams**: Beautiful visual representations of each topology structure
-- **Topology Labels**: Clear identification of T1, T2, T3 assignments -->
-
-<!--
-**Example Topology Log Content:**
-
-```
-2025-06-17 17:12:42,554 - INFO - Newick file topologies (default order)
-2025-06-17 17:12:42,555 - INFO - ==================================================
-2025-06-17 17:12:42,555 - INFO - T1:
-2025-06-17 17:12:42,555 - INFO -   String: (O,((P1,P2),P3));
-2025-06-17 17:12:42,555 - INFO -   ASCII Tree:
-2025-06-17 17:12:42,555 - INFO -        /-O
-2025-06-17 17:12:42,555 - INFO -       |
-2025-06-17 17:12:42,555 - INFO -     --|      /-P1
-2025-06-17 17:12:42,555 - INFO -       |   /-|
-2025-06-17 17:12:42,555 - INFO -        \-|   \-P2
-2025-06-17 17:12:42,555 - INFO -          |
-2025-06-17 17:12:42,555 - INFO -           \-P3
-2025-06-17 17:12:42,556 - INFO - T2:
-2025-06-17 17:12:42,556 - INFO -   String: (O,((P1,P3),P2));
-2025-06-17 17:12:42,556 - INFO -   ASCII Tree:
-...
-``` -->
-
----
-
-### 🐍 Python Interface
-
-You can also use TWISSTNTERN as a Python module:
-
-```python
-from twisstntern import run_analysis
-
-# Basic usage
-results, fundamental_results, csv_file = run_analysis(
-    file="your_file.trees",
-    granularity=0.1
-)
-
-# With topology mapping
-results, fundamental_results, csv_file = run_analysis(
-    file="your_file.trees",
-    granularity=0.1,
-    topology_mapping='T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
-)
-
-# For Newick files
-results, fundamental_results, csv_file = run_analysis(
-    file="your_file.newick",
-    granularity=0.1,
-    taxon_names=["O", "P1", "P2", "P3"],
-    outgroup="O",
-    topology_mapping='T1="(O,(P3,(P1,P2)))"; T2="(O,(P1,(P2,P3)))"; T3="(O,(P2,(P1,P3)))";'
-)
+├── data_heatmap.png                    # 🎨 Customizable colormap
+└── twisstntern_20250701_143022.log
 ```
 
 ---
 
 # 🧬 Simulating Data with `twisstntern_simulate`
 
-The `twisstntern_simulate` module lets you generate simulated tree sequence data and analyze it using the same ternary pipeline as the main package.  
-It is ideal for testing, benchmarking, and exploring different demographic scenarios.
+Generate and analyze simulated tree sequence data with demographic modeling using `msprime`.
 
-- Runs simulations using `msprime`
-- Automatically Downloads Twisst from https://github.com/simonhmartin/twisst
-- Saves trees in Newick format with standardized taxon names
-- Automatically passes simulated data to the analysis pipeline
-- Outputs CSVs and plots in a structured results directory
+**Key Features:**
+- 🔬 **Demographic modeling**: Population sizes, migration, growth rates
+- 🧬 **Flexible simulation modes**: Independent loci or chromosome with recombination
+- 🎯 **Parameter overrides**: Command-line parameter sweeps without editing config files
+- 🎨 **Integrated analysis**: Automatic topology weight calculation and ternary plotting
+- 📊 **Consistent output**: Same visualization pipeline as main package
 
----
-
-## Input
-
-Simulation parameters (demography, sample sizes, sequence length, etc.) are specified in a YAML file.  
-See `config_template.yaml` for a template and documentation of available options.
-
----
-
-## 🔧 Command-Line Usage
-
-The only required input is a configuration file provided via the `--config` flag.
+## 🔧 twisstntern_simulate Command-Line Usage
 
 ```bash
-python -m twisstntern_simulate -c CONFIG [-o OUTPUT] [--downsample N] [--downsampleKB N] [--skip-twisst-check] [--force-download] [--verbose] [--quiet] [--log-file LOG_FILE] [--seed SEED] [--granularity GRANULARITY]
+python -m twisstntern_simulate -c CONFIG [OPTIONS]
 ```
 
-- `-c`, `--config`: **(Required)** Path to a YAML configuration file specifying simulation parameters (see `twisstntern_simulate/config_template.yaml` for an example).
-- `-o`, `--output`: Output directory for results. Defaults to `Results/`.
-- `--downsample N` or `--downsample "N+i"`: Downsample the data by keeping only every Nth tree/locus.Or every Nth starting from index i< N. Works for both locus and chromosome mode.
-- `--downsampleKB Nkb` or `--downsampleKB Nkb+ikb`: **(chromosome mode only)** Downsample by keeping one tree every N kilobases along the simulated chromosome.
-  - **Format**: `Nkb` (every N kb starting from position 0) or `Nkb+ikb` (every N kb starting from position i)
-  - **Units supported**: kb (kilobases), mb (megabases), gb (gigabases), or bp (base pairs)
-  - **Examples**: 
-    - `--downsampleKB "100kb"` → every 100kb starting from position 0
-    - `--downsampleKB "100kb+50kb"` → every 100kb starting from 50kb
-    - `--downsampleKB "50kb+25000"` → every 50kb starting from 25,000 bp
-  - **Constraint**: i < N (starting position must be less than sampling interval)
-  - **This option is ignored in locus mode**
-- `--granularity`: Set analysis granularity (default = 0.1).
-- `--topology-mapping`: Manually specify which topology corresponds to each axis label (T1, T2, T3) in the ternary plot.
-  Format: `'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'`
-  Useful for ensuring consistency across runs or datasets.
-- `--override`: Override configuration values using the format 'key=value' or 'nested.key=value'. Examples:
-  - `--override "migration.p2>p3=0.1"` → Set migration rate from population p2 to p3 to 0.1
-  - `--override "populations.p1.Ne=2000"` → Set effective population size of p1 to 2000
-  - `--override "samplesize=20"` → Set sample size to 20 for all non-ancestral populations
-  - `--override "seed=12345"` → Set random seed to 12345
-- `--skip-twisst-check`: Skip checking for the TWISST executable.
-- `--force-download`: Force re-download of the TWISST executable.
-- `--verbose`: Enable verbose logging.
-- `--quiet`: Suppress most output.
-- `--log-file LOG_FILE`: Write logs to a file.
-- `--seed SEED`: Set a random seed for reproducibility.
+### **Essential Parameters**
 
-**Examples:**
+- `-c`, `--config`: **(Required)** YAML configuration file
+- `-o`, `--output`: Output directory (default: `Results/`)
+- `--granularity`: Analysis resolution (default: `0.1`)
+
+### **Parameter Overrides**
 
 ```bash
-# Basic downsampling - every 10th locus/tree starting from index 0
-python -m twisstntern_simulate -c config_template.yaml --downsample 10
+# Population parameters
+--override "populations.p1.Ne=2000"           # Effective population size
+--override "populations.p2.sample_size=15"    # Sample size
 
-# Enhanced downsampling - every 10th tree starting from index 3
-python -m twisstntern_simulate -c config_template.yaml --downsample "10+3"
+# Migration rates
+--override "migration.p1>p2=0.05"             # Migration from p1 to p2
 
-# KB-based downsampling - every 100kb starting from position 0
-python -m twisstntern_simulate -c config_template.yaml --downsampleKB "100kb"
+# Simulation parameters  
+--override "seed=12345"                        # Random seed
+--override "n_loci=1000"                       # Number of loci
+--override "mutation_rate=1e-7"                # Mutation rate
+```
 
-# Enhanced KB-based downsampling - every 100kb starting from 50kb
-python -m twisstntern_simulate -c config_template.yaml --downsampleKB "100kb+50kb"
+### **Data Processing**
 
-# KB-based downsampling with different units - every 1000kb starting from 30mb
-python -m twisstntern_simulate -c config_template.yaml --downsampleKB "1000kb+30mb"
+- `--downsample N`: Keep every Nth tree/locus
+- `--downsample "N+i"`: Keep every Nth starting from index i
+- `--downsampleKB "100kb"`: *(chromosome mode)* Sample every 100kb
+- `--downsampleKB "100kb+50kb"`: *(chromosome mode)* Every 100kb starting from 50kb
 
-# Override sample size for all populations
-python -m twisstntern_simulate -c config_template.yaml --override "samplesize=20"
+### **Examples**
 
-# Multiple overrides including sample size
-python -m twisstntern_simulate -c config_template.yaml --override "samplesize=15" --override "migration.p2>p3=0.1" --override "populations.p1.Ne=2000"
+```bash
+# Basic simulation
+python -m twisstntern_simulate -c config_template.yaml
+
+# Parameter sweep with overrides
+python -m twisstntern_simulate -c config_template.yaml \
+  --override "migration.p1>p2=0.05" \
+  --override "populations.p1.Ne=2000" \
+  --override "seed=12345"
+
+# Downsampled chromosome analysis
+python -m twisstntern_simulate -c config_template.yaml \
+  --downsampleKB "50kb" \
+  --granularity superfine
 ```
 
 ---
 
-### ⚙️ Configuration Overrides
+## 🐍 twisstntern_simulate Python Interface
 
-You can override any configuration parameter from the YAML file directly via the command line using the `--override` argument. This is extremely useful for testing different parameter values, running parameter sweeps, or exploring sensitivity analyses without editing configuration files.
+```python
+from twisstntern_simulate.pipeline import run_pipeline
 
-#### **Format**
+# Basic simulation and analysis
+results = run_pipeline(
+    config_path="config.yaml",
+    output_dir="simulation_results",
+    granularity=0.1
+)
 
-```bash
---override 'parameter_path=value'
+# With parameter overrides and custom colormap
+results = run_pipeline(
+    config_path="config.yaml",
+    output_dir="simulation_results",
+    granularity=0.1,
+    seed_override=12345,
+    config_overrides=["populations.p1.Ne=2000", "migration.p1>p2=0.05"],
+    heatmap_colormap="plasma"  # Same colormap options as main package
+)
 ```
 
-#### **Supported Parameter Types**
+---
 
-**Top-level Parameters:**
+## 🔬 Advanced Features
 
-```bash
---override "seed=1234"                    # Random seed (int)
---override "ploidy=2"                     # Ploidy level (int: 1=haploid, 2=diploid)
---override "mutation_rate=1e-7"           # Mutation rate (float, supports scientific notation)
---override "chromosome_length=5e7"        # Chromosome length (float)
---override "rec_rate=2e-8"               # Recombination rate (float)
---override "n_loci=500"                  # Number of loci for locus mode (int)
---override "locus_length=10000"          # Locus length for locus mode (int)
-```
+### **🌳 Topology Mapping**
 
-**Population Parameters** (format: `populations.{pop_name}.{parameter}=value`):
+Control which topology is assigned to each ternary plot axis:
 
 ```bash
---override "populations.p1.Ne=2000"           # Effective population size (float)
---override "populations.p1.sample_size=15"    # Number of samples (int)
---override "populations.p2.growth_rate=0.01"  # Population growth rate (float)
+# For TreeSequence files (population IDs: 0,1,2,3)
+python -m twisstntern data.trees \
+  --topology-mapping 'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
+
+# For Newick files (population names: O,P1,P2,P3)  
+python -m twisstntern data.newick \
+  --taxon-names O P1 P2 P3 --outgroup O \
+  --topology-mapping 'T1="(O,(P3,(P1,P2)))"; T2="(O,(P1,(P2,P3)))"; T3="(O,(P2,(P1,P3)))";'
 ```
 
-**Migration Parameters** (format: `migration.{source}>{dest}=rate`):
+### **📊 Granularity Control**
+
+| Keyword     | Value  | Use Case |
+|-------------|--------|----------|
+| `coarse`    | `0.25` | Quick overview, small datasets |
+| `fine`      | `0.1`  | Standard analysis (default) |
+| `superfine` | `0.05` | High-resolution, large datasets |
+| Custom      | e.g., `0.02` | Specific research needs |
+
+**Constraint**: `1/granularity` must be an even integer.
+
+### **📝 Comprehensive Logging**
+
+Every analysis generates detailed logs with:
+- 🖥️ **System information**: Python version, platform, package versions
+- ⚙️ **Parameters**: All settings used for the analysis
+- 🌳 **Topology details**: ASCII tree diagrams and topology strings
+- 📊 **Results summary**: Statistical outcomes and file generation
+- 🕐 **Performance**: Timing and memory usage information
+
+Access logs:
+- **File**: `twisstntern_YYYYMMDD_HHMMSS.log` in output directory  
+- **Console**: Use `--verbose` for real-time detailed output
+
+---
+
+## Citation
+
+If you use TWISSTNTERN in your research, please cite:
+
+```
+[Citation information to be added]
+```
+
+---
+
+## Dependencies
+
+### **Core Requirements**
+- Python ≥ 3.8
+- NumPy ≥ 1.21.0
+- Pandas ≥ 1.3.0
+- SciPy ≥ 1.7.0
+- Matplotlib ≥ 3.4.0
+- scikit-learn ≥ 1.0.0
+
+### **Tree Processing**
+- tskit ≥ 0.4.0
+- msprime ≥ 1.0.0 *(for simulations)*
+- ete3 ≥ 3.1.0
+
+### **Configuration & Data**
+- PyYAML ≥ 6.0.0
+- requests ≥ 2.25.0
+
+**Note**: `twisst.py` is included automatically - no manual installation required.
+
+---
+
+## Contributing
+
+We welcome contributions! Please:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### **Development Setup**
 
 ```bash
---override "migration.p1>p2=0.05"        # Migration from p1 to p2 (float)
---override "migration.p2>p3=0.8"         # Migration from p2 to p3 (float)
---override "migration.O>p1=0.001"        # Migration from outgroup to p1 (float)
+git clone https://github.com/HilaLifchitz/twisstntern_v2.git
+cd twisstntern_v2
+pip install -r requirements.txt
+pip install -e .[dev]
+
+# Run tests
+pytest
+
+# Format code
+black .
 ```
 
-#### **Value Type Conversion**
+---
 
-The override system automatically converts values to appropriate types:
+<div align="center">
 
-- **Integers**: `seed=1234` → `1234` (int)
-- **Floats**: `Ne=1000.5` → `1000.5` (float)
-- **Scientific notation**: `mutation_rate=1e-7` → `0.0000001`
+**🧬 Happy analyzing with TWISSTNTERN! 🔬**
+
+*For issues, feature requests, or questions, please visit our [GitHub repository](https://github.com/HilaLifchitz/twisstntern_v2).*
+
+</div>

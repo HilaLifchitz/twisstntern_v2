@@ -21,9 +21,9 @@ from twisstntern_simulate.visualization import (
     plot,
     plot_results,
     plotting_triangle_index,
+    plot_ternary_heatmap_data,
 )
-# Import density plotting from main visualization module
-from twisstntern.visualization import plot_density_colored
+
 
 # Import logging from twisstntern
 from twisstntern.logger import get_logger, log_analysis_start, log_analysis_complete, log_simulation_config
@@ -159,6 +159,7 @@ def run_pipeline(
     downsample_i: Optional[int] = None,
     downsample_kb: Optional[int] = None,
     downsample_kb_i: Optional[int] = None,
+    heatmap_colormap: str = "viridis_r",
 ) -> Dict[str, Any]:
     """
     Run the complete twisstntern_simulate pipeline.
@@ -176,6 +177,9 @@ def run_pipeline(
         downsample_i: Starting index for downsampling (offset)
         downsample_kb: Downsample interval in kilobases (sample every N kb)
         downsample_kb_i: Starting position in kilobases for KB-based downsampling (offset)
+        heatmap_colormap: Colormap for the ternary heatmap. 
+                         Options: 'viridis', 'viridis_r', 'plasma', 
+                         'inferno', 'Blues', 'Greys'. Default: 'viridis_r'.
 
     Returns:
         Dictionary containing pipeline results and metadata
@@ -408,8 +412,8 @@ def run_pipeline(
         # Generate all plots (exactly like main twisstntern - always generate)
         plot_fundamental_asymmetry(topology_weights, output_prefix)
         plot(topology_weights, granularity, output_prefix)
-        # NEW: Density-colored ternary plot
-        plot_density_colored(topology_weights, granularity, output_prefix)
+        # New: Ternary heatmap (count, no grid) - always uses 0.02 granularity
+        plot_ternary_heatmap_data(topology_weights, 0.02, output_prefix, heatmap_colormap=heatmap_colormap)
         plot_results(triangles_results, granularity, output_prefix)
         plotting_triangle_index(granularity, output_prefix)
 

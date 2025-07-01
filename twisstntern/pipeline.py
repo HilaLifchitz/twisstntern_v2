@@ -11,9 +11,7 @@ from twisstntern.visualization import ( # add the plot functions here 25.6
     plot_results,
     plotting_triangle_index,
     plot_fundamental_asymmetry,
-    plot_ternary_heatmap_data,
-    plot_genome_position_2d,
-    plot_density_colored
+    plot_ternary_heatmap_data
 )
 from twisstntern.tree_processing import (
     detect_and_read_trees,
@@ -124,6 +122,7 @@ def run_analysis( # add plot functions here 25.6
     topology_mapping=None,
     downsample_N=None,
     downsample_i=None,
+    heatmap_colormap="viridis_r",
 ):
     """
     Orchestrates the full analysis and visualization pipeline for both tree files and CSV files.
@@ -141,6 +140,10 @@ def run_analysis( # add plot functions here 25.6
                                          Ignored for CSV files.
         downsample_N (int, optional): Downsample interval (sample every Nth row)
         downsample_i (int, optional): Starting index for downsampling (offset)
+        heatmap_colormap (str, optional): Colormap for the ternary heatmap. 
+                                         Options: 'viridis', 'viridis_r', 'plasma', 
+                                         'inferno', 'Blues', 'Greys'. 
+                                         Default: 'viridis_r'.
 
     Returns:
         tuple: (results, fundamental_results, csv_file_used)
@@ -299,15 +302,12 @@ def run_analysis( # add plot functions here 25.6
     # the ternary plot with data points
     plot(data, granularity, output_prefix)
     logger.debug("Generated ternary plot")
-    # NEW: Density-colored ternary plot
-    plot_density_colored(data, granularity, output_prefix)
-    logger.debug("Generated density-colored ternary plot")
 
     # the hat maps
     # plot_genome_position_2d(data, output_prefix, genome_positions=None, colormap=colormap)
     # logger.debug("Generated genome position plot")
     # New: Ternary heatmap (count, no grid) - always uses 0.02 granularity
-    plot_ternary_heatmap_data(data, 0.02, output_prefix)
+    plot_ternary_heatmap_data(data, 0.02, output_prefix, heatmap_colormap=heatmap_colormap)
     logger.debug("Generated ternary heatmap (count, no grid) - fixed 0.02 granularity")
 
     
