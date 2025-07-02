@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import argparse
 import sys
 import os
 from .main import main as twisstntern_simulate_main

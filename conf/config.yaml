@@ -1,0 +1,28 @@
+# Main configuration for TWISSTNTERN analysis
+
+# Input/Output
+file: null  # Path to input file (tree file or CSV file)
+output: "Results"  # Output directory
+
+# Analysis parameters
+granularity: 0.1  # Granularity level: 'superfine', 'fine', 'coarse', or a float
+taxon_names: null  # List of taxon names for Newick tree files
+outgroup: null  # Outgroup taxon name for tree files
+topology_mapping: null  # Custom topology ordering
+
+# Downsampling
+downsample: null  # Format: 'N' or 'N+i' where N=sample every Nth row, i=starting index
+
+# Logging
+verbose: false  # Enable verbose logging output
+
+# Hydra configuration
+hydra:
+  mode: RUN
+  run:
+    dir: .
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra:job.num}
+  job:
+    chdir: false  # Don't change working directory 

@@ -6,18 +6,19 @@ This module provides the command-line interface for running the complete
 twisstntern_simulate pipeline: simulation -> twisst processing -> analysis.
 
 Usage:
-    python -m twisstntern_simulate -c config.yaml -o Results/
+    python -m twisstntern_simulate config_file=config.yaml output=Results/
     
     # Or with additional options:
-    python -m twisstntern_simulate -c config.yaml -o Results/ --force-download --verbose
+    python -m twisstntern_simulate config_file=config.yaml output=Results/ verbose=true
 """
 
-import argparse
 import sys
 import os
 import time
 import re
 from pathlib import Path
+import hydra
+from omegaconf import DictConfig, OmegaConf
 
 from twisstntern_simulate.pipeline import run_pipeline
 
@@ -176,135 +177,37 @@ def parse_position_with_units(position_str):
         raise ValueError(f"Invalid position format '{position_str}': expected 'Nkb', 'Nmb', 'Ngb', or 'N' (base pairs)")
 
 
-def main():
+@hydra.main(version_base=None, config_path="../conf", config_name="simulate_config")
+def main(cfg: DictConfig) -> None:
     """
     Main entry point for the twisstntern_simulate package.
 
-    Parses command-line arguments and runs the full pipeline:
+    Uses Hydra configuration and runs the full pipeline:
     1. Load configuration from YAML file
     2. Run msprime simulation
     3. Ensure twisst is available (download if needed)
     4. Process tree sequences to generate topology weights
     5. Run twisstntern analysis and generate plots
+    
+    Args:
+        cfg: Hydra configuration object containing all parameters
     """
 
-    parser = argparse.ArgumentParser(
-        description="Run the complete twisstntern_simulate pipeline: simulation -> processing -> analysis",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Basic usage with config file
-  python -m twisstntern_simulate -c config.yaml -o Results/
-  
-  # With verbose output
-  python -m twisstntern_simulate -c config.yaml -o Results/ --verbose
-  
-  # Using default Results directory
-  python -m twisstntern_simulate -c config.yaml
-        """,
-    )
-
-    # Required arguments
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        required=True,
-        help="Path to configuration file (YAML format). See config_template.yaml for example.",
-    )
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="Results",
-        help="Output directory for results. Defaults to 'Results' if not specified. Will be created if it doesn't exist.",
-    )
-
-    # Output and logging options
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose output."
-    )
-
-    parser.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="Suppress most output (only errors will be shown).",
-    )
-
-    parser.add_argument(
-        "--log-file",
-        type=str,
-        help="Path to log file. If not specified, logs only to console.",
-    )
-
-    # Advanced simulation overrides (optional)
-    parser.add_argument(
-        "--seed", type=int, help="Random seed for simulation (overrides config file)."
-    )
-
-    # Note: samplesize can be overridden using --override "samplesize=N"
-
-    # Analysis options
-    parser.add_argument(
-        "--granularity",
-        type=float,
-        default=0.1,
-        help="Granularity for ternary analysis (default: 0.1).",
-    )
-
-    parser.add_argument(
-        "--topology-mapping",
-        type=str,
-        help="Custom topology mapping for T1/T2/T3. "
-             "Format: 'T1=(0,(1,(2,3))); T2=(0,(2,(1,3))); T3=(0,(3,(1,2)));' "
-             "This allows you to specify which topology should be assigned to each axis.",
-    )
-
-    # Configuration override options
-    parser.add_argument(
-        "--override",
-        action="append",
-        help="Override specific config values. Format: 'key=value' or 'nested.key=value'. "
-             "Examples: --override 'migration.p3>p2=0.3' --override 'ploidy=2' --override 'populations.p1.Ne=15000'",
-    )
-
-    parser.add_argument(
-        "--downsample",
-        type=str,
-        default=None,
-        help="Downsample format: 'N' or 'N+i' where N=sample every Nth tree/locus, i=starting index. "
-             "Examples: '10' (every 10th starting from 0), '10+1' (every 10th starting from index 1), "
-             "'5+3' (every 5th starting from index 3). Constraint: i < N. Works for both locus and chromosome mode.",
-    )
-    parser.add_argument(
-        "--downsampleKB",
-        type=str,
-        default=None,
-        help="(chromosome mode only) Downsample format: 'Nkb' or 'Nkb+ikb' where N=sample every N kilobases, i=starting position in kb. "
-             "Examples: '100kb' (every 100kb starting from 0), '100kb+50kb' (every 100kb starting from 50kb), "
-             "'50kb+25kb' (every 50kb starting from 25kb). Constraint: i < N. This option is ignored in locus mode.",
-    )
-    parser.add_argument(
-        "--density-colormap",
-        type=str,
-        default="viridis",
-        help="Colormap for density-colored ternary plot. Options: 'viridis', 'plasma', 'inferno', "
-             "'magma', 'coolwarm', 'RdBu_r', 'Blues', 'Reds', 'Greens', etc. Default: 'viridis'",
-    )
-
-    args = parser.parse_args()
-
     # Create output directory if it doesn't exist
-    output_dir = Path(args.output)
+    output_dir = Path(cfg.output)
     output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Save the final configuration to the results folder
+    from omegaconf import OmegaConf
+    config_save_path = output_dir / "simulation_config.yaml"
+    with open(config_save_path, 'w') as f:
+        OmegaConf.save(cfg, f)
 
     # Setup logging (like twisstntern)
     log_file_path = setup_logging(
         output_dir=str(output_dir),
-        verbose=args.verbose,
-        console_output=not args.quiet
+        verbose=cfg.verbose,
+        console_output=not cfg.quiet
     )
     
     logger = get_logger(__name__)
@@ -312,41 +215,51 @@ Examples:
     # Log system information
     log_system_info()
 
-    # Check if config file exists
-    config_path = Path(args.config)
-    if not config_path.exists():
-        logger.error(f"Configuration file not found: {config_path}")
-        sys.exit(1)
+    # Handle configuration - use embedded config if no external file specified
+    if cfg.config_file is not None:
+        # Use external configuration file
+        config_path = Path(cfg.config_file)
+        if not config_path.exists():
+            logger.error(f"Configuration file not found: {config_path}")
+            sys.exit(1)
+        logger.info(f"Using external simulation configuration: {config_path}")
+        use_embedded_config = False
+    else:
+        # Use embedded configuration from Hydra config
+        logger.info("Using embedded simulation configuration from Hydra config")
+        config_path = None
+        use_embedded_config = True
 
     # Convert granularity to float if needed
     try:
-        granularity = float(args.granularity)
-    except ValueError:
-        granularity = args.granularity
+        granularity = float(cfg.granularity)
+    except (ValueError, TypeError):
+        granularity = cfg.granularity
 
     # Parse downsample argument
     try:
-        downsample_N, downsample_i = parse_downsample_arg(args.downsample)
+        downsample_N, downsample_i = parse_downsample_arg(cfg.downsample)
     except ValueError as e:
         logger.error(f"Invalid downsample argument: {e}")
         sys.exit(1)
 
     # Parse downsampleKB argument
     try:
-        downsampleKB_N, downsampleKB_i = parse_downsampleKB_arg(args.downsampleKB)
+        downsampleKB_N, downsampleKB_i = parse_downsampleKB_arg(cfg.downsampleKB)
     except ValueError as e:
         logger.error(f"Invalid downsampleKB argument: {e}")
         sys.exit(1)
 
     # Log analysis start
+    config_description = "embedded Hydra config" if use_embedded_config else str(config_path)
     log_analysis_start(
-        input_file=str(config_path),
+        input_file=config_description,
         output_dir=str(output_dir),
         granularity=granularity,
-        seed_override=args.seed,
+        seed_override=cfg.seed,
         mode_override=None,
-        topology_mapping=args.topology_mapping,
-        verbose=args.verbose
+        topology_mapping=cfg.topology_mapping,
+        verbose=cfg.verbose
     )
 
     start_time = time.time()
@@ -356,15 +269,24 @@ Examples:
 
     try:
         # Run the pipeline
+        if use_embedded_config:
+            # Save embedded config to a temporary file for the pipeline
+            temp_config_path = output_dir / "temp_simulation_config.yaml"
+            with open(temp_config_path, 'w') as f:
+                OmegaConf.save(cfg.simulation, f)
+            config_path_for_pipeline = str(temp_config_path)
+        else:
+            config_path_for_pipeline = str(config_path)
+            
         results = run_pipeline(
-            config_path=str(config_path),
+            config_path=config_path_for_pipeline,
             output_dir=str(output_dir),
-            seed_override=args.seed,
+            seed_override=cfg.seed,
             mode_override=None,
             granularity=granularity,
-            verbose=args.verbose,
-            topology_mapping=args.topology_mapping,
-            config_overrides=args.override,
+            verbose=cfg.verbose,
+            topology_mapping=cfg.topology_mapping,
+            config_overrides=cfg.override,
             downsample_N=downsample_N,
             downsample_i=downsample_i,
             downsample_kb=downsampleKB_N,
@@ -384,14 +306,22 @@ Examples:
                 if file_path.stat().st_mtime >= start_timestamp:
                     created_files.append(str(file_path))
         
+        # Clean up temporary config file if used
+        if use_embedded_config:
+            temp_config_path = output_dir / "temp_simulation_config.yaml"
+            if temp_config_path.exists():
+                temp_config_path.unlink()
+        
         # Log completion with only the files created in this run
         log_analysis_complete(duration, created_files)
         
         # Print summary to console (like main twisstntern)
         print("----------------------------------------------------------")
         print("Summary of the analysis:")
+        print(f"Configuration used: {config_description}")
         print(f"Data file used: {results['csv_file_used']}")
         print(f"\nResults and plots have been saved to the '{output_dir}' directory.")
+        print(f"Final configuration saved to: {config_save_path}")
         
         if log_file_path:
             print(f"Log file saved to: {log_file_path}")

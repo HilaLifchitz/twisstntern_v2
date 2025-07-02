@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import argparse
 import os
 import sys
 import time
 import re
 from pathlib import Path
+import hydra
+from omegaconf import DictConfig, OmegaConf
 
 from twisstntern.pipeline import run_analysis, ensure_twisst_available
 from twisstntern.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
@@ -56,83 +57,39 @@ def parse_downsample_arg(downsample_str):
     raise ValueError(f"Invalid downsample format: '{downsample_str}'. Use 'N' or 'N+i' (e.g., '10' or '10+3')")
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Run TWISSTNTERN analysis pipeline on tree files or CSV files."
-    )
-    parser.add_argument(
-        "file",
-        type=str,
-        nargs="?",
-        help="Path to the input file (tree file: .trees/.ts/.newick/.tree/.nexus or CSV file: .csv).",
-    )
-    parser.add_argument(
-        "-i",
-        "--input",
-        type=str,
-        dest="file_flag",
-        help="Path to the input file (alternative to positional argument).",
-    )
-    parser.add_argument(
-        "--granularity",
-        type=str,
-        default="0.1",
-        help="Granularity level: 'superfine', 'fine', 'coarse', or a float (e.g., 0.1). Default: 0.1",
-    )
-    parser.add_argument(
-        "--taxon-names",
-        type=str,
-        nargs="+",
-        help="List of taxon names for Newick tree files (e.g., --taxon-names A B C D).",
-    )
-    parser.add_argument(
-        "--outgroup", type=str, help="Outgroup taxon name for tree files."
-    )
-    parser.add_argument(
-        "--topology-mapping",
-        type=str,
-        help='Custom topology ordering. Format: \'T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";\'',
-    )
-    parser.add_argument(
-        "--downsample",
-        type=str,
-        default=None,
-        help="Downsample format: 'N' or 'N+i' where N=sample every Nth row, i=starting index. "
-             "Examples: '10' (every 10th starting from 0), '10+1' (every 10th starting from index 1), "
-             "'5+3' (every 5th starting from index 3). Constraint: i < N.",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        default="Results",
-        help="Path to the output directory. If not provided, a 'Results' directory will be created.",
-    )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Enable verbose logging output.",
-    )
-
-    args = parser.parse_args()
-
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
+def main(cfg: DictConfig) -> None:
+    """
+    Main entry point for TWISSTNTERN analysis pipeline.
+    
+    Args:
+        cfg: Hydra configuration object containing all parameters
+    """
     # Ensure twisst.py is available before any analysis
     ensure_twisst_available()
 
-    # Determine which file argument to use
-    input_file = args.file_flag if args.file_flag else args.file
+    # Get input file from config
+    input_file = cfg.file
     
     if not input_file:
-        parser.error("Input file must be specified either as positional argument or with -f/--file flag")
+        raise ValueError("Input file must be specified in configuration. Use 'file=path/to/file' in config or as command line override.")
 
     # Set output directory (default is "Results" if not specified)
-    output_dir = args.output
+    output_dir = cfg.output
+    
+    # Create output directory if it doesn't exist
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    # Save the final configuration to the results folder
+    from omegaconf import OmegaConf
+    config_save_path = Path(output_dir) / "analysis_config.yaml"
+    with open(config_save_path, 'w') as f:
+        OmegaConf.save(cfg, f)
 
     # Setup logging
     log_file_path = setup_logging(
         output_dir=output_dir,
-        verbose=args.verbose,
+        verbose=cfg.verbose,
         console_output=True
     )
     
@@ -149,13 +106,13 @@ def main():
 
     # Convert granularity to float if possible
     try:
-        granularity = float(args.granularity)
-    except ValueError:
-        granularity = args.granularity
+        granularity = float(cfg.granularity)
+    except (ValueError, TypeError):
+        granularity = cfg.granularity
 
     # Parse downsample argument
     try:
-        downsample_N, downsample_i = parse_downsample_arg(args.downsample)
+        downsample_N, downsample_i = parse_downsample_arg(cfg.downsample)
     except ValueError as e:
         logger.error(f"Invalid downsample argument: {e}")
         sys.exit(1)
@@ -165,10 +122,10 @@ def main():
         input_file=str(file_path),
         output_dir=output_dir,
         granularity=granularity,
-        taxon_names=args.taxon_names,
-        outgroup=args.outgroup,
-        topology_mapping=args.topology_mapping,
-        verbose=args.verbose
+        taxon_names=cfg.taxon_names,
+        outgroup=cfg.outgroup,
+        topology_mapping=cfg.topology_mapping,
+        verbose=cfg.verbose
     )
 
     start_time = time.time()
@@ -181,10 +138,10 @@ def main():
         results, fundamental_results, csv_file_used = run_analysis(
             file=input_file,
             granularity=granularity,
-            taxon_names=args.taxon_names,
-            outgroup=args.outgroup,
+            taxon_names=cfg.taxon_names,
+            outgroup=cfg.outgroup,
             output_dir=output_dir,
-            topology_mapping=args.topology_mapping,
+            topology_mapping=cfg.topology_mapping,
             downsample_N=downsample_N,
             downsample_i=downsample_i,
         )
@@ -209,6 +166,7 @@ def main():
         # Print summary to console
         print("----------------------------------------------------------")
         print("Summary of the analysis:")
+        print(f"Input file: {input_file}")
         print(f"Data file used: {csv_file_used}")
         print("\nFundamental asymmetry results:")
         print(f"n_right: {fundamental_results[0]}")
@@ -217,6 +175,7 @@ def main():
         print(f"G-test: {fundamental_results[3]:.4f}")
         print(f"p-value: {fundamental_results[4]:.4e}")
         print(f"\nResults and plots have been saved to the '{output_dir}' directory.")
+        print(f"Final configuration saved to: {config_save_path}")
         
         if log_file_path:
             print(f"Log file saved to: {log_file_path}")
