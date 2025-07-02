@@ -46,4 +46,6 @@ from .tree_processing import (
     print_topology_mapping_with_trees,
 )
 
+# Versioning follows Semantic Versioning (semver.org):
+# MAJOR.MINOR.PATCH — breaking | feature | fix
 __version__ = "0.1.0"

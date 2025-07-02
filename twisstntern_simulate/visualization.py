@@ -32,6 +32,7 @@ from twisstntern.utils import (
     number_triangles,
 )
 from twisstntern.analysis import fundamental_asymmetry, triangles_analysis
+from sklearn.neighbors import NearestNeighbors
 
 # ============================================================================
 # GLOBAL STYLE SETTINGS - TWEAK THESE FOR VISUAL CUSTOMIZATION
@@ -72,6 +73,92 @@ def save_figure(fig, filename, dpi=300):
             pass  # Skip tight_layout if not compatible (e.g., with inset axes)
     
     fig.savefig(filename, dpi=dpi, bbox_inches="tight")
+
+
+def plot_density_colored_radcount(data, file_name):
+    """
+    EXACT copy of plot() function with density coloring added.
+    This guarantees consistency with other plotting functions.
+    """
+    # Map granularity names to alpha values (copying from plot function)
+    alpha = 0.1
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = plt.axes()
+
+    # Draw triangle by connecting vertices A (top), B (left), and C (right)
+    # EXACT COPY from plot() function
+    triangle_x = [0, -0.5, 0.5, 0]  # A → B → C → A
+    triangle_y = [h, 0, 0, h]
+
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
+
+    # Hide X and Y axes tick marks
+    # EXACT COPY from plot() function
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # EXACT COPY of grid drawing from plot() function
+    steps = np.arange(alpha, 1, alpha)
+    for y in steps:
+        x1_l, x1_r = T1_lim(y)
+        ax.hlines(y=y * h, xmin=x1_l, xmax=x1_r, color=T1_color_data, linewidth=1)
+
+        x2_l, x2_r = T2_lim(y)
+        x2 = np.linspace(x2_l, x2_r, 100)
+        ax.plot(x2, T2(y, x2), color=T2_color_data, linewidth=1)
+
+        x3_l, x3_r = T3_lim(y)
+        x3 = np.linspace(x3_l, x3_r, 100)
+        ax.plot(x3, T3(y, x3), color=T3_color_data, linewidth=1)
+
+    ax.vlines(x=0, ymin=0, ymax=h, colors="#3E3E3E", linestyles=":")
+
+    # convert data points from ternary to cartezian coordinates and plot them
+    # EXACT COPY from plot() function
+    x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
+    
+    # ONLY CHANGE: Calculate density for coloring
+    points = np.column_stack([x_data, y_data])
+    nn = NearestNeighbors(radius=0.02)
+    nn.fit(points)
+    density = nn.radius_neighbors(points, return_distance=False)
+    density = np.array([len(neighbors) for neighbors in density])
+    
+    # MODIFIED: Scatter plot with density coloring instead of fixed color
+    scatter = plt.scatter(
+        x_data,
+        y_data,
+        c=density,  # ONLY CHANGE: use density instead of fixed color
+        cmap=style_heatmap,  # Use colormap instead of facecolors
+        edgecolors="gray",
+        alpha=0.3,
+        linewidths=0.4,
+        s=15,
+    )
+    
+    # ADD: Simple colorbar
+    cbar = plt.colorbar(scatter)
+    cbar.set_label('Count')
+    
+    # EXACT COPY of labeling from plot() function
+    label_color = "black" # 25.6    tweek with locations of labels
+    label_size = 12
+    # Label triangle corners
+    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color) #T1
+    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color) #T3
+    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color) #T2
+
+    # EXACT COPY of border removal from plot() function
+    ax.spines["right"].set_color("none")
+    ax.spines["left"].set_color("none")
+    ax.spines["bottom"].set_color("none")
+    ax.spines["top"].set_color("none")
+
+    # EXACT COPY of saving from plot() function
+    title = f"{file_name}_radcount.png"
+    save_figure(fig, title)
+    return fig
 
 
 def get_professional_colormap(style="RdBu_r", truncate=True):
@@ -293,12 +380,12 @@ def plot_fundamental_asymmetry(data, file_name):
     elif main_p_value < 1e-5:
         ax.scatter(x, y, color="black", marker="*", alpha=1, s=25)
 
-    # Add colorbar for D_LR values - shorter and positioned towards top
+    # Add colorbar for D_LR values - shorter and positioned lower
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
     cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
-                     bbox_to_anchor=(0.05, 0.15, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
     cbar = plt.colorbar(sm, cax=cax)
     cbar.ax.set_title('D_LR', fontsize=10, pad=6)
     cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
@@ -398,7 +485,7 @@ def plotting_triangle_index(granularity, file_name):
         plt.text(x - 0.01, y, str(index), size=font_size)
 
     # === Triangle corner labels ===
-    label_size = 12
+    label_size = 10  # Reduced from 12 to make labels smaller
     plt.text(-0.02, 0.88, r"$\mathbf{T}_1$", size=label_size, color=T1_color) #T1
     plt.text(-0.03, -0.01, r"$\mathbf{T}_2$", size=label_size, color=T2_color) #T2
     plt.text(0.54, -0.01, r"$\mathbf{T}_3$", size=label_size, color=T3_color) #T3
@@ -555,12 +642,12 @@ def plot_results(res, granularity, file_name):
     ax.scatter(0.3, 0.74, color="#fde724", marker="*", alpha=1.0, s=18)  # Brightest yellow from viridis
     plt.text(0.32, 0.74, "$p < 0.05$", size=10)
 
-    # Add colorbar for D-LR values - shorter and positioned towards top
+    # Add colorbar for D-LR values - shorter and positioned lower
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
     cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
-                     bbox_to_anchor=(0.05, 0.15, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
     cbar = plt.colorbar(sm, cax=cax)
     cbar.ax.set_title('D_LR', fontsize=10, pad=6)
     cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
@@ -710,9 +797,29 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     ax = plt.axes()
     triangle_x = [0, -0.5, 0.5, 0]
     triangle_y = [h, 0, 0, h]
-    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
+    ax.set_xticks([])
+    ax.set_yticks([])
 
-    # No grid lines - completely removed for clean heatmap appearance
+    # Add subtle median line (central vertical line) - dotted and thinner like in plot function
+    ax.vlines(x=0, ymin=0, ymax=h, colors="gray", linestyles=":", linewidth=1, zorder=2)
+
+    # Draw grey grid lines (fixed granularity 0.1)
+    if grid_color:
+        for i in range(1, int(1 / 0.1)):
+            y = i * 0.1
+            # T1 lines (horizontal)
+            ax.hlines(y=y * h, xmin=T1_lim(y)[0], 
+                     xmax=T1_lim(y)[1], color=grid_color, linewidth=1, zorder=1)
+            # T2 lines
+            x2 = np.linspace(T2_lim(y)[0], T2_lim(y)[1], 100)
+            ax.plot(x2, T2(y, x2), color=grid_color, linewidth=1, zorder=1)
+            # T3 lines
+            x3 = np.linspace(T3_lim(y)[0], T3_lim(y)[1], 100)
+            ax.plot(x3, T3(y, x3), color=grid_color, linewidth=1, zorder=1)
+        
+        # Central vertical line
+        ax.vlines(x=0, ymin=0, ymax=h, colors=grid_color, ls=':', zorder=1)
 
     # Plot filled triangles (only for nonzero bins)
     for idx, triangle in enumerate(triangles):
@@ -749,11 +856,11 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    # Colorbar (starts from 1) - shorter and positioned towards top
+    # Colorbar (starts from 1) - shorter and positioned lower
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
-                     bbox_to_anchor=(0.05, 0.15, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
     cbar = plt.colorbar(sm, cax=cax)
     cbar.ax.set_title('Count', fontsize=10, pad=6)
     cbar.set_ticks([vmin, vmax])

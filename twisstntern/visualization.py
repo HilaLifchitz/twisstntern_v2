@@ -32,6 +32,7 @@ from twisstntern.utils import (
     number_triangles,
 )
 from twisstntern.analysis import fundamental_asymmetry, triangles_analysis
+from sklearn.neighbors import NearestNeighbors
 
 # ============================================================================
 # GLOBAL STYLE SETTINGS - TWEAK THESE FOR VISUAL CUSTOMIZATION
@@ -170,9 +171,7 @@ def plot(data, granularity, file_name):
     triangle_x = [0, -0.5, 0.5, 0]  # A → B → C → A
     triangle_y = [h, 0, 0, h]
 
-    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
-
-    # Hide X and Y axes tick marks
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
     ax.set_xticks([])
     ax.set_yticks([])
 
@@ -254,8 +253,7 @@ def plot_fundamental_asymmetry(data, file_name):
     # Draw triangle by connecting vertices A (top), B (left), and C (right)
     triangle_x = [0, -0.5, 0.5, 0]  # A → B → C → A
     triangle_y = [h, 0, 0, h]
-    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
-
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
     ax.set_xticks([])
     ax.set_yticks([])
     ax.vlines(0, 0, h, colors="black")
@@ -297,11 +295,11 @@ def plot_fundamental_asymmetry(data, file_name):
     elif main_p_value < 1e-5:
         ax.scatter(x, y, color="black", marker="*", alpha=1, s=25)
 
-    # Add colorbar for D_LR values
+    # Add colorbar for D_LR values - shorter and positioned lower to match other plots
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cax = inset_axes(ax, width="3%", height="60%", loc='center right',
-                     bbox_to_anchor=(0.05, 0, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
     cbar = plt.colorbar(sm, cax=cax)
     cbar.ax.set_title('D_LR', fontsize=10, pad=6)
     cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
@@ -366,7 +364,7 @@ def plotting_triangle_index(granularity, file_name):
 
     # Draw triangle boundary (T2 side + base)
     x_side_T2 = np.linspace(0, 0.5, 100)
-    ax.plot(x_side_T2, T2(0, x_side_T2), color="k", linewidth=1)
+    ax.plot(x_side_T2, T2(0, x_side_T2), color="k", linewidth=1, zorder=3)
     ax.hlines(y=0, xmin=0, xmax=0.5, color="k", linewidth=1)
 
     # Dotted vertical midline (y-axis in ternary diagram)
@@ -401,7 +399,7 @@ def plotting_triangle_index(granularity, file_name):
         plt.text(x - 0.01, y, str(index), size=font_size)
 
     # === Triangle corner labels ===
-    label_size = 12
+    label_size = 10  # Reduced from 12 to make labels smaller
     plt.text(-0.02, 0.88, r"$\mathbf{T}_1$", size=label_size, color=T1_color) #T1
     plt.text(-0.03, -0.01, r"$\mathbf{T}_2$", size=label_size, color=T2_color) #T2
     plt.text(0.54, -0.01, r"$\mathbf{T}_3$", size=label_size, color=T3_color) #T3
@@ -475,7 +473,7 @@ def plot_results(res, granularity, file_name):
 
     # Draw triangle boundaries (T2 and base)
     x_side_T2 = np.linspace(0, 0.5, 100)
-    ax.plot(x_side_T2, T2(0, x_side_T2), "k", linewidth=1)
+    ax.plot(x_side_T2, T2(0, x_side_T2), "k", linewidth=1, zorder=3)
     ax.hlines(y=0, xmin=0, xmax=0.5, color="k", linewidth=1)
 
     # Remove axis ticks
@@ -556,11 +554,11 @@ def plot_results(res, granularity, file_name):
     ax.scatter(0.3, 0.74, color="#fde724", marker="*", alpha=1.0, s=18)  # Brightest yellow from viridis
     plt.text(0.32, 0.74, "$p < 0.05$", size=10)
 
-    # Add colorbar for D-LR values
+    # Add colorbar for D-LR values - shorter and positioned lower to match other plots
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cax = inset_axes(ax, width="3%", height="60%", loc='center right',
-                     bbox_to_anchor=(0.05, 0, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
     cbar = plt.colorbar(sm, cax=cax)
     cbar.ax.set_title('D_LR', fontsize=10, pad=6)
     cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
@@ -714,7 +712,12 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     ax = plt.axes()
     triangle_x = [0, -0.5, 0.5, 0]
     triangle_y = [h, 0, 0, h]
-    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Add subtle median line (central vertical line) - dotted and thinner like in plot function
+    ax.vlines(x=0, ymin=0, ymax=h, colors="gray", linestyles=":", linewidth=1, zorder=2)
 
     # No grid lines - completely removed for clean heatmap appearance
 
@@ -741,23 +744,23 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
 
     
     # === Use EXACT same labeling and cleanup code as plot() function ===
-    label_color = "black" # 25.6    tweek with locations of labels
+    label_color = "black"
     label_size = 12
     # Label triangle corners
-    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)
+    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color) #T1
     plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color) #T3
-    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
+    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color) #T2
 
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    # Colorbar (starts from 1)
+    # Colorbar (starts from 1) - shorter and positioned lower to match other plots
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cax = inset_axes(ax, width="3%", height="80%", loc='center right',
-                     bbox_to_anchor=(0.05, 0, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
     cbar = plt.colorbar(sm, cax=cax)
     cbar.ax.set_title('Count', fontsize=10, pad=6)
     cbar.set_ticks([vmin, vmax])
@@ -767,6 +770,105 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     #plt.title(style_heatmap)
     title = f"{file_name}_heatmap.png"
     save_figure(fig, title)
+    return fig
+
+
+def plot_density_colored_radcount(data, file_name):
+    """
+    Plot ternary coordinate grid with data points colored by local density using neighbor counting.
+    This generates a default "radcount" density plot with fixed parameters.
+    
+    Fixed parameters:
+    - granularity: 0.1 (always)
+    - grid: True (grey grid lines)
+    - point_alpha: 0.8
+    - density_method: "neighbors" 
+    - bandwidth: 0.02
+    - colormap: uses global style_heatmap setting
+    """
+    # Fixed parameters as specified
+    alpha = 0.1  # Fixed granularity
+    grid = True
+    point_alpha = 0.8
+    density_method = "neighbors"
+    bandwidth = 0.02
+    colormap = style_heatmap  # Use global heatmap style
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = plt.axes()
+
+    # === Use EXACT same triangle drawing code as twisstntern plot() function ===
+    triangle_x = [0, -0.5, 0.5, 0]
+    triangle_y = [h, 0, 0, h]
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Draw grey grid lines (fixed granularity 0.1)
+    if grid:
+        for i in range(1, int(1 / 0.1)):
+            y = i * 0.1
+            # T1 lines (horizontal)
+            ax.hlines(y=y * h, xmin=T1_lim(y)[0], 
+                     xmax=T1_lim(y)[1], color="grey", linewidth=1, zorder=1)
+            # T2 lines
+            x2 = np.linspace(T2_lim(y)[0], T2_lim(y)[1], 100)
+            ax.plot(x2, T2(y, x2), color="grey", linewidth=1, zorder=1)
+            # T3 lines
+            x3 = np.linspace(T3_lim(y)[0], T3_lim(y)[1], 100)
+            ax.plot(x3, T3(y, x3), color="grey", linewidth=1, zorder=1)
+        
+        # Central vertical line
+        ax.vlines(x=0, ymin=0, ymax=h, colors="grey", ls=':', zorder=1)
+
+    # Convert data points from ternary to cartesian coordinates
+    x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
+    
+    # Calculate density using neighbors method
+    points = np.column_stack([x_data, y_data])
+    nn = NearestNeighbors(radius=bandwidth)
+    nn.fit(points)
+    density = nn.radius_neighbors(points, return_distance=False)
+    density = np.array([len(neighbors) for neighbors in density])
+    
+    # Create scatter plot colored by density (drawn on top of grid lines)
+    scatter = plt.scatter(
+        x_data,
+        y_data,
+        c=density,
+        cmap=colormap,
+        alpha=point_alpha,
+        s=15,
+        edgecolors="none",
+        zorder=2,
+    )
+    
+    # Add colorbar - match style of other plots but positioned lower
+    sm = plt.cm.ScalarMappable(cmap=colormap, norm=plt.cm.colors.Normalize(vmin=density.min(), vmax=density.max()))
+    sm.set_array([])
+    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cbar = plt.colorbar(sm, cax=cax)
+    cbar.ax.set_title('Count', fontsize=10, pad=6)
+    
+    # Fix axis limits AFTER scatter plot and colorbar - scatter plot was overriding the limits!
+    ax.set_xlim(-0.55, 0.55)
+    ax.set_ylim(-0.05, 0.91)
+    
+    # === Use EXACT same labeling as plot() function ===
+    label_color = "black"
+    label_size = 12
+    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color) #T1
+    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color) #T3
+    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color) #T2
+
+    # Remove plot borders
+    for spine in ax.spines.values():
+        spine.set_color("none")
+
+    # Save the plot with specified filename format - use standard save to prevent label cropping
+    title = f"{file_name}_radcount.png"
+    fig.savefig(title, dpi=300)  # Don't use save_figure() to avoid bbox_inches="tight"
     return fig
 
 

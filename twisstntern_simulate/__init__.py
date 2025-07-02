@@ -29,7 +29,8 @@ logging.getLogger("msprime").setLevel(logging.WARNING)
 logging.getLogger("msprime.ancestry").setLevel(logging.WARNING)
 
 from .config import Config
-from .pipeline import run_pipeline
+# Lazy import of pipeline to avoid early dependency loading
+# from .pipeline import run_pipeline
 from .simulation import run_simulation, simulate_locus, simulate_chromosome
 
 # Define what gets imported with "from twisstntern_simulate import *"
@@ -64,3 +65,8 @@ if missing_packages:
         print(f"  - {package}")
     print("\nTo install missing packages, run:")
     print(f"pip install {' '.join(missing_packages)}")
+
+def run_pipeline(*args, **kwargs):
+    """Lazy import wrapper for run_pipeline to avoid early dependency loading."""
+    from .pipeline import run_pipeline as _run_pipeline
+    return _run_pipeline(*args, **kwargs)

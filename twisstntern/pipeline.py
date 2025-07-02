@@ -11,7 +11,8 @@ from twisstntern.visualization import ( # add the plot functions here 25.6
     plot_results,
     plotting_triangle_index,
     plot_fundamental_asymmetry,
-    plot_ternary_heatmap_data
+    plot_ternary_heatmap_data,
+    plot_density_colored_radcount
 )
 from twisstntern.tree_processing import (
     detect_and_read_trees,
@@ -310,6 +311,9 @@ def run_analysis( # add plot functions here 25.6
     plot_ternary_heatmap_data(data, 0.02, output_prefix, heatmap_colormap=heatmap_colormap)
     logger.debug("Generated ternary heatmap (count, no grid) - fixed 0.02 granularity")
 
+    # New: Density radcount plot - always uses fixed parameters
+    plot_density_colored_radcount(data, output_prefix)
+    logger.debug("Generated density radcount plot")
     
     plot_results(results, granularity, output_prefix)
     logger.debug("Generated results plot")

@@ -22,6 +22,7 @@ from twisstntern_simulate.visualization import (
     plot_results,
     plotting_triangle_index,
     plot_ternary_heatmap_data,
+    plot_density_colored_radcount,
 )
 
 
@@ -414,6 +415,8 @@ def run_pipeline(
         plot(topology_weights, granularity, output_prefix)
         # New: Ternary heatmap (count, no grid) - always uses 0.02 granularity
         plot_ternary_heatmap_data(topology_weights, 0.02, output_prefix, heatmap_colormap=heatmap_colormap)
+        # New: Density radcount plot - always uses fixed parameters
+        plot_density_colored_radcount(topology_weights, output_prefix)
         plot_results(triangles_results, granularity, output_prefix)
         plotting_triangle_index(granularity, output_prefix)
 
