@@ -51,6 +51,10 @@ def fundamental_asymmetry(data):
     # Compute asymmetry statistics
     main_d_lr = D_LR(main_n_r, main_n_l)
     main_g_test, main_p_value = log_likelihood_ratio_test(main_n_r, main_n_l)
+    # ReminderThe test compares:
+    # - Null hypothesis: p = 0.5 (symmetric)
+    # - Alternative hypothesis: p = n_l / (n_r + n_l) (empirical)
+    # log_likelihood_ratio_test(n_r, n_l) = -2 * log(likelihood_null / likelihood_alt)
 
     return (
         int(main_n_r),

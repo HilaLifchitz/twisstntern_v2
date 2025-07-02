@@ -8,8 +8,15 @@ import time
 import re
 from pathlib import Path
 
-from twisstntern.pipeline import run_analysis, ensure_twisst_available
-from twisstntern.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
+from twisstntern.pipeline import run_analysis
+from twisstntern.logger import (
+    setup_logging,
+    get_logger,
+    log_system_info,
+    log_analysis_start,
+    log_analysis_complete,
+    log_error,
+)
 
 
 def parse_downsample_arg(downsample_str):
@@ -19,41 +26,43 @@ def parse_downsample_arg(downsample_str):
     - i = starting index (offset)
     - If only N is provided, default to N+0 (start from index 0)
     - Constraint: i < N (offset must be less than the sampling interval)
-    
+
     Args:
         downsample_str (str): String in format 'N' or 'N+i'
-        
+
     Returns:
         tuple: (N, i) where N is the sampling interval and i is the starting index
-        
+
     Raises:
         ValueError: If format is invalid or i >= N
     """
     if downsample_str is None:
         return None, None
-        
+
     # Check if it's just a number (N format)
     if downsample_str.isdigit():
         N = int(downsample_str)
         if N < 1:
             raise ValueError("Downsample interval N must be >= 1")
         return N, 0  # Default to starting from index 0
-    
+
     # Check if it's in N+i format
-    match = re.match(r'^(\d+)\+(\d+)$', downsample_str)
+    match = re.match(r"^(\d+)\+(\d+)$", downsample_str)
     if match:
         N = int(match.group(1))
         i = int(match.group(2))
-        
+
         if N < 1:
             raise ValueError("Downsample interval N must be >= 1")
         if i >= N:
             raise ValueError(f"Starting index i ({i}) must be < N ({N})")
-            
+
         return N, i
-    
+
     # Invalid format
-    raise ValueError(f"Invalid downsample format: '{downsample_str}'. Use 'N' or 'N+i' (e.g., '10' or '10+3')")
+    raise ValueError(
+        f"Invalid downsample format: '{downsample_str}'. Use 'N' or 'N+i' (e.g., '10' or '10+3')"
+    )
 
 
 def main():
@@ -98,8 +107,8 @@ def main():
         type=str,
         default=None,
         help="Downsample format: 'N' or 'N+i' where N=sample every Nth row, i=starting index. "
-             "Examples: '10' (every 10th starting from 0), '10+1' (every 10th starting from index 1), "
-             "'5+3' (every 5th starting from index 3). Constraint: i < N.",
+        "Examples: '10' (every 10th starting from 0), '10+1' (every 10th starting from index 1), "
+        "'5+3' (every 5th starting from index 3). Constraint: i < N.",
     )
     parser.add_argument(
         "-o",
@@ -117,30 +126,27 @@ def main():
 
     args = parser.parse_args()
 
-    # Ensure twisst.py is available before any analysis
-    ensure_twisst_available()
-
     # Determine which file argument to use
     input_file = args.file_flag if args.file_flag else args.file
-    
+
     if not input_file:
-        parser.error("Input file must be specified either as positional argument or with -f/--file flag")
+        parser.error(
+            "Input file must be specified either as positional argument or with -f/--file flag"
+        )
 
     # Set output directory (default is "Results" if not specified)
     output_dir = args.output
 
     # Setup logging
     log_file_path = setup_logging(
-        output_dir=output_dir,
-        verbose=args.verbose,
-        console_output=True
+        output_dir=output_dir, verbose=args.verbose, console_output=True
     )
-    
+
     logger = get_logger(__name__)
-    
+
     # Log system information
     log_system_info()
-    
+
     # Check if input file exists
     file_path = Path(input_file)
     if not file_path.exists():
@@ -168,14 +174,14 @@ def main():
         taxon_names=args.taxon_names,
         outgroup=args.outgroup,
         topology_mapping=args.topology_mapping,
-        verbose=args.verbose
+        verbose=args.verbose,
     )
 
     start_time = time.time()
-    
+
     # Track files created during this run
     created_files = []
-    
+
     try:
         # Call run_analysis with the new signature that returns 3 values
         results, fundamental_results, csv_file_used = run_analysis(
@@ -191,21 +197,21 @@ def main():
 
         # Calculate duration
         duration = time.time() - start_time
-        
+
         # Collect files created during this run
         output_path = Path(output_dir)
         if output_path.exists():
             # Get the timestamp when we started (approximate)
             start_timestamp = start_time - 1  # Subtract 1 second to be safe
-            
+
             # Only include files created during this run
             for file_path in output_path.glob("*.*"):
                 if file_path.stat().st_mtime >= start_timestamp:
                     created_files.append(str(file_path))
-        
+
         # Log completion with only the files created in this run
         log_analysis_complete(duration, created_files)
-        
+
         # Print summary to console
         print("----------------------------------------------------------")
         print("Summary of the analysis:")
@@ -217,10 +223,10 @@ def main():
         print(f"G-test: {fundamental_results[3]:.4f}")
         print(f"p-value: {fundamental_results[4]:.4e}")
         print(f"\nResults and plots have been saved to the '{output_dir}' directory.")
-        
+
         if log_file_path:
             print(f"Log file saved to: {log_file_path}")
-            
+
     except Exception as e:
         log_error(e, "main analysis")
         logger.critical("Analysis failed. Check the log for details.")

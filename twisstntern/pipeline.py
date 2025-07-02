@@ -46,16 +46,6 @@ def detect_file_type(file_path):
         )
 
 
-def ensure_twisst_available():
-    """Ensure twisst is available for use."""
-    try:
-        from twisstntern.tree_processing import weightTrees
-        return True
-    except ImportError:
-        print("✗ twisst not available in the package")
-        return False
-
-
 def process_tree_file(
     tree_file,
     taxon_names=None,
@@ -81,13 +71,6 @@ def process_tree_file(
     # Ensure output directory exists
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
-
-    # Ensure twisst is available before processing
-    if not ensure_twisst_available():
-        raise RuntimeError(
-            "twisst is required for tree file processing but could not be made available. "
-            "Please install it manually or check your internet connection."
-        )
 
     # Generate output filename
     input_name = Path(tree_file).stem
@@ -203,7 +186,7 @@ def run_analysis( # add plot functions here 25.6
             # ploidy = infer_ploidy_from_samples(tree_data[0])  # Pass first tree
             # print(f"Detected ploidy: {ploidy}x")
 
-        # Process tree file to generate CSV (this will handle twisst installation)
+        # Process tree file to generate CSV
         logger.info("Converting trees to topology weights...")
         csv_file = process_tree_file(
             tree_file=file,
