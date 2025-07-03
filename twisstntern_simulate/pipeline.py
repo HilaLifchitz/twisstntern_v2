@@ -150,7 +150,7 @@ def apply_config_overrides(config, overrides_list):
 
 def run_pipeline(
     config_path: str,
-    output_dir: str,
+    output_dir: Optional[str] = None,
     seed_override: Optional[int] = None,
     mode_override: Optional[str] = None,
     granularity: float = 0.1,
@@ -168,7 +168,7 @@ def run_pipeline(
 
     Args:
         config_path: Path to configuration YAML file
-        output_dir: Directory for output files
+        output_dir: Directory for output files (defaults to timestamped Results_YYYY-MM-DD_HH-MM-SS)
         seed_override: Override random seed from config file
         mode_override: Override simulation mode from config file
         granularity: Granularity for ternary analysis
@@ -191,12 +191,12 @@ def run_pipeline(
         ValueError: If configuration is invalid
         RuntimeError: If any pipeline step fails
     """
-    # Add timestamp to output directory if using default "Results"
-    if output_dir == "Results":
+
+    # Add timestamp to output directory if using default
+    if output_dir is None or output_dir == "Results":
         timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
         output_dir = f"Results_{timestamp}"
         logger.info(f"Using timestamped output directory: {output_dir}")
-
 
     logger.info("---------------------------------------------------------")
     logger.info("Starting twisstntern_simulate pipeline")
