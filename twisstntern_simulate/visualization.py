@@ -52,6 +52,9 @@ style = "RdBu_r" # for D-LR plots (=plot results + plot_fundamental_asymmetry)- 
 style_heatmap = "viridis_r" # for heatmap (=plot_ternary_heatmap_data)- the colormap
 truncate = False # for heatmap -whether to chop off the edges of the gradient map
 
+# Hatch patterns for empty triangles in plot_results:
+# '|||' (vertical), '///' (diagonal), '---' (horizontal), '+++' (crosses), 'xxx' (diagonal crosses), '...' (dots)
+
 
 def save_figure(fig, filename, dpi=300):
     """
@@ -75,87 +78,111 @@ def save_figure(fig, filename, dpi=300):
     fig.savefig(filename, dpi=dpi, bbox_inches="tight")
 
 
+def draw_grey_grid_lines(ax, alpha=0.1):
+    """
+    Draw grey grid lines on ternary plot, copied from simple_density_plot.py
+    Uses fixed granularity of 0.1 as requested.
+    Grid lines are drawn with zorder=1 to ensure they appear under data points.
+    """
+    # Draw grid lines using twisstntern functions (all grey, under data points)
+    for i in range(1, int(1 / alpha)):
+        y = i * alpha
+        # T1 lines (horizontal)
+        ax.hlines(y=y * h, xmin=T1_lim(y)[0], 
+                 xmax=T1_lim(y)[1], color="grey", linewidth=1, zorder=1)
+        # T2 lines
+        x2 = np.linspace(T2_lim(y)[0], T2_lim(y)[1], 100)
+        ax.plot(x2, T2(y, x2), color="grey", linewidth=1, zorder=1)
+        # T3 lines
+        x3 = np.linspace(T3_lim(y)[0], T3_lim(y)[1], 100)
+        ax.plot(x3, T3(y, x3), color="grey", linewidth=1, zorder=1)
+    
+    # Central vertical line
+    ax.vlines(x=0, ymin=0, ymax=h, colors="grey", ls=':', zorder=1)
+
+
 def plot_density_colored_radcount(data, file_name):
     """
-    EXACT copy of plot() function with density coloring added.
-    This guarantees consistency with other plotting functions.
+    Plot ternary coordinate grid with data points colored by local density.
+    Copied from simple_density_plot.py with fixed parameters as requested.
+    
+    Fixed parameters:
+    - granularity: 0.1 (always)
+    - grid: True (grey grid lines)
+    - point_alpha: 0.8
+    - density_method: "neighbors" 
+    - bandwidth: 0.02
+    - colormap: style_heatmap
     """
-    # Map granularity names to alpha values (copying from plot function)
-    alpha = 0.1
+    
+    # Fixed parameters as specified
+    alpha = 0.1  # Fixed granularity
+    grid = True
+    point_alpha = 0.8
+    density_method = "neighbors"
+    bandwidth = 0.02
+    colormap = style_heatmap  # Use global heatmap style
 
     fig = plt.figure(figsize=(8, 6))
     ax = plt.axes()
 
-    # Draw triangle by connecting vertices A (top), B (left), and C (right)
-    # EXACT COPY from plot() function
-    triangle_x = [0, -0.5, 0.5, 0]  # A → B → C → A
+    # === Use EXACT same triangle drawing code as simple_density_plot.py ===
+    triangle_x = [0, -0.5, 0.5, 0]
     triangle_y = [h, 0, 0, h]
-
-    ax.plot(triangle_x, triangle_y, color="k", linewidth=1)
-
-    # Hide X and Y axes tick marks
-    # EXACT COPY from plot() function
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
     ax.set_xticks([])
     ax.set_yticks([])
 
-    # EXACT COPY of grid drawing from plot() function
-    steps = np.arange(alpha, 1, alpha)
-    for y in steps:
-        x1_l, x1_r = T1_lim(y)
-        ax.hlines(y=y * h, xmin=x1_l, xmax=x1_r, color=T1_color_data, linewidth=1)
+    # Draw grid lines based on grid parameter (copied from simple_density_plot.py)
+    if grid:
+        # Use grey grid lines with fixed granularity 0.1
+        draw_grey_grid_lines(ax, alpha=0.1)
+    # When grid=False, draw no grid lines at all (just the triangle outline already drawn above)
 
-        x2_l, x2_r = T2_lim(y)
-        x2 = np.linspace(x2_l, x2_r, 100)
-        ax.plot(x2, T2(y, x2), color=T2_color_data, linewidth=1)
-
-        x3_l, x3_r = T3_lim(y)
-        x3 = np.linspace(x3_l, x3_r, 100)
-        ax.plot(x3, T3(y, x3), color=T3_color_data, linewidth=1)
-
-    ax.vlines(x=0, ymin=0, ymax=h, colors="#3E3E3E", linestyles=":")
-
-    # convert data points from ternary to cartezian coordinates and plot them
-    # EXACT COPY from plot() function
+    # Convert data points from ternary to cartesian coordinates
     x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
     
-    # ONLY CHANGE: Calculate density for coloring
-    points = np.column_stack([x_data, y_data])
-    nn = NearestNeighbors(radius=0.02)
-    nn.fit(points)
-    density = nn.radius_neighbors(points, return_distance=False)
-    density = np.array([len(neighbors) for neighbors in density])
+    # Calculate density for each point (copied from simple_density_plot.py)
+    if density_method == "neighbors":
+        points = np.column_stack([x_data, y_data])
+        nn = NearestNeighbors(radius=bandwidth)
+        nn.fit(points)
+        density = nn.radius_neighbors(points, return_distance=False)
+        density = np.array([len(neighbors) for neighbors in density])
     
-    # MODIFIED: Scatter plot with density coloring instead of fixed color
+    # Create scatter plot colored by density (copied from simple_density_plot.py)
     scatter = plt.scatter(
         x_data,
         y_data,
-        c=density,  # ONLY CHANGE: use density instead of fixed color
-        cmap=style_heatmap,  # Use colormap instead of facecolors
-        edgecolors="gray",
-        alpha=0.3,
-        linewidths=0.4,
+        c=density,
+        cmap=colormap,
+        alpha=point_alpha,
         s=15,
+        edgecolors="none",
+        zorder=2,
     )
     
-    # ADD: Simple colorbar
-    cbar = plt.colorbar(scatter)
-    cbar.set_label('Count')
+    # Add colorbar - EXACT same style as other plotting functions
+    sm = plt.cm.ScalarMappable(cmap=colormap, norm=plt.cm.colors.Normalize(vmin=density.min(), vmax=density.max()))
+    sm.set_array([])
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cbar = plt.colorbar(sm, cax=cax)
+    cbar.ax.set_title('Count', fontsize=10, pad=6)
     
-    # EXACT COPY of labeling from plot() function
-    label_color = "black" # 25.6    tweek with locations of labels
+    # === Labeling (using ax.text for proper coordinate system) ===
+    label_color = "black"
     label_size = 12
-    # Label triangle corners
-    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color) #T1
-    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color) #T3
-    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color) #T2
+    ax.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)
+    ax.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color)
+    ax.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
 
-    # EXACT COPY of border removal from plot() function
-    ax.spines["right"].set_color("none")
-    ax.spines["left"].set_color("none")
-    ax.spines["bottom"].set_color("none")
-    ax.spines["top"].set_color("none")
+    # Remove plot borders (copied from simple_density_plot.py)
+    for spine in ax.spines.values():
+        spine.set_color("none")
 
-    # EXACT COPY of saving from plot() function
+    # Save the plot
     title = f"{file_name}_radcount.png"
     save_figure(fig, title)
     return fig
@@ -593,6 +620,8 @@ def plot_results(res, granularity, file_name):
 
         if np.isnan(row["D-LR"]):
             # Create striped pattern for empty triangles using Polygon with hatch
+            # Available hatch patterns: '|||' (vertical), '///' (diagonal), '---' (horizontal), 
+            # '+++' (crosses), 'xxx' (diagonal crosses), '...' (dots)
             from matplotlib.patches import Polygon
             triangle_coords = list(zip(trianglex, triangley))
             empty_triangle = Polygon(
@@ -600,7 +629,7 @@ def plot_results(res, granularity, file_name):
                 closed=True,
                 facecolor='white',
                 edgecolor='grey',
-                hatch='///',
+                hatch='|||',  # 🔄 Change this to experiment with different patterns
                 linewidth=0.5
             )
             ax.add_patch(empty_triangle)
@@ -628,7 +657,7 @@ def plot_results(res, granularity, file_name):
         closed=True,
         facecolor='white',
         edgecolor='grey',
-        hatch='///',
+        hatch='|||',  # Should match the pattern used in empty triangles above
         linewidth=0.5
     )
     ax.add_patch(legend_rect)
@@ -700,7 +729,7 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     VISUAL TWEAKING GUIDE:
     - Change the colormap for the heatmap: see `get_professional_colormap(style=style_heatmap, ...)`
     - Change the color and alpha of grid lines: see `grid_color` and the grid drawing section
-    - Change the color, width, and hatch pattern for empty triangles: see the Polygon creation for empty triangles
+    - Change the color, width, and hatch pattern for empty triangles: see the Polygon creation for empty triangles (currently vertical lines)
     - Change the colorbar style, ticks, and label: see the colorbar section
     - To show/hide axis coordinate labels, uncomment the relevant block below.
     - To change figure size, edit `fig = plt.figure(figsize=(8, 6))`

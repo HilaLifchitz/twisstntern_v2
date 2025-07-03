@@ -183,9 +183,8 @@ def main():
     Parses command-line arguments and runs the full pipeline:
     1. Load configuration from YAML file
     2. Run msprime simulation
-    3. Ensure twisst is available (download if needed)
-    4. Process tree sequences to generate topology weights
-    5. Run twisstntern analysis and generate plots
+    3. Process tree sequences to generate topology weights using bundled twisst
+    4. Run twisstntern analysis and generate plots
     """
 
     parser = argparse.ArgumentParser(
@@ -193,23 +192,35 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Get configuration template
+  python -m twisstntern_simulate --get-config
+  python -m twisstntern_simulate --get-config my_config.yaml
+  
   # Basic usage with config file
   python -m twisstntern_simulate -c config.yaml -o Results/
   
   # With verbose output
   python -m twisstntern_simulate -c config.yaml -o Results/ --verbose
   
-  # Using default Results directory
+  # Using default timestamped Results directory
   python -m twisstntern_simulate -c config.yaml
         """,
     )
 
-    # Required arguments
+    # Special commands
+    parser.add_argument(
+        "--get-config",
+        nargs="?",
+        const="",
+        help="Download config template to current directory or specified path. "
+             "Usage: --get-config [path]. If no path provided, saves to current directory as 'config_template.yaml'.",
+    )
+
+    # Required arguments (unless using --get-config)
     parser.add_argument(
         "-c",
         "--config",
         type=str,
-        required=True,
         help="Path to configuration file (YAML format). See config_template.yaml for example.",
     )
 
@@ -218,7 +229,7 @@ Examples:
         "--output",
         type=str,
         default="Results",
-        help="Output directory for results. Defaults to 'Results' if not specified. Will be created if it doesn't exist.",
+        help="Output directory for results. Defaults to timestamped 'Results_YYYY-MM-DD_HH-MM-SS' if not specified. Will be created if it doesn't exist.",
     )
 
     # Output and logging options
@@ -296,8 +307,42 @@ Examples:
 
     args = parser.parse_args()
 
+    # Handle --get-config command
+    if hasattr(args, 'get_config') and args.get_config is not None:
+        from .utils import download_config_template
+        
+        print("🔧 TWISSTNTERN_SIMULATE Configuration Template")
+        print("=" * 50)
+        
+        if args.get_config:
+            # Custom destination path provided
+            downloaded_path = download_config_template(args.get_config)
+        else:
+            # Default to current directory
+            downloaded_path = download_config_template()
+        
+        if downloaded_path:
+            print(f"📁 Template ready for use: {downloaded_path}")
+            print("\n💡 Next steps:")
+            print("   1. Edit the configuration file to match your simulation needs")
+            print("   2. Run: python -m twisstntern_simulate -c config_template.yaml -o results")
+        sys.exit(0)
+
+    # Check required arguments (if not using --get-config)
+    if not args.config:
+        parser.error("the following arguments are required: -c/--config")
+
+    # Set output directory with timestamp if using default
+    if args.output == "Results":
+        # Generate timestamped directory name
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+        output_directory_name = f"Results_{timestamp}"
+    else:
+        # Use user-specified directory name
+        output_directory_name = args.output
+
     # Create output directory if it doesn't exist
-    output_dir = Path(args.output)
+    output_dir = Path(output_directory_name)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Setup logging (like twisstntern)

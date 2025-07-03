@@ -115,7 +115,7 @@ def main():
         "--output",
         type=str,
         default="Results",
-        help="Path to the output directory. If not provided, a 'Results' directory will be created.",
+        help="Path to the output directory. If not provided, a timestamped 'Results_YYYY-MM-DD_HH-MM-SS' directory will be created.",
     )
     parser.add_argument(
         "--verbose",
@@ -134,8 +134,14 @@ def main():
             "Input file must be specified either as positional argument or with -f/--file flag"
         )
 
-    # Set output directory (default is "Results" if not specified)
-    output_dir = args.output
+    # Set output directory with timestamp if using default
+    if args.output == "Results":
+        # Generate timestamped directory name
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+        output_dir = f"Results_{timestamp}"
+    else:
+        # Use user-specified directory name
+        output_dir = args.output
 
     # Setup logging
     log_file_path = setup_logging(

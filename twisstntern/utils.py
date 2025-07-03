@@ -772,6 +772,7 @@ def D_LR(n_r, n_l):
     """
     Calculate the directional asymmetry statistic D_LR = (n_r - n_l) / (n_r + n_l),
     which captures the imbalance between right and left triangle counts.
+    Interpetation: D_LR = 0.2 indicates a 20% net asymmetry toward the right side
     """
     total = n_r + n_l
     return np.nan if total == 0 else (n_r - n_l) / total
