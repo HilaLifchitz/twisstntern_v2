@@ -101,7 +101,7 @@ def draw_grey_grid_lines(ax, alpha=0.1):
     ax.vlines(x=0, ymin=0, ymax=h, colors="grey", ls=':', zorder=1)
 
 
-def plot_density_colored_radcount(data, file_name):
+def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
     """
     Plot ternary coordinate grid with data points colored by local density.
     Copied from simple_density_plot.py with fixed parameters as requested.
@@ -112,7 +112,7 @@ def plot_density_colored_radcount(data, file_name):
     - point_alpha: 0.8
     - density_method: "neighbors" 
     - bandwidth: 0.02
-    - colormap: style_heatmap
+    - colormap: User-specified colormap (default: "viridis_r")
     """
     
     # Fixed parameters as specified
@@ -121,24 +121,17 @@ def plot_density_colored_radcount(data, file_name):
     point_alpha = 0.8
     density_method = "neighbors"
     bandwidth = 0.02
-    colormap = style_heatmap  # Use global heatmap style
+    # Use the passed colormap parameter instead of global style_heatmap
 
     fig = plt.figure(figsize=(8, 6))
     ax = plt.axes()
 
-    # === Use EXACT same triangle drawing code as simple_density_plot.py ===
-    triangle_x = [0, -0.5, 0.5, 0]
-    triangle_y = [h, 0, 0, h]
-    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    # Draw grid lines based on grid parameter (copied from simple_density_plot.py)
+    # === STEP 1: Draw grid lines FIRST (zorder=1) ===
     if grid:
         # Use grey grid lines with fixed granularity 0.1
         draw_grey_grid_lines(ax, alpha=0.1)
-    # When grid=False, draw no grid lines at all (just the triangle outline already drawn above)
 
+    # === STEP 2: Plot scatter points SECOND (zorder=2) ===
     # Convert data points from ternary to cartesian coordinates
     x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
     
@@ -161,16 +154,18 @@ def plot_density_colored_radcount(data, file_name):
         edgecolors="none",
         zorder=2,
     )
+
+    # === STEP 3: Draw triangle outline THIRD (zorder=3) ===
+    triangle_x = [0, -0.5, 0.5, 0]
+    triangle_y = [h, 0, 0, h]
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
     
-    # Add colorbar - EXACT same style as other plotting functions
-    sm = plt.cm.ScalarMappable(cmap=colormap, norm=plt.cm.colors.Normalize(vmin=density.min(), vmax=density.max()))
-    sm.set_array([])
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
-                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
-    cbar = plt.colorbar(sm, cax=cax)
-    cbar.ax.set_title('Count', fontsize=10, pad=6)
+    # === STEP 4: Draw median line LAST and FAINTLY on top (zorder=4) ===
+    ax.vlines(x=0, ymin=0, ymax=h, colors="lightgrey", linestyles=":", linewidth=0.8, alpha=0.6, zorder=4)
     
+    ax.set_xticks([])
+    ax.set_yticks([])
+
     # === Labeling (using ax.text for proper coordinate system) ===
     label_color = "black"
     label_size = 12
@@ -181,6 +176,14 @@ def plot_density_colored_radcount(data, file_name):
     # Remove plot borders (copied from simple_density_plot.py)
     for spine in ax.spines.values():
         spine.set_color("none")
+
+    # Add colorbar - EXACT same style as other plotting functions
+    sm = plt.cm.ScalarMappable(cmap=colormap, norm=plt.cm.colors.Normalize(vmin=density.min(), vmax=density.max()))
+    sm.set_array([])
+    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
+                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cbar = plt.colorbar(sm, cax=cax)
+    cbar.ax.set_title('Count', fontsize=10, pad=6)
 
     # Save the plot
     title = f"{file_name}_radcount.png"
@@ -401,11 +404,11 @@ def plot_fundamental_asymmetry(data, file_name):
     # Annotate p-value significance stars
     x, y = 0.15, 0.4 * h
     if 0.001 <= main_p_value < 0.05:
-        ax.scatter(x, y, color="#fde724", marker="*", alpha=1.0, s=15)  # Brightest yellow from viridis
+        ax.scatter(x, y, color="#fde724", marker="*", alpha=1.0, s=25, edgecolors='black', linewidths=0.2)  # Yellow with black outline
     elif 1e-5 <= main_p_value < 0.001:
-        ax.scatter(x, y, color="#5ec961", marker="*", alpha=1.0, s=22)  # Super bright green from viridis
+        ax.scatter(x, y, color="#5ec961", marker="*", alpha=1.0, s=32, edgecolors='black', linewidths=0.2)  # Green with black outline
     elif main_p_value < 1e-5:
-        ax.scatter(x, y, color="black", marker="*", alpha=1, s=25)
+        ax.scatter(x, y, color="black", marker="*", alpha=1, s=35, edgecolors='black', linewidths=0.8)  # Black 
 
     # Add colorbar for D_LR values - shorter and positioned lower
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -420,13 +423,13 @@ def plot_fundamental_asymmetry(data, file_name):
 
     # Add star marker legend - moved to left side to avoid overlap with colorbar
     legend_items = [
-        (0.8, "black", "$p < 10^{-5}$", 25, 1.0),
-        (0.77, "#5ec961", "$p < 0.001$", 22, 1.0),  # Super bright green from viridis
-        (0.74, "#fde724", "$p < 0.05$", 18, 1.0),   # Brightest yellow from viridis
+        (0.8, "black", "$p < 10^{-5}$", 35, 1.0),  # Black 
+        (0.77, "#5ec961", "$p < 0.001$", 32, 1.0),  # Green with black outline
+        (0.74, "#fde724", "$p < 0.05$", 28, 1.0),   # Yellow with black outline
     ]
     for y_pos, color, label, size, alpha in legend_items:
-        ax.scatter(-0.45, y_pos, color=color, marker="*", alpha=alpha, s=size)
-        ax.text(-0.43, y_pos, label, size=8)
+        ax.scatter(-0.45, y_pos, color=color, marker="*", alpha=alpha, s=size, edgecolors='black', linewidths=0.2)
+        ax.text(-0.43, y_pos, label, size=10)
 
     # Label sample sizes
     ax.text(-0.5, -0.1, "n =", size=12)
@@ -643,11 +646,11 @@ def plot_results(res, granularity, file_name):
             x, y = mid_point_triangle(a1, b1, a2, b2, a3, b3)
             p = row["p-value(g-test)"]
             if 0.05 > p >= 0.001:
-                ax.scatter(x, y, color="#fde724", marker="*", alpha=1.0, s=15)  # Brightest yellow from viridis
+                ax.scatter(x, y, color="#fde724", marker="*", alpha=1.0, s=25, edgecolors='black', linewidths=0.2)  # Yellow with black outline
             elif 0.001 > p >= 1e-5:
-                ax.scatter(x, y, color="#5ec961", marker="*", alpha=1.0, s=22)  # Super bright green from viridis
+                ax.scatter(x, y, color="#5ec961", marker="*", alpha=1.0, s=32, edgecolors='black', linewidths=0.2)  # Green with black outline
             elif p < 1e-5:
-                ax.scatter(x, y, color="black", marker="*", alpha=1, s=25)
+                ax.scatter(x, y, color="black", marker="*", alpha=1, s=35, edgecolors='black', linewidths=0.2)  # Black
 
     # Legend for empty triangles - positioned in middle between triangle and colorbar
     # Create a small striped rectangle for the legend
@@ -664,11 +667,11 @@ def plot_results(res, granularity, file_name):
     plt.text(0.36, 0.865, "empty triangle", size=8)
 
     # Legend for p-values - positioned in middle between triangle and colorbar
-    ax.scatter(0.3, 0.8, color="black", marker="*", alpha=1, s=25)
+    ax.scatter(0.3, 0.8, color="black", marker="*", alpha=1, s=35, edgecolors='black', linewidths=0.2)
     plt.text(0.32, 0.8, "$p < 10^{-5}$", size=10)
-    ax.scatter(0.3, 0.77, color="#5ec961", marker="*", alpha=1.0, s=22)  # Super bright green from viridis
+    ax.scatter(0.3, 0.77, color="#5ec961", marker="*", alpha=1.0, s=32, edgecolors='black', linewidths=0.2)  # Green with black outline
     plt.text(0.32, 0.77, "$p < 0.001$", size=10)
-    ax.scatter(0.3, 0.74, color="#fde724", marker="*", alpha=1.0, s=18)  # Brightest yellow from viridis
+    ax.scatter(0.3, 0.74, color="#fde724", marker="*", alpha=1.0, s=30, edgecolors='black', linewidths=0.2)  # Yellow with black outline
     plt.text(0.32, 0.74, "$p < 0.05$", size=10)
 
     # Add colorbar for D-LR values - shorter and positioned lower

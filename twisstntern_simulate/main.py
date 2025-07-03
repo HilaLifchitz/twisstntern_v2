@@ -401,7 +401,7 @@ Examples:
 
     try:
         # Run the pipeline
-        results = run_pipeline(
+        triangles_results, fundamental_results, csv_file_used = run_pipeline(
             config_path=str(config_path),
             output_dir=str(output_dir),
             seed_override=args.seed,
@@ -435,7 +435,7 @@ Examples:
         # Print summary to console (like main twisstntern)
         print("----------------------------------------------------------")
         print("Summary of the analysis:")
-        print(f"Data file used: {results['csv_file_used']}")
+        print(f"Data file used: {csv_file_used}")
         print(f"\nResults and plots have been saved to the '{output_dir}' directory.")
         
         if log_file_path:

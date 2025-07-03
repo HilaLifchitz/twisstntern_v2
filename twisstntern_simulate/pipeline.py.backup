@@ -7,7 +7,6 @@ twisstntern_simulate workflow: simulation -> processing -> analysis
 
 import os
 import logging
-import time
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -162,7 +161,7 @@ def run_pipeline(
     downsample_kb: Optional[int] = None,
     downsample_kb_i: Optional[int] = None,
     colormap: str = "viridis_r",
-) -> tuple:
+) -> Dict[str, Any]:
     """
     Run the complete twisstntern_simulate pipeline.
 
@@ -184,19 +183,13 @@ def run_pipeline(
                          'inferno', 'Blues', 'Greys'. Default: 'viridis_r'.
 
     Returns:
-        tuple: (triangles_results, fundamental_results, weights_file) - same format as twisstntern.run_analysis()
+        Dictionary containing pipeline results and metadata
 
     Raises:
         FileNotFoundError: If config file or required inputs don't exist
         ValueError: If configuration is invalid
         RuntimeError: If any pipeline step fails
     """
-    # Add timestamp to output directory if using default "Results"
-    if output_dir == "Results":
-        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-        output_dir = f"Results_{timestamp}"
-        logger.info(f"Using timestamped output directory: {output_dir}")
-
 
     logger.info("---------------------------------------------------------")
     logger.info("Starting twisstntern_simulate pipeline")
@@ -459,7 +452,7 @@ def run_pipeline(
         logger.info("Analysis pipeline completed successfully!")
         logger.info(f"Pipeline completed successfully - Results in: {output_dir}")
 
-        return triangles_results, fundamental_results, weights_file
+        return results
 
     except Exception as e:
         error_msg = f"Pipeline failed: {str(e)}"

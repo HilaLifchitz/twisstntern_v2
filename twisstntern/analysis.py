@@ -59,7 +59,6 @@ def fundamental_asymmetry(data):
           likelihood_alt = binom.pmf(n_l, N, p_alt)
     --->  log_likelihood_ratio_test(n_r, n_l) = -2 * log(likelihood_null / likelihood_alt)
     '''
-
     return (
         int(main_n_r),
         int(main_n_l),
@@ -106,7 +105,7 @@ def triangles_analysis(data, granularity):
         k_T3 = row_index
 
         while True:
-            # Process up triangle
+            # Process up-triangle
             a2_up = k_T2 * alpha
             b2_up = (k_T2 + 1) * alpha
             a3_up = 1 - (k_T3 + 1) * alpha
@@ -128,7 +127,7 @@ def triangles_analysis(data, granularity):
 
             all_results.append([coords, n_r, n_l, d_lr, g_stat, p_val])
 
-            # Process down triangle (sharing base with the up triangle)
+            # Process down-triangle (sharing base with the up-triangle)
             k_T3 += 1
 
             a2_down = k_T2 * alpha
@@ -154,7 +153,7 @@ def triangles_analysis(data, granularity):
 
             all_results.append([coords, n_r, n_l, d_lr, g_stat, p_val])
 
-            k_T2 += 1  # Advance to the next pair of up/down triangles
+            k_T2 += 1  # Advance to the next pair of up/down-triangles
 
     # Create DataFrame of results
     triangles = pd.DataFrame(

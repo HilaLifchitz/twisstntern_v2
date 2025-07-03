@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import time
 from pathlib import Path
 import pandas as pd
 
@@ -106,7 +107,7 @@ def run_analysis( # add plot functions here 25.6
     topology_mapping=None,
     downsample_N=None,
     downsample_i=None,
-    heatmap_colormap="viridis_r",
+    colormap="viridis_r",
 ):
     """
     Orchestrates the full analysis and visualization pipeline for both tree files and CSV files.
@@ -124,7 +125,7 @@ def run_analysis( # add plot functions here 25.6
                                          Ignored for CSV files.
         downsample_N (int, optional): Downsample interval (sample every Nth row)
         downsample_i (int, optional): Starting index for downsampling (offset)
-        heatmap_colormap (str, optional): Colormap for the ternary heatmap. 
+        colormap (str, optional): Colormap for the ternary heatmap. 
                                          Options: 'viridis', 'viridis_r', 'plasma', 
                                          'inferno', 'Blues', 'Greys'. 
                                          Default: 'viridis_r'.
@@ -136,6 +137,12 @@ def run_analysis( # add plot functions here 25.6
             - csv_file_used: Path to the CSV file that was analyzed (original or generated)
     """
     logger = get_logger(__name__)
+    
+    # Set output directory with timestamp if using default
+    if output_dir == "Results":
+        # Generate timestamped directory name
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+        output_dir = f"Results_{timestamp}"
     
     # Ensure Results directory exists
     results_dir = Path(output_dir)
@@ -291,11 +298,11 @@ def run_analysis( # add plot functions here 25.6
     # plot_genome_position_2d(data, output_prefix, genome_positions=None, colormap=colormap)
     # logger.debug("Generated genome position plot")
     # New: Ternary heatmap (count, no grid) - always uses 0.02 granularity
-    plot_ternary_heatmap_data(data, 0.02, output_prefix, heatmap_colormap=heatmap_colormap)
+    plot_ternary_heatmap_data(data, 0.02, output_prefix, heatmap_colormap=colormap)
     logger.debug("Generated ternary heatmap (count, no grid) - fixed 0.02 granularity")
 
     # New: Density radcount plot - always uses fixed parameters
-    plot_density_colored_radcount(data, output_prefix)
+    plot_density_colored_radcount(data, output_prefix, colormap=colormap)
     logger.debug("Generated density radcount plot")
     
     plot_results(results, granularity, output_prefix)

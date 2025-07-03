@@ -635,7 +635,7 @@ def n(a1, b1, a2, b2, a3, b3, data):
     return int(n_r), int(n_l)
 
 
-# Calculate the number of subtriangles in a ternary plot grid given a granularity parameter alpha.
+# Calculates the number of subtriangles in a ternary plot grid given a granularity parameter alpha.
 #
 # The triangle grid is defined by horizontal rows of triangle bases aligned with T1 coordinates,
 # starting at T1 = 0 and increasing in steps of size alpha. Each row contains alternating
@@ -765,7 +765,7 @@ def right_triangle_coordinates_list(alpha):
     return coords_list
 
 
-######################### Symmetry tests (move to analysis.py?) ################################
+######################### Symmetry tests  ################################
 
 
 def D_LR(n_r, n_l):
