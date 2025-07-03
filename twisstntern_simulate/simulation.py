@@ -41,23 +41,20 @@ Example usage:
         ts_chrom = results['chromosome']
 """
 
-import os
 import msprime
 import tskit
-import numpy as np
-import pandas as pd
-from typing import Dict, List, Union, Tuple, Optional, Literal
+from typing import Optional
 from pathlib import Path
 import logging
-from .config import Config 
+from .config import Config
 import random
-import ete3
 
 # Get logger (logging configured in __init__.py)
 logger = logging.getLogger(__name__)
 ######################################################################################
 # SIMULATION FUNCTIONS
 ######################################################################################
+
 
 def simulate_locus(config: Config):
     """
@@ -93,11 +90,11 @@ def simulate_locus(config: Config):
         )
 
     # Add migration rates
-    if hasattr(config, 'migration') and config.migration:
+    if hasattr(config, "migration") and config.migration:
         for migration_route, rate in config.migration.items():
             if rate > 0:  # Only add non-zero migration rates
                 # Parse migration route like "p1>p2" -> source="p1", dest="p2"
-                source, dest = migration_route.split('>')
+                source, dest = migration_route.split(">")
                 demography.set_migration_rate(source=source, dest=dest, rate=rate)
 
     # Default values, in case the user hasn't specified them
@@ -171,11 +168,11 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
         )
 
     # Add migration rates
-    if hasattr(config, 'migration') and config.migration:
+    if hasattr(config, "migration") and config.migration:
         for migration_route, rate in config.migration.items():
             if rate > 0:  # Only add non-zero migration rates
                 # Parse migration route like "p1>p2" -> source="p1", dest="p2"
-                source, dest = migration_route.split('>')
+                source, dest = migration_route.split(">")
                 demography.set_migration_rate(source=source, dest=dest, rate=rate)
 
     # Default is haploid
@@ -205,12 +202,15 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
     )
     return ts
 
+
 ######################################################################################
 # MAIN SIMULATION FUNCTION
 ######################################################################################
 
 
-def run_simulation(config: Config, output_dir: str, mode_override: Optional[str] = None) -> dict:
+def run_simulation(
+    config: Config, output_dir: str, mode_override: Optional[str] = None
+) -> dict:
     """
     Runs simulation based on the specified mode in config.
     This function acts as a dispatcher for different simulation modes,
@@ -232,13 +232,13 @@ def run_simulation(config: Config, output_dir: str, mode_override: Optional[str]
         Only one mode (locus OR chromosome) will be run based on config.simulation_mode.
     """
     results = {}
-    
+
     # Apply mode override if provided
     if mode_override is not None:
         # Type assertion for Pylance - we know mode_override is a string here
         assert isinstance(mode_override, str)
         config.simulation_mode = mode_override
-    
+
     # Run locus simulation if requested
     if config.simulation_mode == "locus":
         print("Simulating independent non-recombining loci...")
@@ -247,19 +247,19 @@ def run_simulation(config: Config, output_dir: str, mode_override: Optional[str]
 
         # Convert generator to list once for both saving and processing
         ts_list = list(ts_locus)
-        
+
         # Store the list (not the exhausted generator) for pipeline processing
         results["locus"] = ts_list
-        
+
         # Ensure output directory exists
         Path(output_dir).mkdir(parents=True, exist_ok=True)
-        
+
         # Save trees as Newick format
         newick_path = Path(output_dir) / f"{config.simulation_mode}_trees.newick"
         newick_file = save_ts_LOCUS_as_plain_newick(ts_list, newick_path)
-        
+
         print(f"✅ Saved trees: {newick_file}")
-        
+
         results["newick_file"] = newick_file
 
     # Run chromosome simulation if requested
@@ -267,23 +267,29 @@ def run_simulation(config: Config, output_dir: str, mode_override: Optional[str]
         print("Simulating recombining chromosome...")
         ts_chrom = simulate_chromosome(config)
         results["chromosome"] = ts_chrom
-        print(f"Generated chromosome of length {config.chromosome_length:.1e} with reocmbination rate of {config.rec_rate:.1e}")
-        
+        print(
+            f"Generated chromosome of length {config.chromosome_length:.1e} with reocmbination rate of {config.rec_rate:.1e}"
+        )
+
         # Always save trees
         # Ensure output directory exists
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         newick_path = Path(output_dir) / f"{config.simulation_mode}_trees.newick"
         newick_file = save_ts_CHROM_as_newick(ts_chrom, newick_path)
         results["newick_file"] = newick_file
-    
+
     else:
-        raise ValueError(f"Unknown simulation mode: {config.simulation_mode}. Must be 'locus' or 'chromosome'")
+        raise ValueError(
+            f"Unknown simulation mode: {config.simulation_mode}. Must be 'locus' or 'chromosome'"
+        )
 
     return results
+
 
 ######################################################################################
 # HELPER FUNCTIONS FOR SAVING TREE SEQUENCES AS NEWICK FILES
 ######################################################################################
+
 
 def get_population_map(ts):
     """
@@ -309,17 +315,17 @@ def get_population_map(ts):
 
     # Count samples within each population to create unique identifiers
     pop_sample_counts = {}
-    
+
     # Map each sample to its unique population sample name
     for sample_id in ts.samples():
         node = ts.node(sample_id)
         pop_name = pop_id_to_name[node.population]
-        
+
         # Increment counter for this population
         if pop_name not in pop_sample_counts:
             pop_sample_counts[pop_name] = 0
         pop_sample_counts[pop_name] += 1
-        
+
         # Create unique sample identifier like "P1_1", "P1_2", etc.
         unique_sample_name = f"{pop_name}_{pop_sample_counts[pop_name]}"
         pop_map[sample_id] = unique_sample_name
@@ -375,6 +381,8 @@ def create_newick_with_sample_labels(tree, pop_map):
         newick += ";"
 
     return newick
+
+
 #######################################################################################
 # FOR THE CHROMOSOME MODE:
 def save_ts_CHROM_as_newick(ts, output_path):
@@ -388,14 +396,16 @@ def save_ts_CHROM_as_newick(ts, output_path):
         for tree in ts.trees():
             labeled_newick = create_newick_with_sample_labels(tree, pop_map)
             f.write(labeled_newick + "\n")
-    
+
     return str(output_path)
 
+
 # EXAMPLE:
-#save_ts_chromosome_as_newick(ts, os.path.join(output_dir, "CHROM_pop_plain.newick"))
+# save_ts_chromosome_as_newick(ts, os.path.join(output_dir, "CHROM_pop_plain.newick"))
 ##################################################################################
 # LOCUS MODE:
 ##################################################################################
+
 
 def save_ts_LOCUS_as_plain_newick(ts_list, output_path):
     """
@@ -408,7 +418,5 @@ def save_ts_LOCUS_as_plain_newick(ts_list, output_path):
             for tree in ts.trees():
                 labeled_newick = create_newick_with_sample_labels(tree, pop_map)
                 file.write(labeled_newick + "\n")
-    
+
     return str(output_path)
-
-

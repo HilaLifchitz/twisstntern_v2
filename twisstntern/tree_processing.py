@@ -22,17 +22,13 @@ Main Functions:
 - reorder_weights_by_topology_preference(): Apply custom topology ordering
 """
 
-import os
 import sys
-import tempfile
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Union, List, Tuple, Optional
 import tskit
 import ete3
-import msprime
-import re
 import logging
 
 
@@ -47,14 +43,16 @@ from twisst import weightTrees, summary  # type: ignore
 from twisstntern.logger import get_logger
 
 
-def log_topologies(topos, simplified_topos, columns, logger, message_prefix="", population_labels=None):
+def log_topologies(
+    topos, simplified_topos, columns, logger, message_prefix="", population_labels=None
+):
     """
     Log topology information both as strings and ASCII trees to the log file ONLY.
     This avoids duplicating the console output that's already handled by print() statements.
-    
+
     Args:
         topos: List of topology objects with get_ascii() method
-        simplified_topos: List of simplified topology strings  
+        simplified_topos: List of simplified topology strings
         columns: List of column names (T1, T2, T3, etc.)
         logger: Logger instance
         message_prefix: Optional prefix for log messages
@@ -62,42 +60,45 @@ def log_topologies(topos, simplified_topos, columns, logger, message_prefix="", 
     """
     # Get a file-only logger to avoid duplicating console output
     file_logger = logging.getLogger(f"{logger.name}.topologies")
-    
+
     # Remove any console handlers from this specific logger
     for handler in file_logger.handlers[:]:
-        if isinstance(handler, logging.StreamHandler) and handler.stream.name == '<stdout>':
+        if (
+            isinstance(handler, logging.StreamHandler)
+            and handler.stream.name == "<stdout>"
+        ):
             file_logger.removeHandler(handler)
-    
+
     # Ensure it only logs to file by setting propagate=False and using parent's file handler
     file_logger.propagate = False
-    
+
     # Add only the file handler from the parent logger
     root_logger = logging.getLogger()
     for handler in root_logger.handlers:
         if isinstance(handler, logging.FileHandler):
             file_logger.addHandler(handler)
             break
-    
+
     file_logger.setLevel(logging.INFO)
-    
+
     if message_prefix:
         file_logger.info(f"{message_prefix}")
     else:
         file_logger.info("Discovered topologies:")
-    
-    file_logger.info("="*50)
-    
+
+    file_logger.info("=" * 50)
+
     # Always add population legend - extract all leaf names from topologies
     leaf_names = set()
     for topo in topos:
         leaf_names.update([leaf.name for leaf in topo.get_leaves()])
-    
+
     # Sort leaf names for consistent output
     sorted_leaf_names = sorted(leaf_names)
-    
+
     file_logger.info("Population Legend:")
     file_logger.info("-" * 20)
-    
+
     if population_labels:
         # Use custom population labels if provided
         for leaf_name in sorted_leaf_names:
@@ -109,27 +110,30 @@ def log_topologies(topos, simplified_topos, columns, logger, message_prefix="", 
         # Create basic legend with numeric IDs
         for leaf_name in sorted_leaf_names:
             file_logger.info(f"  {leaf_name} = Population {leaf_name}")
-    
+
     file_logger.info("")
-    
-    for i, (topo, simplified, col_name) in enumerate(zip(topos, simplified_topos, columns)):
+
+    for i, (topo, simplified, col_name) in enumerate(
+        zip(topos, simplified_topos, columns)
+    ):
         file_logger.info(f"{col_name}:")
         file_logger.info(f"  String: {simplified}")
-        
+
         # Get ASCII representation
         try:
             ascii_tree = topo.get_ascii()
             # Log each line of the ASCII tree
             file_logger.info("  ASCII Tree:")
-            for line in ascii_tree.split('\n'):
+            for line in ascii_tree.split("\n"):
                 if line.strip():  # Only log non-empty lines
                     file_logger.info(f"    {line}")
         except Exception as e:
             file_logger.warning(f"  Could not generate ASCII tree: {e}")
-        
+
         file_logger.info("")  # Empty line for readability
-    
-    file_logger.info("="*50)
+
+    file_logger.info("=" * 50)
+
 
 # to know if the file is a tree sequence or a newick file
 def detect_and_read_trees(
@@ -392,7 +396,13 @@ def ts_chromosome_to_twisst_weights(
 
         # Log topologies to file
         logger = get_logger(__name__)
-        log_topologies(topos, simplified_topos, columns, logger, "TreeSequence topologies (default order)")
+        log_topologies(
+            topos,
+            simplified_topos,
+            columns,
+            logger,
+            "TreeSequence topologies (default order)",
+        )
 
     # Get number of topologies for reporting (works for both cases)
     n_topos = len(columns)
@@ -502,11 +512,11 @@ def ts_to_twisst_weights(
                 populations_with_samples.append(str(pop_id))
 
         # if len(populations_with_samples) < 3:
-            # if verbose:
-            #     print(
-            #         f"  Skipping: only {len(populations_with_samples)} populations with samples"
-            #     )
-            # continue
+        # if verbose:
+        #     print(
+        #         f"  Skipping: only {len(populations_with_samples)} populations with samples"
+        #     )
+        # continue
 
         # Set default outgroup to first population if not specified
         current_outgroup = outgroup
@@ -635,10 +645,16 @@ def ts_to_twisst_weights(
         for i, topo in enumerate(canonical_topologies):
             print(f"Topology {i+1}")
             print(topo)
-        
+
         # Log topologies to file
         logger = get_logger(__name__)
-        log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)")
+        log_topologies(
+            canonical_topologies,
+            canonical_simplified_topos,
+            columns,
+            logger,
+            "Multi-TreeSequence canonical topologies (default order)",
+        )
 
     if verbose:
         print(f"\nCombined Results:")
@@ -853,17 +869,23 @@ def newick_to_twisst_weights(
 
         # Get simplified topologies for CSV header
         simplified_topos = simplify_topologies(weightsData)
-        
+
         # Create column names based on number of topologies
         n_topos = weights_norm.shape[1]
         if n_topos == 3:
             columns = ["T1", "T2", "T3"]  # Standard 3-topology case (4 populations)
         else:
             columns = [f"Topo{i+1}" for i in range(n_topos)]
-        
+
         # Log topologies to file
         logger = get_logger(__name__)
-        log_topologies(topos, simplified_topos, columns, logger, "Newick file topologies (default order)")
+        log_topologies(
+            topos,
+            simplified_topos,
+            columns,
+            logger,
+            "Newick file topologies (default order)",
+        )
 
     # Create DataFrame
     df = pd.DataFrame(weights_norm, columns=columns)
@@ -970,63 +992,65 @@ def trees_to_twisst_weights_unified(
 def parse_topology_mapping(mapping_string):
     """
     Parse user-specified topology mapping from a string like:
-    "T1=(0,(1,(2,3))); T2=(0,(2,(1,3))); T3=(0,(3,(1,2)));"  
+    "T1=(0,(1,(2,3))); T2=(0,(2,(1,3))); T3=(0,(3,(1,2)));"
     or (for Newick files)
     "T1=(O,(P1,(P2,P3))); T2=(O,(P2,(P1,P3))); T3=(O,(P3,(P1,P2)));"
-    
+
     Args:
         mapping_string (str): String containing topology assignments
-        
+
     Returns:
         dict: Mapping from T1/T2/T3 to simplified topology strings
     """
     mapping = {}
-    
+
     # Remove extra whitespace and split by semicolon
     assignments = [part.strip() for part in mapping_string.split(";") if part.strip()]
-    
+
     for assignment in assignments:
         if "=" not in assignment:
             continue
-            
+
         # Split on first '=' to handle cases where topology contains '='
         key, value = assignment.split("=", 1)
         key = key.strip()
         value = value.strip()
-        
+
         # Remove surrounding quotes if present
         if value.startswith('"') and value.endswith('"'):
             value = value[1:-1]
         elif value.startswith("'") and value.endswith("'"):
             value = value[1:-1]
-            
+
         # Validate key is T1, T2, or T3
         if key not in ["T1", "T2", "T3"]:
             raise ValueError(f"Invalid topology key: {key}. Must be T1, T2, or T3")
-            
+
         mapping[key] = value
-    
+
     # Ensure all three topologies are specified
     if len(mapping) != 3:
         missing = set(["T1", "T2", "T3"]) - set(mapping.keys())
         raise ValueError(f"Missing topology assignments: {missing}")
-    
+
     # Validate that all three topologies are distinct
     keys = ["T1", "T2", "T3"]
     normalized_values = [normalize_topology_string(mapping[key]) for key in keys]
-    
+
     if len(set(normalized_values)) != 3:
         # Find duplicates
         duplicates = []
         for i in range(len(keys)):
             for j in range(i + 1, len(keys)):
                 if normalized_values[i] == normalized_values[j]:
-                    duplicates.append(f"{keys[i]}={mapping[keys[i]]} and {keys[j]}={mapping[keys[j]]}")
-        
+                    duplicates.append(
+                        f"{keys[i]}={mapping[keys[i]]} and {keys[j]}={mapping[keys[j]]}"
+                    )
+
         raise ValueError(
             f"All three topologies must be distinct. Found duplicate topologies: {'; '.join(duplicates)}"
         )
-    
+
     return mapping
 
 
@@ -1041,22 +1065,22 @@ def normalize_topology_string(topo_str):
     Converts P1 → p1, P2 → p2, etc. (case-insensitive comparison)
     Does NOT convert p1 to 1 - preserves the letter format.
     Also removes trailing semicolons, quotes, and whitespace for consistent comparison.
-    
+
     Args:
         topo_str (str): Topology string like "(0,(p1,(p2,p3)))" or "(0,(P1,(P2,P3)));"
-        
+
     Returns:
         str: Normalized topology string like "(0,(p1,(p2,p3)))"
     """
     import re
-    
+
     # Remove leading/trailing quotes, semicolons and whitespace
     normalized = topo_str.strip().rstrip(";").strip('"').strip("'")
-    
+
     # Convert P1/P2/P3 to p1/p2/p3 (lowercase) for consistent comparison
     # This handles case-insensitivity without converting to digits
     normalized = re.sub(r"P(\d+)", r"p\1", normalized)
-    
+
     return normalized
 
 
@@ -1064,11 +1088,11 @@ def normalize_topology_string(topo_str):
 def compare_topologies(topo1, topo2):
     """
     Compare two topology strings, accounting for different population naming conventions.
-    
+
     Args:
         topo1 (str): First topology string
         topo2 (str): Second topology string
-        
+
     Returns:
         bool: True if topologies are equivalent
     """
@@ -1080,11 +1104,11 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
     """
     Reorder topology weights according to user preference.
     This should be called BEFORE creating the DataFrame.
-    
+
     Args:
         weightsData (dict): Output from twisst.weightTrees containing 'topos' and 'weights'
         topology_mapping (dict): Mapping from T1/T2/T3 to desired topology strings
-        
+
     Returns:
         tuple: (reordered_weights, reordered_simplified_topos, column_names)
     """
@@ -1096,7 +1120,7 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
     #     print(topo)
 
     original_simplified_topos = simplify_topologies(weightsData)
-    
+
     # Parse topology mapping if it's a string (do this FIRST)
     if isinstance(topology_mapping, str):
         topology_mapping = parse_topology_mapping(topology_mapping)
@@ -1110,20 +1134,20 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
         row_sums = weights.sum(axis=1)
         if not np.all(row_sums == 0):
             weights = weights / row_sums[:, np.newaxis]
-    
+
     # Validate that we have exactly matching number of topologies
     num_expected_topologies = len(topology_mapping.keys())
     if len(original_simplified_topos) != num_expected_topologies:
         raise ValueError(
             f"Expected {num_expected_topologies} topologies, found {len(original_simplified_topos)}"
         )
-    
+
     # Find mapping from user preferences to current column positions
     column_mapping = {}  # {target_column: source_column_index}
-    
+
     for target_col in ["T1", "T2", "T3"]:
         desired_topo = topology_mapping[target_col]
-        
+
         # Find which current column contains this topology
         found = False
         for i, current_topo in enumerate(original_simplified_topos):
@@ -1131,7 +1155,7 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
                 column_mapping[target_col] = i
                 found = True
                 break
-        
+
         if not found:
             print(f"Available topologies:")
             for i, topo in enumerate(original_simplified_topos):
@@ -1142,14 +1166,14 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
             raise ValueError(
                 f"Topology '{desired_topo}' not found in computed topologies."
             )
-    
+
     # Create new column order
     new_column_order = [
         column_mapping["T1"],
         column_mapping["T2"],
         column_mapping["T3"],
     ]
-    
+
     # Reorder weights and topologies
     reordered_weights = weights[:, new_column_order]
     reordered_simplified_topos = [
@@ -1189,7 +1213,7 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
     mapped_topos = []
     mapped_simplified = []
     mapped_columns = []
-    
+
     # For each T1, T2, T3, find the corresponding original topology index
     for target_label in ["T1", "T2", "T3"]:
         desired_topo_string = topology_mapping[target_label]
@@ -1205,7 +1229,7 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
             print(f"\n{target_label}:")
             print(original_topos[original_index].get_ascii())
             print(f"String: {original_simplified_topos[original_index]}")
-            
+
             # Collect data for logging
             mapped_topos.append(original_topos[original_index])
             mapped_simplified.append(original_simplified_topos[original_index])
@@ -1214,8 +1238,14 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
             print(f"\n{target_label}: ERROR - topology not found!")
 
     print("=" * 50)
-    
+
     # Log the reordered topologies
     if mapped_topos:  # Only log if we have valid mappings
         logger = get_logger(__name__)
-        log_topologies(mapped_topos, mapped_simplified, mapped_columns, logger, "Applied topology mapping")
+        log_topologies(
+            mapped_topos,
+            mapped_simplified,
+            mapped_columns,
+            logger,
+            "Applied topology mapping",
+        )

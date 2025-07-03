@@ -22,6 +22,7 @@ __author__ = "Hila Lifchitz"
 
 # Configure logging once for the entire package
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 # Suppress msprime INFO messages
@@ -29,6 +30,7 @@ logging.getLogger("msprime").setLevel(logging.WARNING)
 logging.getLogger("msprime.ancestry").setLevel(logging.WARNING)
 
 from .config import Config
+
 # Lazy import of pipeline to avoid early dependency loading
 # from .pipeline import run_pipeline
 from .simulation import run_simulation, simulate_locus, simulate_chromosome
@@ -38,7 +40,7 @@ __all__ = [
     "run_pipeline",
     "Config",
     "run_simulation",
-    "simulate_locus", 
+    "simulate_locus",
     "simulate_chromosome",
 ]
 
@@ -66,7 +68,9 @@ if missing_packages:
     print("\nTo install missing packages, run:")
     print(f"pip install {' '.join(missing_packages)}")
 
+
 def run_pipeline(*args, **kwargs):
     """Lazy import wrapper for run_pipeline to avoid early dependency loading."""
     from .pipeline import run_pipeline as _run_pipeline
+
     return _run_pipeline(*args, **kwargs)

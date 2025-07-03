@@ -67,7 +67,7 @@ Example configuration (YAML):
 import yaml
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
-import re  
+import re
 
 
 def is_ancestral_population(pop_name):
@@ -78,6 +78,7 @@ def is_ancestral_population(pop_name):
         return True
     match = re.fullmatch(r"p\d{2,}", pop_name)
     return match is not None
+
 
 @dataclass
 class Population:
@@ -123,6 +124,7 @@ class Split:
 # this is the main class that loads the config file and validates the parameters
 # it is used in the simulation.py file to run the simulation
 ########################################################################################
+
 
 class Config:
     """
@@ -217,7 +219,6 @@ class Config:
         self._simulation_mode = self.config.get("simulation_mode", "locus")
         self._reload_mode_parameters()
 
-
         # Validate configuration
         self._validate()
 
@@ -290,7 +291,7 @@ class Config:
                 raise ValueError("chromosome_length is required for chromosome mode")
             if "rec_rate" not in self.config:
                 raise ValueError("rec_rate is required for chromosome mode")
-            self.chromosome_length = float(self.config["chromosome_length"])    
+            self.chromosome_length = float(self.config["chromosome_length"])
             self.rec_rate = float(self.config["rec_rate"])
 
         # Re-validate with new parameters
@@ -470,7 +471,8 @@ class Config:
         taxonNames = [
             pop.name
             for pop in self.populations
-            if not pop.is_ancestral and (pop.sample_size is not None and pop.sample_size > 0)
+            if not pop.is_ancestral
+            and (pop.sample_size is not None and pop.sample_size > 0)
         ]
         if not taxonNames:
             raise ValueError("No populations with sample size > 0 found")

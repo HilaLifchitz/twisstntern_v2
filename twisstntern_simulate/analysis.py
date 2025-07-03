@@ -1,18 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os
-from pathlib import Path
-import numpy as np
-from scipy.stats import binom
-from scipy.stats.distributions import chi2
-from math import log
 import pandas as pd
-import matplotlib.pyplot as plt
 from twisstntern.utils import (
     cartizian,
     return_triangle_coord,
-    dump_data,
     n,
     D_LR,
     log_likelihood_ratio_test,
@@ -45,7 +37,7 @@ def fundamental_asymmetry(data):
     if len(data) > 0 and isinstance(data.iloc[0, 0], str):
         print(f"  WARNING: First row contains strings: {data.iloc[0].tolist()}")
     print()
-    
+
     # Convert ternary coordinates to Cartesian x-coordinates
     data["x-axis"] = cartizian(data["T1"], data["T2"], data["T3"])[0]
 
@@ -174,4 +166,3 @@ def triangles_analysis(data, granularity):
     triangles["index"] = list(range(number_triangles(alpha), 0, -1))
 
     return triangles
-

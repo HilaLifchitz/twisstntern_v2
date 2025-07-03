@@ -8,18 +8,12 @@ os.environ["QT_QPA_PLATFORM"] = "xcb"  # Force XCB backend instead of Wayland
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # Add 3D plotting capability
-from pathlib import Path
-import pandas as pd
-from math import sqrt
-from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.patches import Polygon
 import seaborn as sns  # For color palettes
 from twisstntern.utils import (
     cartizian,
     return_triangle_coord,
-    dump_data,
-    T1,
     T2,
     T3,
     T1_lim,
@@ -29,9 +23,8 @@ from twisstntern.utils import (
     h,
     mid_point_triangle,
     right_triangle_coordinates_list,
-    number_triangles,
 )
-from twisstntern.analysis import fundamental_asymmetry, triangles_analysis
+from twisstntern.analysis import fundamental_asymmetry
 from sklearn.neighbors import NearestNeighbors
 
 # ============================================================================
@@ -39,18 +32,18 @@ from sklearn.neighbors import NearestNeighbors
 # ============================================================================
 
 # Colors for the isoclines of T1, T2, T3 in the index
-T1_color = "#7B1E1E" # for index plot
-T2_color = "#277DA1" # for index plot
-T3_color = "#F4A261" # for index plot
+T1_color = "#7B1E1E"  # for index plot
+T2_color = "#277DA1"  # for index plot
+T3_color = "#F4A261"  # for index plot
 
-T1_color_data = "lightgrey" # for the data plot
-T2_color_data = "lightgrey" # for the data plot
-T3_color_data = "lightgrey" # for the data plot
+T1_color_data = "lightgrey"  # for the data plot
+T2_color_data = "lightgrey"  # for the data plot
+T3_color_data = "lightgrey"  # for the data plot
 
 
-style = "RdBu_r" # for D-LR plots (=plot results + plot_fundamental_asymmetry)- the colormap
-style_heatmap = "viridis_r" # for heatmap (=plot_ternary_heatmap_data)- the colormap
-truncate = False # for heatmap -whether to chop off the edges of the gradient map
+style = "RdBu_r"  # for D-LR plots (=plot results + plot_fundamental_asymmetry)- the colormap
+style_heatmap = "viridis_r"  # for heatmap (=plot_ternary_heatmap_data)- the colormap
+truncate = False  # for heatmap -whether to chop off the edges of the gradient map
 
 # Hatch patterns for empty triangles in plot_results:
 # '|||' (vertical), '///' (diagonal), '---' (horizontal), '+++' (crosses), 'xxx' (diagonal crosses), '...' (dots)
@@ -66,7 +59,7 @@ def save_figure(fig, filename, dpi=300):
         dpi: int — resolution in dots per inch (default: 300)
     """
     import warnings
-    
+
     # Suppress tight_layout warnings
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message=".*tight_layout.*")
@@ -74,7 +67,7 @@ def save_figure(fig, filename, dpi=300):
             fig.tight_layout()  # Try tight_layout, but don't fail if incompatible
         except:
             pass  # Skip tight_layout if not compatible (e.g., with inset axes)
-    
+
     fig.savefig(filename, dpi=dpi, bbox_inches="tight")
 
 
@@ -88,33 +81,39 @@ def draw_grey_grid_lines(ax, alpha=0.1):
     for i in range(1, int(1 / alpha)):
         y = i * alpha
         # T1 lines (horizontal)
-        ax.hlines(y=y * h, xmin=T1_lim(y)[0], 
-                 xmax=T1_lim(y)[1], color="grey", linewidth=1, zorder=1)
+        ax.hlines(
+            y=y * h,
+            xmin=T1_lim(y)[0],
+            xmax=T1_lim(y)[1],
+            color="grey",
+            linewidth=1,
+            zorder=1,
+        )
         # T2 lines
         x2 = np.linspace(T2_lim(y)[0], T2_lim(y)[1], 100)
         ax.plot(x2, T2(y, x2), color="grey", linewidth=1, zorder=1)
         # T3 lines
         x3 = np.linspace(T3_lim(y)[0], T3_lim(y)[1], 100)
         ax.plot(x3, T3(y, x3), color="grey", linewidth=1, zorder=1)
-    
+
     # Central vertical line
-    ax.vlines(x=0, ymin=0, ymax=h, colors="grey", ls=':', zorder=1)
+    ax.vlines(x=0, ymin=0, ymax=h, colors="grey", ls=":", zorder=1)
 
 
 def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
     """
     Plot ternary coordinate grid with data points colored by local density.
     Copied from simple_density_plot.py with fixed parameters as requested.
-    
+
     Fixed parameters:
     - granularity: 0.1 (always)
     - grid: True (grey grid lines)
     - point_alpha: 0.8
-    - density_method: "neighbors" 
+    - density_method: "neighbors"
     - bandwidth: 0.02
     - colormap: User-specified colormap (default: "viridis_r")
     """
-    
+
     # Fixed parameters as specified
     alpha = 0.1  # Fixed granularity
     grid = True
@@ -134,7 +133,7 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
     # === STEP 2: Plot scatter points SECOND (zorder=2) ===
     # Convert data points from ternary to cartesian coordinates
     x_data, y_data = cartizian(data["T1"], data["T2"], data["T3"])
-    
+
     # Calculate density for each point (copied from simple_density_plot.py)
     if density_method == "neighbors":
         points = np.column_stack([x_data, y_data])
@@ -142,7 +141,7 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
         nn.fit(points)
         density = nn.radius_neighbors(points, return_distance=False)
         density = np.array([len(neighbors) for neighbors in density])
-    
+
     # Create scatter plot colored by density (copied from simple_density_plot.py)
     scatter = plt.scatter(
         x_data,
@@ -159,10 +158,19 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
     triangle_x = [0, -0.5, 0.5, 0]
     triangle_y = [h, 0, 0, h]
     ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
-    
+
     # === STEP 4: Draw median line LAST and FAINTLY on top (zorder=4) ===
-    ax.vlines(x=0, ymin=0, ymax=h, colors="lightgrey", linestyles=":", linewidth=0.8, alpha=0.6, zorder=4)
-    
+    ax.vlines(
+        x=0,
+        ymin=0,
+        ymax=h,
+        colors="lightgrey",
+        linestyles=":",
+        linewidth=0.8,
+        alpha=0.6,
+        zorder=4,
+    )
+
     ax.set_xticks([])
     ax.set_yticks([])
 
@@ -178,12 +186,22 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
         spine.set_color("none")
 
     # Add colorbar - EXACT same style as other plotting functions
-    sm = plt.cm.ScalarMappable(cmap=colormap, norm=plt.cm.colors.Normalize(vmin=density.min(), vmax=density.max()))
+    sm = plt.cm.ScalarMappable(
+        cmap=colormap,
+        norm=plt.cm.colors.Normalize(vmin=density.min(), vmax=density.max()),
+    )
     sm.set_array([])
-    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
-                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cax = inset_axes(
+        ax,
+        width="3%",
+        height="25%",
+        loc="upper right",
+        bbox_to_anchor=(0.05, 0.05, 1, 1),
+        bbox_transform=ax.transAxes,
+        borderpad=1,
+    )
     cbar = plt.colorbar(sm, cax=cax)
-    cbar.ax.set_title('Count', fontsize=10, pad=6)
+    cbar.ax.set_title("Count", fontsize=10, pad=6)
 
     # Save the plot
     title = f"{file_name}_radcount.png"
@@ -194,7 +212,7 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
 def get_professional_colormap(style="RdBu_r", truncate=True):
     """
     Get professional diverging colormaps suitable for scientific publication.
-    
+
     Args:
         style (str): One of the following professional colormap styles:
             - "RdBu_r": Red-Blue diverging (reversed) - classic scientific
@@ -206,7 +224,7 @@ def get_professional_colormap(style="RdBu_r", truncate=True):
             - "inferno": Inferno - dark to bright
             - And many more options...
         truncate (bool): Whether to truncate the colormap to avoid extreme colors
-    
+
     Returns:
         matplotlib.colors.LinearSegmentedColormap: Professional colormap
     """
@@ -235,20 +253,20 @@ def get_professional_colormap(style="RdBu_r", truncate=True):
         "rocket": "rocket",  # Seaborn sequential - dark maroon to light red
         "mako": "mako",  # Seaborn sequential - deep blue to light teal
     }
-    
+
     if style not in colormap_options:
         print(f"Warning: {style} not found, using RdBu_r")
         style = "RdBu_r"
-    
+
     cmap = sns.color_palette(colormap_options[style], as_cmap=True)
-    
+
     if truncate:
         # Truncate the colormap to get lighter colors by cutting off the extremes
         cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
-            f'truncated_{style}', 
-            cmap(np.linspace(0.1, 0.9, 256))  # Cut off 10% from each end
+            f"truncated_{style}",
+            cmap(np.linspace(0.1, 0.9, 256)),  # Cut off 10% from each end
         )
-    
+
     return cmap
 
 
@@ -308,15 +326,14 @@ def plot(data, granularity, file_name):
     x_data, y_data = cartizian(
         data["T1"], data["T2"], data["T3"]
     )  # coordinates of the data points to be plotted
-    #points_color = "#A2C5F2" #"my" blue
+    # points_color = "#A2C5F2" #"my" blue
     # Position 0.4: #2a788e (more blue-green)
     # Position 0.45: #25848e (slightly more blue)
     # Position 0.5: #21918c (the mid-range green you asked about)
     # Position 0.55: #1e9c89 (slightly more green)
     # Position 0.6: #22a884 (more vibrant green)
 
-
-    points_color= "#22a884"
+    points_color = "#22a884"
     plt.scatter(
         x_data,
         y_data,
@@ -326,13 +343,14 @@ def plot(data, granularity, file_name):
         linewidths=0.4,
         s=15,
     )
-    label_color = "black" # 25.6    tweek with locations of labels
+    label_color = "black"  # 25.6    tweek with locations of labels
     label_size = 12
     # Label triangle corners
-    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color) #T1
-    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color) #T3
-    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color) #T2
-
+    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)  # T1
+    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color)  # T3
+    plt.text(
+        -0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color
+    )  # T2
 
     # removing the box lines around the plot
     ax.spines["right"].set_color("none")
@@ -383,52 +401,98 @@ def plot_fundamental_asymmetry(data, file_name):
     main_n_r, main_n_l, main_d_lr, main_g_test, main_p_value = fundamental_asymmetry(
         data
     )
-    
+
     # Set up professional colormap for D_LR values
-    cmap = get_professional_colormap(style="RdBu_r", truncate=True)  # Custom blue to red
+    cmap = get_professional_colormap(
+        style="RdBu_r", truncate=True
+    )  # Custom blue to red
     norm = plt.cm.colors.Normalize(vmin=-1, vmax=1)  # D_LR ranges from -1 to 1
-    
+
     # Calculate separate D_LR values for left and right triangles
     # Right triangle: use the main D_LR value (positive = more points on right)
     d_lr_right = main_d_lr
     # Left triangle: use the opposite perspective (negative = more points on left)
     d_lr_left = -main_d_lr  # This shows the asymmetry from the left perspective
-    
+
     # Color fill triangles by D_LR score using the colormap
     color_R = cmap(norm(d_lr_right))
     color_L = cmap(norm(d_lr_left))
-    
+
     ax.fill(trianglex_R, triangley_R, color=color_R, alpha=0.8)
     ax.fill(trianglex_L, triangley_L, color=color_L, alpha=0.8)
 
     # Annotate p-value significance stars
     x, y = 0.15, 0.4 * h
     if 0.001 <= main_p_value < 0.05:
-        ax.scatter(x, y, color="#fde724", marker="*", alpha=1.0, s=25, edgecolors='black', linewidths=0.2)  # Yellow with black outline
+        ax.scatter(
+            x,
+            y,
+            color="#fde724",
+            marker="*",
+            alpha=1.0,
+            s=25,
+            edgecolors="black",
+            linewidths=0.2,
+        )  # Yellow with black outline
     elif 1e-5 <= main_p_value < 0.001:
-        ax.scatter(x, y, color="#5ec961", marker="*", alpha=1.0, s=32, edgecolors='black', linewidths=0.2)  # Green with black outline
+        ax.scatter(
+            x,
+            y,
+            color="#5ec961",
+            marker="*",
+            alpha=1.0,
+            s=32,
+            edgecolors="black",
+            linewidths=0.2,
+        )  # Green with black outline
     elif main_p_value < 1e-5:
-        ax.scatter(x, y, color="black", marker="*", alpha=1, s=35, edgecolors='black', linewidths=0.8)  # Black 
+        ax.scatter(
+            x,
+            y,
+            color="black",
+            marker="*",
+            alpha=1,
+            s=35,
+            edgecolors="black",
+            linewidths=0.8,
+        )  # Black
 
     # Add colorbar for D_LR values - shorter and positioned lower
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
-                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+
+    cax = inset_axes(
+        ax,
+        width="3%",
+        height="25%",
+        loc="upper right",
+        bbox_to_anchor=(0.05, 0.05, 1, 1),
+        bbox_transform=ax.transAxes,
+        borderpad=1,
+    )
     cbar = plt.colorbar(sm, cax=cax)
-    cbar.ax.set_title('D_LR', fontsize=10, pad=6)
+    cbar.ax.set_title("D_LR", fontsize=10, pad=6)
     cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
-    cbar.ax.set_yticklabels(['-1', '-0.5', '0', '0.5', '1'])
+    cbar.ax.set_yticklabels(["-1", "-0.5", "0", "0.5", "1"])
 
     # Add star marker legend - moved to left side to avoid overlap with colorbar
     legend_items = [
-        (0.8, "black", "$p < 10^{-5}$", 35, 1.0),  # Black 
+        (0.8, "black", "$p < 10^{-5}$", 35, 1.0),  # Black
         (0.77, "#5ec961", "$p < 0.001$", 32, 1.0),  # Green with black outline
-        (0.74, "#fde724", "$p < 0.05$", 28, 1.0),   # Yellow with black outline
+        (0.74, "#fde724", "$p < 0.05$", 28, 1.0),  # Yellow with black outline
     ]
     for y_pos, color, label, size, alpha in legend_items:
-        ax.scatter(-0.45, y_pos, color=color, marker="*", alpha=alpha, s=size, edgecolors='black', linewidths=0.2)
+        ax.scatter(
+            -0.45,
+            y_pos,
+            color=color,
+            marker="*",
+            alpha=alpha,
+            s=size,
+            edgecolors="black",
+            linewidths=0.2,
+        )
         ax.text(-0.43, y_pos, label, size=10)
 
     # Label sample sizes
@@ -516,9 +580,9 @@ def plotting_triangle_index(granularity, file_name):
 
     # === Triangle corner labels ===
     label_size = 10  # Reduced from 12 to make labels smaller
-    plt.text(-0.02, 0.88, r"$\mathbf{T}_1$", size=label_size, color=T1_color) #T1
-    plt.text(-0.03, -0.01, r"$\mathbf{T}_2$", size=label_size, color=T2_color) #T2
-    plt.text(0.54, -0.01, r"$\mathbf{T}_3$", size=label_size, color=T3_color) #T3
+    plt.text(-0.02, 0.88, r"$\mathbf{T}_1$", size=label_size, color=T1_color)  # T1
+    plt.text(-0.03, -0.01, r"$\mathbf{T}_2$", size=label_size, color=T2_color)  # T2
+    plt.text(0.54, -0.01, r"$\mathbf{T}_3$", size=label_size, color=T3_color)  # T3
 
     # === Axis coordinate labels ===
     coord = np.arange(0, 1 + alpha, alpha)
@@ -612,7 +676,9 @@ def plot_results(res, granularity, file_name):
     ax.vlines(x=0, ymin=0, ymax=h, colors="gray", linestyle=":", linewidth=1.2)
 
     # Set up professional colormap for D-LR values !!!
-    cmap = get_professional_colormap(style="RdBu_r", truncate=True)  # Custom blue to red
+    cmap = get_professional_colormap(
+        style="RdBu_r", truncate=True
+    )  # Custom blue to red
     norm = plt.cm.colors.Normalize(vmin=-1, vmax=1)  # D-LR ranges from -1 to 1
 
     # Plot subtriangles and highlight significance
@@ -623,17 +689,18 @@ def plot_results(res, granularity, file_name):
 
         if np.isnan(row["D-LR"]):
             # Create striped pattern for empty triangles using Polygon with hatch
-            # Available hatch patterns: '|||' (vertical), '///' (diagonal), '---' (horizontal), 
+            # Available hatch patterns: '|||' (vertical), '///' (diagonal), '---' (horizontal),
             # '+++' (crosses), 'xxx' (diagonal crosses), '...' (dots)
             from matplotlib.patches import Polygon
+
             triangle_coords = list(zip(trianglex, triangley))
             empty_triangle = Polygon(
                 triangle_coords,
                 closed=True,
-                facecolor='white',
-                edgecolor='grey',
-                hatch='|||',  # 🔄 Change this to experiment with different patterns
-                linewidth=0.5
+                facecolor="white",
+                edgecolor="grey",
+                hatch="|||",  # 🔄 Change this to experiment with different patterns
+                linewidth=0.5,
             )
             ax.add_patch(empty_triangle)
         else:
@@ -646,44 +713,107 @@ def plot_results(res, granularity, file_name):
             x, y = mid_point_triangle(a1, b1, a2, b2, a3, b3)
             p = row["p-value(g-test)"]
             if 0.05 > p >= 0.001:
-                ax.scatter(x, y, color="#fde724", marker="*", alpha=1.0, s=25, edgecolors='black', linewidths=0.2)  # Yellow with black outline
+                ax.scatter(
+                    x,
+                    y,
+                    color="#fde724",
+                    marker="*",
+                    alpha=1.0,
+                    s=25,
+                    edgecolors="black",
+                    linewidths=0.2,
+                )  # Yellow with black outline
             elif 0.001 > p >= 1e-5:
-                ax.scatter(x, y, color="#5ec961", marker="*", alpha=1.0, s=32, edgecolors='black', linewidths=0.2)  # Green with black outline
+                ax.scatter(
+                    x,
+                    y,
+                    color="#5ec961",
+                    marker="*",
+                    alpha=1.0,
+                    s=32,
+                    edgecolors="black",
+                    linewidths=0.2,
+                )  # Green with black outline
             elif p < 1e-5:
-                ax.scatter(x, y, color="black", marker="*", alpha=1, s=35, edgecolors='black', linewidths=0.2)  # Black
+                ax.scatter(
+                    x,
+                    y,
+                    color="black",
+                    marker="*",
+                    alpha=1,
+                    s=35,
+                    edgecolors="black",
+                    linewidths=0.2,
+                )  # Black
 
     # Legend for empty triangles - positioned in middle between triangle and colorbar
     # Create a small striped rectangle for the legend
     from matplotlib.patches import Polygon
+
     legend_rect = Polygon(
         [(0.3, 0.85), (0.35, 0.85), (0.35, 0.9), (0.3, 0.9)],
         closed=True,
-        facecolor='white',
-        edgecolor='grey',
-        hatch='|||',  # Should match the pattern used in empty triangles above
-        linewidth=0.5
+        facecolor="white",
+        edgecolor="grey",
+        hatch="|||",  # Should match the pattern used in empty triangles above
+        linewidth=0.5,
     )
     ax.add_patch(legend_rect)
     plt.text(0.36, 0.865, "empty triangle", size=8)
 
     # Legend for p-values - positioned in middle between triangle and colorbar
-    ax.scatter(0.3, 0.8, color="black", marker="*", alpha=1, s=35, edgecolors='black', linewidths=0.2)
+    ax.scatter(
+        0.3,
+        0.8,
+        color="black",
+        marker="*",
+        alpha=1,
+        s=35,
+        edgecolors="black",
+        linewidths=0.2,
+    )
     plt.text(0.32, 0.8, "$p < 10^{-5}$", size=10)
-    ax.scatter(0.3, 0.77, color="#5ec961", marker="*", alpha=1.0, s=32, edgecolors='black', linewidths=0.2)  # Green with black outline
+    ax.scatter(
+        0.3,
+        0.77,
+        color="#5ec961",
+        marker="*",
+        alpha=1.0,
+        s=32,
+        edgecolors="black",
+        linewidths=0.2,
+    )  # Green with black outline
     plt.text(0.32, 0.77, "$p < 0.001$", size=10)
-    ax.scatter(0.3, 0.74, color="#fde724", marker="*", alpha=1.0, s=30, edgecolors='black', linewidths=0.2)  # Yellow with black outline
+    ax.scatter(
+        0.3,
+        0.74,
+        color="#fde724",
+        marker="*",
+        alpha=1.0,
+        s=30,
+        edgecolors="black",
+        linewidths=0.2,
+    )  # Yellow with black outline
     plt.text(0.32, 0.74, "$p < 0.05$", size=10)
 
     # Add colorbar for D-LR values - shorter and positioned lower
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
-                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+
+    cax = inset_axes(
+        ax,
+        width="3%",
+        height="25%",
+        loc="upper right",
+        bbox_to_anchor=(0.05, 0.05, 1, 1),
+        bbox_transform=ax.transAxes,
+        borderpad=1,
+    )
     cbar = plt.colorbar(sm, cax=cax)
-    cbar.ax.set_title('D_LR', fontsize=10, pad=6)
+    cbar.ax.set_title("D_LR", fontsize=10, pad=6)
     cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
-    cbar.ax.set_yticklabels(['-1', '-0.5', '0', '0.5', '1'])
+    cbar.ax.set_yticklabels(["-1", "-0.5", "0", "0.5", "1"])
 
     # === Annotate triangle corners ===
     # Removed coordinate labels to avoid overlay on heatmap
@@ -717,7 +847,7 @@ def plot_results(res, granularity, file_name):
     # Remove plot box frame
     for spine in ["right", "left", "bottom", "top"]:
         ax.spines[spine].set_color("none")
-    #plt.title(style)     
+    # plt.title(style)
 
     # Save figure
     title = f"{file_name}_analysis_granularity_{alpha}.png"
@@ -725,7 +855,9 @@ def plot_results(res, granularity, file_name):
     return fig
 
 
-def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E", heatmap_colormap="viridis_r"):
+def plot_ternary_heatmap_data(
+    data, granularity, file_name, grid_color="#3E3E3E", heatmap_colormap="viridis_r"
+):
     """
     Plot a ternary heatmap: each subtriangle is colored by the number of data points it contains.
 
@@ -739,7 +871,7 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     - To change output file name, edit the `title = ...` line at the end.
     """
     import matplotlib as mpl
-    from matplotlib.colors import LinearSegmentedColormap
+
     if granularity == "superfine":
         alpha = 0.05
     elif granularity == "fine":
@@ -763,19 +895,15 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
                 a2 = round(T2_step * alpha, 10)
                 b2 = round((T2_step + 1) * alpha, 10)
                 if a3_1 >= 0:
-                    triangles.append({
-                        'T1': (a1, b1),
-                        'T2': (a2, b2),
-                        'T3': (a3_1, b3_1)
-                    })
+                    triangles.append(
+                        {"T1": (a1, b1), "T2": (a2, b2), "T3": (a3_1, b3_1)}
+                    )
                 a3_2 = round(a3_1 - alpha, 10)
                 b3_2 = round(b3_1 - alpha, 10)
                 if a3_2 >= 0:
-                    triangles.append({
-                        'T1': (a1, b1),
-                        'T2': (a2, b2),
-                        'T3': (a3_2, b3_2)
-                    })
+                    triangles.append(
+                        {"T1": (a1, b1), "T2": (a2, b2), "T3": (a3_2, b3_2)}
+                    )
                 a3_1 = a3_2
                 b3_1 = b3_2
         return triangles
@@ -793,9 +921,13 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
             condition_a3 = a3 <= data.T3
         else:
             condition_a3 = a3 < data.T3
-        n = len(data[(condition_a1 & (data.T1 <= b1)) &
-                     (condition_a2 & (data.T2 <= b2)) &
-                     (condition_a3 & (data.T3 <= b3))])
+        n = len(
+            data[
+                (condition_a1 & (data.T1 <= b1))
+                & (condition_a2 & (data.T2 <= b2))
+                & (condition_a3 & (data.T3 <= b3))
+            ]
+        )
         return n
 
     triangles = create_triangular_grid(alpha)
@@ -803,10 +935,13 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     counts = []
     for triangle in triangles:
         count = n_twisstcompare(
-            triangle['T1'][0], triangle['T1'][1],
-            triangle['T2'][0], triangle['T2'][1],
-            triangle['T3'][0], triangle['T3'][1],
-            data
+            triangle["T1"][0],
+            triangle["T1"][1],
+            triangle["T2"][0],
+            triangle["T2"][1],
+            triangle["T3"][0],
+            triangle["T3"][1],
+            data,
         )
         counts.append(count)
     counts = np.array(counts)
@@ -819,7 +954,7 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     if heatmap_colormap not in allowed_colormaps:
         print(f"Warning: Unknown colormap '{heatmap_colormap}', using 'viridis_r'")
         heatmap_colormap = "viridis_r"
-    
+
     # Use the specified colormap for the heatmap
     cmap = get_professional_colormap(style=heatmap_colormap, truncate=False)
 
@@ -841,46 +976,51 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
         for i in range(1, int(1 / 0.1)):
             y = i * 0.1
             # T1 lines (horizontal)
-            ax.hlines(y=y * h, xmin=T1_lim(y)[0], 
-                     xmax=T1_lim(y)[1], color=grid_color, linewidth=1, zorder=1)
+            ax.hlines(
+                y=y * h,
+                xmin=T1_lim(y)[0],
+                xmax=T1_lim(y)[1],
+                color=grid_color,
+                linewidth=1,
+                zorder=1,
+            )
             # T2 lines
             x2 = np.linspace(T2_lim(y)[0], T2_lim(y)[1], 100)
             ax.plot(x2, T2(y, x2), color=grid_color, linewidth=1, zorder=1)
             # T3 lines
             x3 = np.linspace(T3_lim(y)[0], T3_lim(y)[1], 100)
             ax.plot(x3, T3(y, x3), color=grid_color, linewidth=1, zorder=1)
-        
+
         # Central vertical line
-        ax.vlines(x=0, ymin=0, ymax=h, colors=grid_color, ls=':', zorder=1)
+        ax.vlines(x=0, ymin=0, ymax=h, colors=grid_color, ls=":", zorder=1)
 
     # Plot filled triangles (only for nonzero bins)
     for idx, triangle in enumerate(triangles):
-        (a1, b1), (a2, b2), (a3, b3) = triangle['T1'], triangle['T2'], triangle['T3']
+        (a1, b1), (a2, b2), (a3, b3) = triangle["T1"], triangle["T2"], triangle["T3"]
         trianglex, triangley, _ = return_triangle_coord(a1, b1, a2, b2, a3, b3)
-        
+
         if values[idx] == 0:
             # Create plain white triangles for empty regions
             triangle_coords = list(zip(trianglex, triangley))
             empty_triangle = Polygon(
                 triangle_coords,
                 closed=True,
-                facecolor='white',
-                edgecolor='none',
-                linewidth=0
+                facecolor="white",
+                edgecolor="none",
+                linewidth=0,
             )
             ax.add_patch(empty_triangle)
         else:
             # Use colormap for non-zero values (no restrictions on gradient)
             color = cmap(norm(values[idx]))
-            ax.fill(trianglex, triangley, color=color, edgecolor='none')
+            ax.fill(trianglex, triangley, color=color, edgecolor="none")
 
-    
     # === Use EXACT same labeling and cleanup code as plot() function ===
-    label_color = "black" # 25.6    tweek with locations of labels
+    label_color = "black"  # 25.6    tweek with locations of labels
     label_size = 12
     # Label triangle corners
     plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)
-    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color) #T3
+    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color)  # T3
     plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
 
     ax.set_xticks([])
@@ -891,19 +1031,21 @@ def plot_ternary_heatmap_data(data, granularity, file_name, grid_color="#3E3E3E"
     # Colorbar (starts from 1) - shorter and positioned lower
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cax = inset_axes(ax, width="3%", height="25%", loc='upper right',
-                     bbox_to_anchor=(0.05, 0.05, 1, 1), bbox_transform=ax.transAxes, borderpad=1)
+    cax = inset_axes(
+        ax,
+        width="3%",
+        height="25%",
+        loc="upper right",
+        bbox_to_anchor=(0.05, 0.05, 1, 1),
+        bbox_transform=ax.transAxes,
+        borderpad=1,
+    )
     cbar = plt.colorbar(sm, cax=cax)
-    cbar.ax.set_title('Count', fontsize=10, pad=6)
+    cbar.ax.set_title("Count", fontsize=10, pad=6)
     cbar.set_ticks([vmin, vmax])
     cbar.ax.set_yticklabels([f"{vmin:.2g}", f"{vmax:.2g}"])
 
-
-    #plt.title(style_heatmap)
+    # plt.title(style_heatmap)
     title = f"{file_name}_heatmap.png"
     save_figure(fig, title)
     return fig
-
-
-
-

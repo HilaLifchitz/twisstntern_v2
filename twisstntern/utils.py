@@ -5,12 +5,10 @@ import numpy as np
 import pandas as pd
 import warnings
 from math import sqrt, log
-import re
 
 # from sympy import Eq, Symbol as sym, solve
 from scipy.stats import binom, chi2
 import sys
-import csv
 
 # Constants
 h = sqrt(3) / 2  # Height of the equilateral triangle
@@ -360,7 +358,6 @@ def dump_data(file, logger=None):
 
 
 ###################################################
-
 
 
 #  Data point counting in ternary space in the subtriangle corresponding to the given coordinates a1,b1,a2,b2,a3,b3

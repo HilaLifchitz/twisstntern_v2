@@ -6,91 +6,14 @@ This module provides functionality to:
 3. Convert topology weights to our analysis format
 """
 
-import os
 import sys
-import tempfile
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Union, List, Tuple, Optional
+from typing import List, Optional
 import tskit
 import ete3
-import msprime
 
-
-# ####################### ts on the spot ##########################
-
-# # KEEP THIS CONSTANT -- SHOULD BE KEPT SMALL FOR TESTING
-# nP1 = 10  # number of samples in population 1
-# nP2 = 10  # number of samples in population 2
-# nP3 = 10  # number of samples in population 3
-# n0 = 10  # number of samples in the outgroup
-
-# # Provide divergence times
-# # WE KEEP CONSTANT FOR THIS RUN
-# t1 = 100  # time of split between population 1 and population 2
-# t2 = 200  # time of split between population (1,2) and population 3
-# t3 = 300  # time of split between population (1,2,3) and the outgroup 0
-
-# # Provide migration rate
-# m = 0.000  # migration rate between population 2 and population 3
-# mig_rate = m
-
-# Ne = 1000  # population size we keep constant for all populations for simplicity
-# # Provide population sizes
-# NeP1 = Ne
-# NeP2 = Ne
-# NeP3 = Ne
-# NeO = Ne
-# NeP12 = Ne
-# NeP123 = Ne
-# NeANC = Ne
-
-
-# COMMENTED OUT: This code was executing simulations at import time, causing unwanted output
-# This appears to be example/test code that should not run during import
-
-# # A demography where (1,2) first coalesce, with our given Ne
-
-# demography = msprime.Demography()
-
-# # initializing populations
-# demography.add_population(name="O", initial_size=NeO)
-# demography.add_population(name="P1", initial_size=NeP1)
-# demography.add_population(name="P2", initial_size=NeP2)
-# demography.add_population(name="P3", initial_size=NeP3)
-# demography.add_population(name="P12", initial_size=NeP12)
-# demography.add_population(name="P123", initial_size=NeP123)
-# demography.add_population(name="ANC", initial_size=NeANC)
-
-# # adding split times
-# demography.add_population_split(time=t1, derived=["P1", "P2"], ancestral="P12")
-# demography.add_population_split(time=t2, derived=["P12", "P3"], ancestral="P123")
-# demography.add_population_split(time=t3, derived=["P123", "O"], ancestral="ANC")
-
-# # setting up gene flow
-# demography.set_migration_rate("P2", "P3", mig_rate)
-
-# ploidy = 1
-# # from collections import defaultdict
-# num_replicates = 10000
-# # For the locus usage -- ts1 is a tskit.generator object !!
-# ts1 = msprime.sim_ancestry(
-#     samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
-#     demography=demography,
-#     num_replicates=num_replicates,
-#     ploidy=ploidy,
-# )
-# # For the Chromosome usage -- ts is a tskit.TreeSequence object
-# ts = msprime.sim_ancestry(
-#     samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
-#     demography=demography,
-#     sequence_length=100000000,
-#     recombination_rate=0.000000001,
-#     ploidy=ploidy,
-# )
-
-########################################################################################
 
 # Add the external directory to the Python path
 EXTERNAL_DIR = Path(__file__).parent / "external"
@@ -118,7 +41,7 @@ def simplify_topologies(weightsData):
     """
     simplified_topos = []
     topos = weightsData.get("topos", [])
-    
+
     # Handle case where topos might be None
     if topos is None:
         return []
@@ -136,9 +59,16 @@ def simplify_topologies(weightsData):
 
     return simplified_topos
 
+
 # this is the main function for the chromosome mode
 def ts_chromosome_to_twisst_weights(
-    ts, outgroup=None, output_file=None, verbose=False, twisst_verbose=False, topology_mapping=None, population_labels=None
+    ts,
+    outgroup=None,
+    output_file=None,
+    verbose=False,
+    twisst_verbose=False,
+    topology_mapping=None,
+    population_labels=None,
 ):
     """
     Extract topology weights from any TreeSequence object using twisst.
@@ -153,7 +83,7 @@ def ts_chromosome_to_twisst_weights(
     Returns:
         pd.DataFrame: Normalized weights ready for dump_data function, first row is the simplified topologies, the rest are the weights
     """
-  
+
     # Debug info about the TreeSequence
     if verbose:
         print("=== TreeSequence Info ===")
@@ -206,7 +136,7 @@ def ts_chromosome_to_twisst_weights(
         outgroup=outgroup,
         verbose=twisst_verbose,
     )
-    
+
     # Apply topology reordering if user preference is provided
     if topology_mapping is not None:
         if verbose:
@@ -215,7 +145,9 @@ def ts_chromosome_to_twisst_weights(
             weights_norm,
             simplified_topos,
             columns,
-        ) = reorder_weights_by_topology_preference(weightsData, topology_mapping, population_labels)
+        ) = reorder_weights_by_topology_preference(
+            weightsData, topology_mapping, population_labels
+        )
     else:  # if no topology mapping
         # we just print the default topologies order by twisst
         # print("No topology mapping was provided; displaying the default topology axis")
@@ -251,7 +183,14 @@ def ts_chromosome_to_twisst_weights(
         # Log topologies to file
         logger = get_logger(__name__)
         topos = weightsData["topos"]
-        log_topologies(topos, simplified_topos, columns, logger, "TreeSequence topologies (default order)", population_labels)
+        log_topologies(
+            topos,
+            simplified_topos,
+            columns,
+            logger,
+            "TreeSequence topologies (default order)",
+            population_labels,
+        )
 
     # Get number of topologies for reporting (works for both cases)
     n_topos = len(columns)
@@ -295,8 +234,15 @@ def ts_chromosome_to_twisst_weights(
 # main topology weights generating function
 #################################################################################
 
+
 def ts_to_twisst_weights(
-    input_data, outgroup=None, output_file=None, verbose=False, twisst_verbose=False, topology_mapping=None, population_labels=None
+    input_data,
+    outgroup=None,
+    output_file=None,
+    verbose=False,
+    twisst_verbose=False,
+    topology_mapping=None,
+    population_labels=None,
 ):
     """
     Enhanced version of ts_to_twisst_weights that can handle both single TreeSequence objects
@@ -331,10 +277,10 @@ def ts_to_twisst_weights(
             population_labels=population_labels,
         )
         # Ensure 'position' column is present (should already be added by ts_chromosome_to_twisst_weights)
-        if 'position' not in df.columns:
+        if "position" not in df.columns:
             if isinstance(input_data, tskit.TreeSequence):
                 positions = [tree.interval[0] for tree in input_data.trees()]
-                df.insert(0, 'position', positions)
+                df.insert(0, "position", positions)
         return df
     #########################################################
     # Generator case - process multiple TreeSequences
@@ -343,8 +289,10 @@ def ts_to_twisst_weights(
         input_data = list(input_data)
     else:
         # This shouldn't happen given our earlier check, but handle it gracefully
-        raise TypeError("Input data is neither a TreeSequence nor an iterable of TreeSequences")
-        
+        raise TypeError(
+            "Input data is neither a TreeSequence nor an iterable of TreeSequences"
+        )
+
     if verbose:
         print("Processing generator of TreeSequences...")
 
@@ -353,7 +301,6 @@ def ts_to_twisst_weights(
     canonical_simplified_topos: Optional[List[str]] = None
     columns: Optional[List[str]] = None
     total_processed = 0
-
 
     if verbose:
         print(
@@ -370,11 +317,11 @@ def ts_to_twisst_weights(
                 populations_with_samples.append(str(pop_id))
 
         # if len(populations_with_samples) < 3:
-            # if verbose:
-            #     print(
-            #         f"  Skipping: only {len(populations_with_samples)} populations with samples"
-            #     )
-            # continue
+        # if verbose:
+        #     print(
+        #         f"  Skipping: only {len(populations_with_samples)} populations with samples"
+        #     )
+        # continue
 
         # Set default outgroup to first population if not specified
         current_outgroup = outgroup
@@ -421,8 +368,14 @@ def ts_to_twisst_weights(
 
             # Log canonical topologies
             logger = get_logger(__name__)
-            log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)", population_labels)
-
+            log_topologies(
+                canonical_topologies,
+                canonical_simplified_topos,
+                columns,
+                logger,
+                "Multi-TreeSequence canonical topologies (default order)",
+                population_labels,
+            )
 
         # Type assertion for Pylance
         assert canonical_simplified_topos is not None
@@ -482,8 +435,8 @@ def ts_to_twisst_weights(
 
     combined_df = pd.concat(all_weights, ignore_index=True)
     combined_df = combined_df.round(3)
-    combined_df = combined_df.loc[combined_df.iloc[:, 1] != combined_df.iloc[:, 2]] 
-    
+    combined_df = combined_df.loc[combined_df.iloc[:, 1] != combined_df.iloc[:, 2]]
+
     print(f"\nWeights with T2 == T3 removed. Remaining rows: {len(combined_df)}")
 
     # Apply user topology mapping if provided
@@ -502,7 +455,9 @@ def ts_to_twisst_weights(
             reordered_weights,
             reordered_simplified_topos,
             new_columns,
-        ) = reorder_weights_by_topology_preference(temp_weightsData, topology_mapping, population_labels)
+        ) = reorder_weights_by_topology_preference(
+            temp_weightsData, topology_mapping, population_labels
+        )
 
         # Update combined_df with reordered data
         combined_df = pd.DataFrame(reordered_weights, columns=new_columns)
@@ -514,7 +469,7 @@ def ts_to_twisst_weights(
         for i, topo in enumerate(canonical_topologies):
             print(f"Topology {i+1}")
             print(topo)
-        
+
         # Topologies already logged during first iteration, no need to log again
 
     if verbose:
@@ -534,12 +489,13 @@ def ts_to_twisst_weights(
         full_df = pd.concat([header_row, combined_df], ignore_index=True)
 
         # Save to CSV
-        full_df.to_csv(output_file, index=False, float_format='%.3f')
+        full_df.to_csv(output_file, index=False, float_format="%.3f")
 
         if verbose:
             print(f"  Saved results to: {output_file}")
 
     return combined_df
+
 
 # Not used directly, but still good to have:
 # taking in a ts object- not in generator or Newick format- and returning the populations with samples
@@ -590,70 +546,74 @@ def debug_ts_populations(ts):
 
     return populations_with_samples
 
+
 ######################################################################################
 # TOPOLOGY MAPPING FUNCTIONS (copied from twisstntern)
 ######################################################################################
 
+
 def parse_topology_mapping(mapping_string):
     """
     Parse user-specified topology mapping from a string like:
-    "T1=(0,(1,(2,3))); T2=(0,(2,(1,3))); T3=(0,(3,(1,2)));"  
+    "T1=(0,(1,(2,3))); T2=(0,(2,(1,3))); T3=(0,(3,(1,2)));"
     or (for Newick files)
     "T1=(O,(P1,(P2,P3))); T2=(O,(P2,(P1,P3))); T3=(O,(P3,(P1,P2)));"
-    
+
     Args:
         mapping_string (str): String containing topology assignments
-        
+
     Returns:
         dict: Mapping from T1/T2/T3 to simplified topology strings
     """
     mapping = {}
-    
+
     # Remove extra whitespace and split by semicolon
     assignments = [part.strip() for part in mapping_string.split(";") if part.strip()]
-    
+
     for assignment in assignments:
         if "=" not in assignment:
             continue
-            
+
         # Split on first '=' to handle cases where topology contains '='
         key, value = assignment.split("=", 1)
         key = key.strip()
         value = value.strip()
-        
+
         # Remove surrounding quotes if present
         if value.startswith('"') and value.endswith('"'):
             value = value[1:-1]
         elif value.startswith("'") and value.endswith("'"):
             value = value[1:-1]
-            
+
         # Validate key is T1, T2, or T3
         if key not in ["T1", "T2", "T3"]:
             raise ValueError(f"Invalid topology key: {key}. Must be T1, T2, or T3")
-            
+
         mapping[key] = value
-    
+
     # Ensure all three topologies are specified
     if len(mapping) != 3:
         missing = set(["T1", "T2", "T3"]) - set(mapping.keys())
         raise ValueError(f"Missing topology assignments: {missing}")
-    
+
     # Validate that all three topologies are distinct
     keys = ["T1", "T2", "T3"]
     normalized_values = [normalize_topology_string(mapping[key]) for key in keys]
-    
+
     if len(set(normalized_values)) != 3:
         # Find duplicates
         duplicates = []
         for i in range(len(keys)):
             for j in range(i + 1, len(keys)):
                 if normalized_values[i] == normalized_values[j]:
-                    duplicates.append(f"{keys[i]}={mapping[keys[i]]} and {keys[j]}={mapping[keys[j]]}")
-        
+                    duplicates.append(
+                        f"{keys[i]}={mapping[keys[i]]} and {keys[j]}={mapping[keys[j]]}"
+                    )
+
         raise ValueError(
             f"All three topologies must be distinct. Found duplicate topologies: {'; '.join(duplicates)}"
         )
-    
+
     return mapping
 
 
@@ -663,56 +623,58 @@ def normalize_topology_string(topo_str):
     Converts P1 → p1, P2 → p2, etc. (case-insensitive comparison)
     Does NOT convert p1 to 1 - preserves the letter format.
     Also removes trailing semicolons, quotes, and whitespace for consistent comparison.
-    
+
     Args:
         topo_str (str): Topology string like "(0,(p1,(p2,p3)))" or "(0,(P1,(P2,P3)));"
-        
+
     Returns:
         str: Normalized topology string like "(0,(p1,(p2,p3)))"
     """
     import re
-    
+
     # Remove leading/trailing quotes, semicolons and whitespace
     normalized = topo_str.strip().rstrip(";").strip('"').strip("'")
-    
+
     # Convert P1/P2/P3 to p1/p2/p3 (lowercase) for consistent comparison
     # This handles case-insensitivity without converting to digits
     normalized = re.sub(r"P(\d+)", r"p\1", normalized)
-    
+
     return normalized
 
 
 def compare_topologies(topo1, topo2):
     """
     Compare two topology strings, accounting for different population naming conventions.
-    
+
     Args:
         topo1 (str): First topology string
         topo2 (str): Second topology string
-        
+
     Returns:
         bool: True if topologies are equivalent
     """
     return normalize_topology_string(topo1) == normalize_topology_string(topo2)
 
 
-def reorder_weights_by_topology_preference(weightsData, topology_mapping, population_labels=None):
+def reorder_weights_by_topology_preference(
+    weightsData, topology_mapping, population_labels=None
+):
     """
     Reorder topology weights according to user preference.
     This should be called BEFORE creating the DataFrame.
-    
+
     Args:
         weightsData (dict): Output from twisst.weightTrees containing 'topos' and 'weights'
         topology_mapping (dict): Mapping from T1/T2/T3 to desired topology strings
         population_labels (dict, optional): Mapping from population IDs to descriptive labels
-        
+
     Returns:
         tuple: (reordered_weights, reordered_simplified_topos, column_names)
     """
     # Get current topologies and weights
     original_topos = weightsData["topos"]
     original_simplified_topos = simplify_topologies(weightsData)
-    
+
     # Parse topology mapping if it's a string (do this FIRST)
     if isinstance(topology_mapping, str):
         topology_mapping = parse_topology_mapping(topology_mapping)
@@ -726,20 +688,20 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping, popula
         row_sums = weights.sum(axis=1)
         if not np.all(row_sums == 0):
             weights = weights / row_sums[:, np.newaxis]
-    
+
     # Validate that we have exactly matching number of topologies
     num_expected_topologies = len(topology_mapping.keys())
     if len(original_simplified_topos) != num_expected_topologies:
         raise ValueError(
             f"Expected {num_expected_topologies} topologies, found {len(original_simplified_topos)}"
         )
-    
+
     # Find mapping from user preferences to current column positions
     column_mapping = {}  # {target_column: source_column_index}
-    
+
     for target_col in ["T1", "T2", "T3"]:
         desired_topo = topology_mapping[target_col]
-        
+
         # Find which current column contains this topology
         found = False
         for i, current_topo in enumerate(original_simplified_topos):
@@ -747,7 +709,7 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping, popula
                 column_mapping[target_col] = i
                 found = True
                 break
-        
+
         if not found:
             print(f"Available topologies:")
             for i, topo in enumerate(original_simplified_topos):
@@ -758,14 +720,14 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping, popula
             raise ValueError(
                 f"Topology '{desired_topo}' not found in computed topologies."
             )
-    
+
     # Create new column order
     new_column_order = [
         column_mapping["T1"],
         column_mapping["T2"],
         column_mapping["T3"],
     ]
-    
+
     # Reorder weights and topologies
     reordered_weights = weights[:, new_column_order]
     reordered_simplified_topos = [
@@ -778,7 +740,9 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping, popula
     return reordered_weights, reordered_simplified_topos, ["T1", "T2", "T3"]
 
 
-def print_topology_mapping_with_trees(weightsData, topology_mapping, population_labels=None):
+def print_topology_mapping_with_trees(
+    weightsData, topology_mapping, population_labels=None
+):
     """
     Print topology mapping with beautiful ASCII tree representations.
     Uses twisst's built-in tree rendering to show the actual tree structure.
@@ -800,12 +764,12 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping, population_
 
     print("Applied topology mapping:")
     print("=" * 50)
-    
+
     # Collect topology information for logging
     mapped_topos = []
     mapped_simplified = []
     mapped_columns = []
-    
+
     # For each T1, T2, T3, find the corresponding original topology index
     for target_label in ["T1", "T2", "T3"]:
         desired_topo_string = topology_mapping[target_label]
@@ -821,7 +785,7 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping, population_
             print(f"\n{target_label}:")
             print(original_topos[original_index].get_ascii())
             print(f"String: {original_simplified_topos[original_index]}")
-            
+
             # Collect for logging
             mapped_topos.append(original_topos[original_index])
             mapped_simplified.append(original_simplified_topos[original_index])
@@ -830,8 +794,15 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping, population_
             print(f"\n{target_label}: ERROR - topology not found!")
 
     print("=" * 50)
-    
+
     # Log the applied topology mapping
     if mapped_topos:
         logger = get_logger(__name__)
-        log_topologies(mapped_topos, mapped_simplified, mapped_columns, logger, "Applied topology mapping", population_labels)
+        log_topologies(
+            mapped_topos,
+            mapped_simplified,
+            mapped_columns,
+            logger,
+            "Applied topology mapping",
+            population_labels,
+        )

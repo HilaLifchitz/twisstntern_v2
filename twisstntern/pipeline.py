@@ -7,13 +7,13 @@ import pandas as pd
 
 from twisstntern.utils import dump_data
 from twisstntern.analysis import triangles_analysis, fundamental_asymmetry
-from twisstntern.visualization import ( # add the plot functions here 25.6
+from twisstntern.visualization import (  # add the plot functions here 25.6
     plot,
     plot_results,
     plotting_triangle_index,
     plot_fundamental_asymmetry,
     plot_ternary_heatmap_data,
-    plot_density_colored_radcount
+    plot_density_colored_radcount,
 )
 from twisstntern.tree_processing import (
     detect_and_read_trees,
@@ -98,7 +98,7 @@ def process_tree_file(
 
 
 # default granularity is 0.1
-def run_analysis( # add plot functions here 25.6
+def run_analysis(  # add plot functions here 25.6
     file,
     granularity=0.1,
     taxon_names=None,
@@ -125,9 +125,9 @@ def run_analysis( # add plot functions here 25.6
                                          Ignored for CSV files.
         downsample_N (int, optional): Downsample interval (sample every Nth row)
         downsample_i (int, optional): Starting index for downsampling (offset)
-        colormap (str, optional): Colormap for the ternary heatmap. 
-                                         Options: 'viridis', 'viridis_r', 'plasma', 
-                                         'inferno', 'Blues', 'Greys'. 
+        colormap (str, optional): Colormap for the ternary heatmap.
+                                         Options: 'viridis', 'viridis_r', 'plasma',
+                                         'inferno', 'Blues', 'Greys'.
                                          Default: 'viridis_r'.
 
     Returns:
@@ -137,13 +137,13 @@ def run_analysis( # add plot functions here 25.6
             - csv_file_used: Path to the CSV file that was analyzed (original or generated)
     """
     logger = get_logger(__name__)
-    
+
     # Set output directory with timestamp if using default
     if output_dir == "Results":
         # Generate timestamped directory name
         timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
         output_dir = f"Results_{timestamp}"
-    
+
     # Ensure Results directory exists
     results_dir = Path(output_dir)
     results_dir.mkdir(exist_ok=True)
@@ -229,15 +229,21 @@ def run_analysis( # add plot functions here 25.6
     if downsample_N is not None and downsample_N > 1:
         if downsample_i is None:
             downsample_i = 0  # Default to starting from index 0
-            
-        logger.info(f"Downsampling: keeping every {downsample_N}th row starting from index {downsample_i}.")
-        print(f"Downsampling: keeping every {downsample_N}th row starting from index {downsample_i}.")
-        
+
+        logger.info(
+            f"Downsampling: keeping every {downsample_N}th row starting from index {downsample_i}."
+        )
+        print(
+            f"Downsampling: keeping every {downsample_N}th row starting from index {downsample_i}."
+        )
+
         # Create the downsampled indices: start from downsample_i, then every downsample_N
         indices = list(range(downsample_i, len(data), downsample_N))
         data_trimmed = data.iloc[indices, :].reset_index(drop=True)
-        
-        trimmed_csv_file = str(Path(csv_file).with_name(Path(csv_file).stem + "_trimmed.csv"))
+
+        trimmed_csv_file = str(
+            Path(csv_file).with_name(Path(csv_file).stem + "_trimmed.csv")
+        )
         data_trimmed.to_csv(trimmed_csv_file, index=False)
         logger.info(f"Trimmed topology weights saved to: {trimmed_csv_file}")
         n_after_trim = len(data_trimmed)
@@ -261,21 +267,25 @@ def run_analysis( # add plot functions here 25.6
     n_used = n_right + n_left
     n_filtered = n_after_trim - n_used
 
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info("FUNDAMENTAL ASYMMETRY RESULTS")
-    logger.info("="*60)
+    logger.info("=" * 60)
     logger.info(f"Data file used: {csv_file}")
     logger.info(f"Total data points before downsampling: {n_before_trim}")
     if downsample_N is not None and downsample_N > 1:
         logger.info(f"Total data points after downsampling: {n_after_trim}")
-    logger.info(f"Total data points used in symmetry analysis: {n_used} (n_right + n_left = {n_used})")
-    logger.info(f"Note: {n_filtered} data points were filtered out (where T2 = T3, which fall exactly on the y-axis in ternary space)")
+    logger.info(
+        f"Total data points used in symmetry analysis: {n_used} (n_right + n_left = {n_used})"
+    )
+    logger.info(
+        f"Note: {n_filtered} data points were filtered out (where T2 = T3, which fall exactly on the y-axis in ternary space)"
+    )
     logger.info(f"n_right: {n_right}")
     logger.info(f"n_left: {n_left}")
     logger.info(f"D_LR: {fundamental_results[2]:.4f}")
     logger.info(f"G-test: {fundamental_results[3]:.4f}")
     logger.info(f"p-value: {fundamental_results[4]:.4e}")
-    logger.info("="*60)
+    logger.info("=" * 60)
 
     # Generate output prefix based on original file name
     output_prefix = str(results_dir / Path(file).stem)
@@ -304,7 +314,7 @@ def run_analysis( # add plot functions here 25.6
     # New: Density radcount plot - always uses fixed parameters
     plot_density_colored_radcount(data, output_prefix, colormap=colormap)
     logger.debug("Generated density radcount plot")
-    
+
     plot_results(results, granularity, output_prefix)
     logger.debug("Generated results plot")
     # the triangle index plot
@@ -327,7 +337,7 @@ def run_analysis( # add plot functions here 25.6
     # save plots and results
     ##################################
     logger.info("Saving results...")
-    
+
     # Convert granularity to float for filename
     if granularity == "superfine":
         alpha = 0.05
@@ -337,7 +347,7 @@ def run_analysis( # add plot functions here 25.6
         alpha = 0.25
     else:
         alpha = float(granularity)
-    
+
     results_csv = results_dir / f"{Path(file).stem}_triangle_analysis_{alpha}.csv"
     results.to_csv(results_csv, index=False, float_format="%.3f")
     logger.info(f"Saved triangle analysis results to: {results_csv}")
