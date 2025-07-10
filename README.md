@@ -204,7 +204,7 @@ results, fundamental_results, csv_file = run_analysis(
     file="trees.newick",
     taxon_names=["O", "P1", "P2", "P3"],
     outgroup="O",
-    granularity="superfine",
+    granularity="superfine"
 )
 ```
 
@@ -217,6 +217,8 @@ results, fundamental_results, csv_file = run_analysis(
     granularity=0.1,
     colormap="plasma",
     topology_mapping='T1="(0,(3,(1,2)))"; T2="(0,(1,(2,3)))"; T3="(0,(2,(1,3)))";'
+    downsample_N=100,
+    downsample_i=20
 )
 ```
 ---
