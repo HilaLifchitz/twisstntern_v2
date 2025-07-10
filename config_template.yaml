@@ -122,7 +122,7 @@ seed: 4576 # Random seed for simulation (optional)
 
 #=== Simulation mode "locus" ===#
 # msprime will simulate independent non-recombining loci with length 10k
-n_loci: 1000 # Number of loci / windows to simulate (default 10000)
+n_loci: 10000 # Number of loci / windows to simulate (default 10000)
 locus_length: 1 # Length of each locus in base pairs
 
 #=== Simulation mode "chromosome" ===#
