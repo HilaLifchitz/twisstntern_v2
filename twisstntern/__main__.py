@@ -115,13 +115,21 @@ def main():
         "--output",
         type=str,
         default="Results",
-        help="Path to the output directory. If not provided, a timestamped 'Results_YYYY-MM-DD_HH-MM-SS' directory will be created.",
+        help="Path to the output directory for all results and plots. If not provided, a timestamped 'Results_YYYY-MM-DD_HH-MM-SS' directory will be created.",
     )
     parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
         help="Enable verbose logging output.",
+    )
+    parser.add_argument(
+        "--axis",
+        type=str,
+        nargs=3,
+        metavar=("AXIS1", "AXIS2", "AXIS3"),
+        default=["T1", "T2", "T3"],
+        help="Order of axes for CSV columns. Example: --axis T2 T1 T3 (default: T1 T2 T3)",
     )
 
     args = parser.parse_args()
@@ -191,7 +199,7 @@ def main():
     try:
         # Call run_analysis with the new signature that returns 3 values
         results, fundamental_results, csv_file_used = run_analysis(
-            file=input_file,
+            file=str(file_path),
             granularity=granularity,
             taxon_names=args.taxon_names,
             outgroup=args.outgroup,
@@ -199,6 +207,8 @@ def main():
             topology_mapping=args.topology_mapping,
             downsample_N=downsample_N,
             downsample_i=downsample_i,
+            colormap="viridis_r",
+            axis_order=args.axis,  # <--- ADD THIS LINE
         )
 
         # Calculate duration

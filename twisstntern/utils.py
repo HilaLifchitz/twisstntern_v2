@@ -230,7 +230,7 @@ def mid_point_triangle(a1, b1, a2, b2, a3, b3):
 ###########################################
 
 
-def dump_data(file, logger=None):
+def dump_data(file, logger=None, axis_order=None):
     """Load and process data from CSV file.
 
     Args:
@@ -326,7 +326,10 @@ def dump_data(file, logger=None):
             data = data[best_data.columns]
 
     # Rename columns to standard format
-    data.columns = ["T1", "T2", "T3"]
+    if axis_order is None:
+        axis_order = ["T1", "T2", "T3"]
+    # Map columns according to axis_order
+    data.columns = axis_order
 
     # Convert to numeric and handle any non-numeric values
     for col in data.columns:
@@ -350,9 +353,9 @@ def dump_data(file, logger=None):
         f"\nData loaded and normalized. Points with T2 == T3 removed. Remaining rows: {len(data)}"
     )
 
-    # Log that we're assuming standard column order
+    # Log that we're assuming custom or standard column order
     if logger:
-        logger.info("Assuming columns are T1, T2, T3 (in order).")
+        logger.info(f"Assuming columns are {axis_order} (in order).")
 
     return data
 

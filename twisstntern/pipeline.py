@@ -108,6 +108,7 @@ def run_analysis(  # add plot functions here 25.6
     downsample_N=None,
     downsample_i=None,
     colormap="viridis_r",
+    axis_order=None,  # <--- ADD THIS PARAMETER
 ):
     """
     Orchestrates the full analysis and visualization pipeline for both tree files and CSV files.
@@ -136,6 +137,9 @@ def run_analysis(  # add plot functions here 25.6
             - fundamental_results: Fundamental asymmetry results
             - csv_file_used: Path to the CSV file that was analyzed (original or generated)
     """
+    # Ensure output directory exists at the very start
+    results_dir = Path(output_dir)
+    results_dir.mkdir(parents=True, exist_ok=True)
     logger = get_logger(__name__)
 
     # Set output directory with timestamp if using default
@@ -145,8 +149,8 @@ def run_analysis(  # add plot functions here 25.6
         output_dir = f"Results_{timestamp}"
 
     # Ensure Results directory exists
-    results_dir = Path(output_dir)
-    results_dir.mkdir(exist_ok=True)
+    # results_dir = Path(output_dir) # This line is now redundant as it's handled above
+    # results_dir.mkdir(exist_ok=True) # This line is now redundant as it's handled above
     logger.info(f"Output directory: {results_dir}")
 
     # Detect file type and process accordingly
@@ -220,7 +224,7 @@ def run_analysis(  # add plot functions here 25.6
     # Load and process the CSV data (either original or generated from trees)
     logger.info(f"Loading data from: {csv_file}")
     print(f"Loading data from: {csv_file}")
-    data = dump_data(csv_file, logger=logger)
+    data = dump_data(csv_file, logger=logger, axis_order=axis_order)  # <--- PASS axis_order
     n_before_trim = len(data)
     logger.info(f"Loaded data shape: {data.shape}")
     logger.debug(f"Data columns: {list(data.columns)}")

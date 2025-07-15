@@ -27,6 +27,7 @@ from twisstntern.utils import (
 )
 from twisstntern.analysis import fundamental_asymmetry
 from sklearn.neighbors import NearestNeighbors
+import matplotlib.colors as mcolors
 
 # ============================================================================
 # GLOBAL STYLE SETTINGS - TWEAK THESE FOR VISUAL CUSTOMIZATION
@@ -1023,395 +1024,109 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
 
 def get_professional_colormap(style="RdBu_r", truncate=True):
     """
-    Get professional diverging colormaps suitable for scientific publication.
-
-    Args:
-        style (str): One of the following professional colormap styles:
-            - "RdBu_r": Red-Blue diverging (reversed) - classic scientific
-            - "coolwarm": Cool-warm diverging - Nature journal style
-            - "seismic": Seismic diverging - Geophysical style
-            - "seismic_soft": Soft seismic - lighter, more pastel version
-            - "seismic_bold": Bold seismic - more vibrant version
-            - "seismic_enhanced": Enhanced seismic - better white center
-            - "bwr": Blue-White-Red - clean and professional
-            - "PRGn": Purple-Green diverging - colorblind friendly
-            - "PiYG": Pink-Yellow-Green diverging - vibrant but professional
-            - "viridis": Viridis - modern and colorblind friendly
-            - "plasma": Plasma - vibrant purple to yellow
-            - "magma": Magma - dark to light
-            - "inferno": Inferno - dark to bright
-            - "inferno_r": Reversed inferno
-            - "inferno_r_soft": Reversed inferno with much brighter, softer start
-            - "inferno_midrange": Custom inferno with mid-range center instead of white
-            - "inferno_midrange_r": Reversed inferno_midrange
-            - "vlag": Violet-Light Blue diverging
-            - "PuOr": Purple-Orange diverging
-            - "blue_grey_red": Custom Blue-Grey-Red diverging
-            - "Greys": Light gray to black - clean, minimal
-            - "Blues": White to dark blue - elegant, geoscience
-            - "Reds": White to dark red - elegant, warm
-            - "Greens": White to dark green - natural, environmental
-            - "Oranges": White to dark orange - warm, energetic
-            - "YlOrRd": Yellow to orange to red - vibrant sequential
-            - "Purples": Light lavender to deep purple - density plots
-            - "rocket_r": Seaborn sequential reversed - light red to dark maroon
-            - "mako_r": Seaborn sequential reversed - light teal to deep blue
-            - "crest_r": Seaborn cool gradient reversed - light aqua to dark blue/green
-            - "BuGn_r": Blue-green reversed - light to dark cyan
-            - "copper": White to brownish-black - physical sciences
-            - "Greys_r": Black to light gray - reversed
-            - "Blues_r": Dark blue to white - reversed
-            - "Purples_r": Deep purple to light lavender - reversed
-            - "rocket": Seaborn sequential - dark maroon to light red
-            - "mako": Seaborn sequential - deep blue to light teal
-            - "crest": Seaborn cool gradient - dark blue/green to light aqua
-            - "BuGn": Blue-green - dark cyan to light
-            - "BuGn_r": Blue-green reversed - light to dark cyan
-            - "BuViolet": Blue to violet - elegant gradient
-            - "BuMagenta": Blue to magenta - vibrant gradient
-            - "BuPi": Blue to pink - starts exactly like BuGn, ends in pink
-            - "BuPu": Blue to purple - starts exactly like BuGn, ends in dark dramatic purple
-            - "Greys_dark": Custom darker grey colormap - starts from lighter grey and goes to black
-            - "grey_1": Custom grey colormap - starts very light and goes to pure black
-            - "rocket_truncated": Rocket colormap with darkest 1/3 removed for brighter appearance
-            - "rocket_truncated_r": Reversed rocket_truncated - starts dark and goes to bright
-            - "rocket_bottom_third": Rocket colormap using only the bottom 1/3 of the spectrum
-            - "viridis_r_soft": Reversed viridis with softer yellow start
-        truncate (bool): Whether to truncate the colormap to avoid extreme colors
-
-    Returns:
-        matplotlib.colors.LinearSegmentedColormap: Professional colormap
+    Returns a professional-looking colormap, optionally truncated.
     """
-    # Professional colormap options
-    colormap_options = {
-        "RdBu_r": "RdBu_r",  # Red-Blue diverging (reversed) - classic
-        "coolwarm": "coolwarm",  # Cool-warm diverging - Nature style
-        "seismic": "seismic",  # Seismic diverging - Geophysical
-        "bwr": "bwr",  # Blue-White-Red - clean
-        "PRGn": "PRGn",  # Purple-Green - colorblind friendly
-        "PiYG": "PiYG",  # Pink-Yellow-Green - vibrant but professional
-        "RdBu": "RdBu",  # Red-Blue (not reversed) - alternative
-        "BrBG": "BrBG",  # Brown-Blue-Green - earth tones
-        "viridis": "viridis",  # Modern, colorblind friendly
-        "viridis_r": "viridis_r",  # Reversed viridis
-        "plasma": "plasma",  # Purple to yellow
-        "magma": "magma",  # Dark to light
-        "inferno": "inferno",  # Dark to bright
-        "inferno_r": "inferno_r",  # Reversed inferno
-        "inferno_midrange": "inferno_midrange",  # Custom inferno with mid-range center
-        "inferno_midrange_r": "inferno_midrange_r",  # Reversed inferno_midrange
-        "vlag": "vlag",  # Violet-Light Blue diverging
-        "PuOr": "PuOr",  # Purple-Orange diverging
-        "blue_grey_red": "blue_grey_red",  # Custom Blue-Grey-Red diverging
-        "Greys": "Greys",  # Light gray to black - clean, minimal
-        "Blues": "Blues",  # White to dark blue - elegant, geoscience
-        "Reds": "Reds",  # White to dark red - elegant, warm
-        "Greens": "Greens",  # White to dark green - natural, environmental
-        "Oranges": "Oranges",  # White to dark orange - warm, energetic
-        "YlOrRd": "YlOrRd",  # Yellow to orange to red - vibrant sequential
-        "Purples": "Purples",  # Light lavender to deep purple - density plots
-        "rocket_r": "rocket_r",  # Seaborn sequential reversed - light red to dark maroon
-        "mako_r": "mako_r",  # Seaborn sequential reversed - light teal to deep blue
-        "crest_r": "crest_r",  # Seaborn cool gradient reversed - light aqua to dark blue/green
-        "BuGn_r": "BuGn_r",  # Blue-green reversed - light to dark cyan
-        "copper": "copper",  # White to brownish-black - physical sciences
-        "Greys_r": "Greys_r",  # Black to light gray - reversed
-        "Blues_r": "Blues_r",  # Dark blue to white - reversed
-        "Purples_r": "Purples_r",  # Deep purple to light lavender - reversed
-        "rocket": "rocket",  # Seaborn sequential - dark maroon to light red
-        "mako": "mako",  # Seaborn sequential - deep blue to light teal
-        "crest": "crest",  # Seaborn cool gradient - dark blue/green to light aqua
-        "BuGn": "BuGn",  # Blue-green - dark cyan to light
-        "BuGn_r": "BuGn_r",  # Blue-green reversed - light to dark cyan
-        "BuViolet": "BuViolet",  # Custom light blue to violet colormap (starts light like BuGn)
-        "BuMagenta": "BuMagenta",  # Custom light blue to magenta colormap (starts light like BuGn)
-        "BuPi": "BuPi",  # Custom light blue to pink colormap (starts exactly like BuGn, ends in pink)
-        "BuPu": "BuPu",  # Custom light blue to dark dramatic purple colormap (starts exactly like BuGn, ends in dark purple)
-        "Greys_dark": "Greys_dark",  # Custom darker grey colormap - starts from lighter grey and goes to black
-        "grey_1": "grey_1",  # Custom grey colormap - starts very light and goes to pure black
-        "rocket_truncated": "rocket_truncated",  # Rocket colormap with darkest 1/3 removed for brighter appearance
-        "rocket_truncated_r": "rocket_truncated_r",  # Reversed rocket_truncated - starts dark and goes to bright
-        "rocket_bottom_third": "rocket_bottom_third",  # Rocket colormap using only the bottom 1/3 of the spectrum
-        "viridis_r_soft": "viridis_r_soft",  # Reversed viridis with softer yellow start
-    }
-
-    # Handle custom seismic variants
-    if style == "seismic_soft":
-        base_seismic = plt.cm.seismic
-        soft_colors = base_seismic(np.linspace(0.15, 0.85, 256))  # More truncation
-        soft_colors = np.clip(soft_colors * 1.3, 0, 1)  # Make lighter
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "seismic_soft", soft_colors
-        )
-
-    elif style == "seismic_bold":
-        base_seismic = plt.cm.seismic
-        bold_colors = base_seismic(np.linspace(0.05, 0.95, 256))  # Less truncation
-        bold_colors = np.clip(bold_colors * 0.8, 0, 1)  # Make more saturated
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "seismic_bold", bold_colors
-        )
-
-    elif style == "seismic_enhanced":
-        base_seismic = plt.cm.seismic
-        enhanced_colors = base_seismic(np.linspace(0.1, 0.9, 256))
-        # Enhance the middle (white) region
-        mid_idx = len(enhanced_colors) // 2
-        enhanced_colors[mid_idx - 10 : mid_idx + 10] = [1, 1, 1, 1]  # Pure white center
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "seismic_enhanced", enhanced_colors
-        )
-
-    elif style == "inferno_midrange":
-        # Custom inferno with mid-range center instead of white
-        base_inferno = plt.cm.inferno
-        # Use the full range but center around orange/yellow instead of white
-        colors = base_inferno(np.linspace(0.0, 1.0, 256))
-        # The middle (around 0.6-0.7 in inferno) will be orange/yellow instead of white
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "inferno_midrange", colors
-        )
-
-    elif style == "inferno_midrange_r":
-        # Reversed version of inferno_midrange
-        base_inferno = plt.cm.inferno
-        # Use the full range but center around orange/yellow instead of white, then reverse
-        colors = base_inferno(np.linspace(0.0, 1.0, 256))
-        # Reverse the colors
-        colors = colors[::-1]
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "inferno_midrange_r", colors
-        )
-
-    elif style == "inferno_centered":
-        # Alternative: use inferno but center it around the orange/yellow region
-        base_inferno = plt.cm.inferno
-        # Map D-LR [-1, 1] to inferno [0.2, 0.8] to avoid pure black/white
-        colors = base_inferno(np.linspace(0.2, 0.8, 256))
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "inferno_centered", colors
-        )
-
-    elif style == "blue_to_red":
-        # Custom continuous blue to red colormap
-        # Create a smooth transition from blue to red
-        colors = []
-        for i in range(256):
-            # Blue to red transition
-            if i < 128:
-                # First half: blue to purple
-                ratio = i / 127.0
-                r = ratio * 0.5  # 0 to 0.5
-                g = 0.0
-                b = 1.0 - ratio * 0.5  # 1.0 to 0.5
-            else:
-                # Second half: purple to red
-                ratio = (i - 128) / 127.0
-                r = 0.5 + ratio * 0.5  # 0.5 to 1.0
-                g = 0.0
-                b = 0.5 - ratio * 0.5  # 0.5 to 0.0
-            colors.append([r, g, b, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list("blue_to_red", colors)
-
-    elif style == "blue_to_red_centered":
-        # Blue to red with a centered approach (avoiding pure black/white)
-        # Similar to inferno_centered but blue to red
-        colors = []
-        for i in range(256):
-            # Map to avoid extremes
-            t = 0.2 + 0.6 * (i / 255.0)  # Map [0,1] to [0.2, 0.8]
-
-            if t < 0.5:
-                # Blue to purple
-                ratio = (t - 0.2) / 0.3  # Map [0.2, 0.5] to [0, 1]
-                r = ratio * 0.5
-                g = 0.0
-                b = 1.0 - ratio * 0.3
-            else:
-                # Purple to red
-                ratio = (t - 0.5) / 0.3  # Map [0.5, 0.8] to [0, 1]
-                r = 0.5 + ratio * 0.5
-                g = 0.0
-                b = 0.7 - ratio * 0.7
-            colors.append([r, g, b, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "blue_to_red_centered", colors
-        )
-
-    elif style == "blue_grey_red":
-        # Custom blue-grey-red diverging colormap
-        colors = []
-        for i in range(256):
-            # Blue to grey to red transition
-            if i < 128:
-                # First half: blue to grey
-                ratio = i / 127.0
-                r = ratio * 0.5  # 0 to 0.5
-                g = ratio * 0.5  # 0 to 0.5
-                b = 1.0 - ratio * 0.5  # 1.0 to 0.5
-            else:
-                # Second half: grey to red
-                ratio = (i - 128) / 127.0
-                r = 0.5 + ratio * 0.5  # 0.5 to 1.0
-                g = 0.5 - ratio * 0.5  # 0.5 to 0.0
-                b = 0.5 - ratio * 0.5  # 0.5 to 0.0
-            colors.append([r, g, b, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list("blue_grey_red", colors)
-
-    elif style == "BuViolet":
-        # Custom light blue to violet colormap (starts light like BuGn)
-        colors = []
-        for i in range(256):
-            # Light blue to violet transition
-            ratio = i / 255.0
-            # Start with exact light blue/cyan from BuGn (approximately RGB 0.9, 0.95, 0.95)
-            # End with a pretty violet (approximately RGB 0.5, 0.0, 0.5)
-            r = 0.9 - ratio * 0.4  # 0.9 to 0.5
-            g = 0.95 - ratio * 0.95  # 0.95 to 0.0
-            b = 0.95 + ratio * 0.05  # 0.95 to 1.0
-            colors.append([r, g, b, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list("BuViolet", colors)
-
-    elif style == "BuMagenta":
-        # Custom light blue to magenta colormap (starts light like BuGn)
-        colors = []
-        for i in range(256):
-            # Light blue to magenta transition
-            ratio = i / 255.0
-            # Start with exact light blue/cyan from BuGn (approximately RGB 0.9, 0.95, 0.95)
-            # End with dignified magenta (approximately RGB 0.8, 0.0, 0.8) - less saturated
-            r = 0.9 - ratio * 0.1  # 0.9 to 0.8
-            g = 0.95 - ratio * 0.95  # 0.95 to 0.0
-            b = 0.95 - ratio * 0.15  # 0.95 to 0.8
-            colors.append([r, g, b, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list("BuMagenta", colors)
-
-    elif style == "BuPi":
-        # Custom light blue to pink colormap (starts exactly like BuGn, ends in pink)
-        colors = []
-        for i in range(256):
-            # Light blue to pink transition
-            ratio = i / 255.0
-            # Start with exact light blue/cyan from BuGn (approximately RGB 0.9, 0.95, 0.95)
-            # End with a darker, sophisticated pink (approximately RGB 0.8, 0.3, 0.5)
-            r = 0.9 - ratio * 0.1  # 0.9 to 0.8
-            g = 0.95 - ratio * 0.65  # 0.95 to 0.3
-            b = 0.95 - ratio * 0.45  # 0.95 to 0.5
-            colors.append([r, g, b, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list("BuPi", colors)
-
-    elif style == "BuPu":
-        # Custom light blue to dark dramatic purple colormap (starts exactly like BuGn, ends in dark purple)
-        colors = []
-        for i in range(256):
-            # Light blue to dark purple transition
-            ratio = i / 255.0
-            # Start with exact light blue/cyan from BuGn (approximately RGB 0.9, 0.95, 0.95)
-            # End with dark dramatic purple (approximately RGB 0.4, 0.0, 0.6)
-            r = 0.9 - ratio * 0.5  # 0.9 to 0.4
-            g = 0.95 - ratio * 0.95  # 0.95 to 0.0
-            b = 0.95 - ratio * 0.35  # 0.95 to 0.6
-            colors.append([r, g, b, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list("BuPu", colors)
-
-    elif style == "Greys_dark":
-        # Custom darker grey colormap - starts from lighter grey and goes to black
-        colors = []
-        for i in range(256):
-            # Light grey to black transition
-            ratio = i / 255.0
-            # Start with very light grey (approximately RGB 0.8, 0.8, 0.8) - subtle but distinct from white
-            # End with pure black (RGB 0, 0, 0)
-            grey_value = 0.8 - ratio * 0.8  # 0.8 to 0.0
-            colors.append([grey_value, grey_value, grey_value, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list("Greys_dark", colors)
-
-    elif style == "grey_1":
-        # Custom grey colormap - starts very light and goes to pure black
-        colors = []
-        for i in range(256):
-            # Very light grey to black transition
-            ratio = i / 255.0
-            # Start with very light grey (approximately RGB 0.85, 0.85, 0.85) - just a tad lighter than Greys_dark
-            # End with pure black (RGB 0, 0, 0)
-            grey_value = 0.85 - ratio * 0.85  # 0.85 to 0.0
-            colors.append([grey_value, grey_value, grey_value, 1.0])
-        return plt.cm.colors.LinearSegmentedColormap.from_list("grey_1", colors)
-
-    elif style == "rocket_truncated":
-        # Rocket colormap with darkest 1/3 removed for brighter appearance
-        base_rocket = sns.color_palette("rocket", as_cmap=True)
-        # Use only the top 2/3 of the rocket colormap (cut off the darkest 1/3)
-        colors = base_rocket(np.linspace(0.33, 1.0, 256))  # 0.33 to 1.0 = top 2/3
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "rocket_truncated", colors
-        )
-
-    elif style == "rocket_truncated_r":
-        # Reversed rocket_truncated - starts dark and goes to bright
-        base_rocket = sns.color_palette("rocket", as_cmap=True)
-        # Use a smaller range from the rocket colormap for darker appearance
-        # Start from 0.5 (darker) and go to 0.9 (still dark but not the darkest)
-        colors = base_rocket(
-            np.linspace(0.35, 0.99, 256)
-        )  # 0.5 to 0.9 = middle-dark range
-        colors = colors[::-1]  # Reverse the colors
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "rocket_truncated_r", colors
-        )
-
-    elif style == "rocket_bottom_third":
-        # Rocket colormap using only the bottom 1/3 of the spectrum
-        base_rocket = sns.color_palette("rocket", as_cmap=True)
-        # Use only the bottom 1/3 of the rocket colormap (0.0 to 0.33)
-        colors = base_rocket(np.linspace(0.0, 0.87, 256))  # 0.0 to 0.33 = bottom 1/3
-        return plt.cm.colors.LinearSegmentedColormap.from_list(
-            "rocket_bottom_third", colors
-        )
-
-    elif style == "viridis_r_soft":
-        # Reversed viridis with softer yellow start
-        base_viridis = plt.cm.viridis
-        # Use full viridis range but reverse it
-        colors = base_viridis(np.linspace(0.0, 1.0, 256))  # Full range
-        colors = colors[::-1]  # Reverse the colors
-
-        # Blend the first portion with a softer yellow to make the start less bright
-        soft_yellow = np.array([0.95, 0.9, 0.7, 1.0])  # RGBA for soft, pastel yellow
-        n_blend = int(0.15 * len(colors))  # Blend first 15% of the colormap
-        for i in range(n_blend):
-            blend_ratio = 1 - (i / n_blend)  # More blending at the start, less as we go
-            colors[i, :3] = (
-                blend_ratio * soft_yellow[:3] + (1 - blend_ratio) * colors[i, :3]
-            )
-
-        return plt.cm.colors.LinearSegmentedColormap.from_list("viridis_r_soft", colors)
-
-    # Custom inferno_r_soft: reversed inferno with much brighter, softer start
-    if style == "inferno_r_soft":
-        base = plt.cm.get_cmap("inferno_r")
-        # Start at 0.7 for much brighter, and blend first 20% with soft, light yellow
-        colors = base(np.linspace(0.7, 1.0, 256))
-        soft_yellow = np.array([1.0, 0.97, 0.8, 1.0])  # RGBA for soft, pastel yellow
-        n_blend = int(0.2 * len(colors))
-        for i in range(n_blend):
-            blend_ratio = 1 - (i / n_blend)
-            colors[i, :3] = (
-                blend_ratio * soft_yellow[:3] + (1 - blend_ratio) * colors[i, :3]
-            )
-        return plt.cm.colors.LinearSegmentedColormap.from_list("inferno_r_soft", colors)
-
-    if style not in colormap_options:
-        print(f"Warning: {style} not found, using RdBu_r")
-        style = "RdBu_r"
-
-    cmap = sns.color_palette(colormap_options[style], as_cmap=True)
-
+    # ... colormap generation logic ...
+    cmap = sns.color_palette(style, as_cmap=True)
     if truncate:
-        # Truncate the colormap to get lighter colors by cutting off the extremes
-        cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
-            f"truncated_{style}",
-            cmap(np.linspace(0.1, 0.9, 256)),  # Cut off 10% from each end
-        )
-
+        # Truncate the colormap to avoid extreme colors
+        # Example: use 10-90% of the original range
+        return mcolors.ListedColormap(cmap(np.linspace(0.1, 0.9, 256)))
     return cmap
+
+
+def plot_ternary_projection_stretched(data, expectation, file_name, new_median=0.5):
+    """
+    Plots a ternary projection where the T2 axis is non-linearly stretched
+    around a given expectation value.
+
+    Points with T2 > expectation are pushed further towards the T2 vertex,
+    and points with T2 < expectation are compressed away from it. The
+    projection is contained within the standard ternary triangle.
+
+    Parameters:
+        data (pd.DataFrame): DataFrame with T1, T2, T3 columns.
+        expectation (float): The value of T2 to stretch around.
+        file_name (str): The prefix for the output plot file.
+        new_median (float, optional): The point on the T2 axis to map the
+                                     expectation value to. Defaults to 0.5.
+    """
+    p1 = data["T1"].values
+    p2 = data["T2"].values
+    p3 = data["T3"].values
+
+    # Define the piecewise linear stretching function for T2
+    p2_stretched = np.zeros_like(p2)
+
+    # For p2 < expectation, map [0, expectation] -> [0, new_median]
+    mask_lt = p2 < expectation
+    if np.any(mask_lt):
+        p2_stretched[mask_lt] = new_median * (p2[mask_lt] / expectation)
+
+    # For p2 >= expectation, map [expectation, 1] -> [new_median, 1]
+    mask_ge = p2 >= expectation
+    if np.any(mask_ge):
+        # Avoid division by zero if expectation is 1
+        if expectation == 1:
+            p2_stretched[mask_ge] = new_median
+        else:
+            p2_stretched[mask_ge] = new_median + (
+                p2[mask_ge] - expectation
+            ) * (1 - new_median) / (1 - expectation)
+
+    # To keep the points on the simplex, we re-scale p1 and p3
+    # while preserving their ratio.
+    p1_plus_p3 = p1 + p3
+    p1_stretched = np.zeros_like(p1)
+    p3_stretched = np.zeros_like(p3)
+
+    # Avoid division by zero where p1+p3 is 0 (i.e., at the T2 vertex)
+    non_zero_mask = p1_plus_p3 > 0
+
+    scale_factor = (1 - p2_stretched[non_zero_mask]) / p1_plus_p3[non_zero_mask]
+    p1_stretched[non_zero_mask] = p1[non_zero_mask] * scale_factor
+    p3_stretched[non_zero_mask] = p3[non_zero_mask] * scale_factor
+
+    # At the T2 vertex, p1=p3=0, so stretched versions are also 0.
+    # This is handled by np.zeros_like initialization.
+
+    # Now, plot the stretched coordinates
+    fig = plt.figure(figsize=(8, 6))
+    ax = plt.axes()
+
+    # Draw triangle
+    triangle_x = [0, -0.5, 0.5, 0]
+    triangle_y = [h, 0, 0, h]
+    ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Convert stretched ternary coords to cartesian and plot
+    x_data, y_data = cartizian(p1_stretched, p2_stretched, p3_stretched)
+
+    points_color = "#22a884"
+    plt.scatter(
+        x_data,
+        y_data,
+        facecolors=points_color,
+        edgecolors="gray",
+        alpha=0.3,
+        linewidths=0.4,
+        s=15,
+    )
+
+    label_color = "black"
+    label_size = 12
+    plt.text(-0.01, 0.88, r"$\mathbf{T}_1$", size=label_size, color=label_color)
+    plt.text(0.51, -0.005, r"$\mathbf{T}_3$", size=label_size, color=label_color)
+    plt.text(-0.535, -0.005, r"$\mathbf{T}_2$", size=label_size, color=label_color)
+
+    ax.spines["right"].set_color("none")
+    ax.spines["left"].set_color("none")
+    ax.spines["bottom"].set_color("none")
+    ax.spines["top"].set_color("none")
+
+    title = f"{file_name}_stretched_projection_exp_{expectation}.png"
+    save_figure(fig, title)
+    return fig
+

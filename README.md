@@ -442,6 +442,49 @@ Access logs:
 
 ---
 
+## Axis Order for CSV Input (`--axis` flag)
+
+By default, TWISSTNTERN expects CSV files to have columns in the order T1, T2, T3. If your CSV columns are in a different order, you can specify the mapping using the `--axis` flag.
+
+**Usage:**
+
+```
+twisstntern data.csv --axis T2 T1 T3
+```
+
+This will interpret the first column as T2, the second as T1, and the third as T3. If you do not provide the flag, the default is `T1 T2 T3` (first column is T1, second is T2, third is T3).
+
+**Example:**
+
+If your CSV looks like this:
+
+```
+A,B,C
+0.1,0.6,0.3
+0.2,0.3,0.5
+```
+
+and you want to map A to T2, B to T1, and C to T3, run:
+
+```
+twisstntern mydata.csv --axis T2 T1 T3
+```
+
+## Output Directory (`--output` flag)
+
+You can control where TWISSTNTERN writes all results and plots using the `--output` (or `-o`) flag. By default, if you do not specify this flag, a timestamped directory (e.g., `Results_2025-07-03_17-11-06`) will be created for each run. If you specify a directory name, all output files will be placed there. The directory will be created automatically if it does not exist.
+
+**Usage:**
+
+```
+twisstntern data.csv --output my_results_folder
+```
+
+This will save all results and plots in the `my_results_folder` directory.
+
+If you do not provide `--output`, a new directory named like `Results_YYYY-MM-DD_HH-MM-SS` will be created for you.
+
+
 ## Citation
 
 ### 📚 Citation
