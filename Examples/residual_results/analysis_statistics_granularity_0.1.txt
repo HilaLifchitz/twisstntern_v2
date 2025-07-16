@@ -1,0 +1,20 @@
+Topology Weights Residual Analysis Summary\n============================================================
+
+Granularity: 0.1\nSample size 1: 11303
+Sample size 2: 11559
+
+COMPREHENSIVE METRICS:
+------------------------------
+L2_distance: 1.483157e-03
+chi2_statistic: 1.550200e+12
+p_value: 0.000000e+00
+total_data_points: 11303
+total_model_points: 11559
+num_triangles: 100
+num_meaningful_triangles: 88
+num_empty_triangles: 12
+degrees_freedom: 87
+mean_residual: 3.154043e-19
+std_residual: 1.590111e-02
+max_residual: 7.356046e-02
+mean_squared_residual: 2.499722e-04
