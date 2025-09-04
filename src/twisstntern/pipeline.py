@@ -5,8 +5,8 @@ from pathlib import Path
 import pandas as pd
 from omegaconf import DictConfig
 
-from .utils import dump_data
-from .analysis import triangles_analysis, fundamental_asymmetry
+from ..core.utils import dump_data
+from ..core.analysis import triangles_analysis, fundamental_asymmetry
 from .visualization import (
     plot,
     plot_results,
@@ -19,7 +19,7 @@ from .tree_processing import (
     detect_and_read_trees,
     trees_to_twisst_weights_unified,
 )
-from .logger import get_logger
+from ..core.logger import get_logger
 
 
 def detect_file_type(file_path):

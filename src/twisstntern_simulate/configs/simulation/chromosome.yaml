@@ -1,0 +1,56 @@
+# Configuration for chromosome mode simulation  
+# @package simulation
+
+mode: chromosome
+chromosome_length: 1000000  # 1Mb
+rec_rate: 1e-8
+
+# Default demographic parameters (can be overridden)
+mutation_rate: 1e-8
+ploidy: 1
+
+# Population structure (example - will be overridden by demographic config)
+populations:
+  - name: p1
+    Ne: 10000
+    growth_rate: 0.0
+    sample_size: 10
+  - name: p2
+    Ne: 10000
+    growth_rate: 0.0
+    sample_size: 10
+  - name: p3
+    Ne: 10000
+    growth_rate: 0.0
+    sample_size: 10
+  - name: O
+    Ne: 10000
+    growth_rate: 0.0
+    sample_size: 10
+  - name: p12
+    Ne: 10000
+    growth_rate: 0.0
+  - name: p123
+    Ne: 10000
+    growth_rate: 0.0
+  - name: ANC
+    Ne: 10000
+    growth_rate: 0.0
+
+# Population splits
+splits:
+  - time: 1000
+    derived_pop1: p1
+    derived_pop2: p2
+    ancestral_pop: p12
+  - time: 2000
+    derived_pop1: p12
+    derived_pop2: p3
+    ancestral_pop: p123
+  - time: 3000
+    derived_pop1: p123
+    derived_pop2: O
+    ancestral_pop: ANC
+
+# Migration rates (population1>population2: rate)
+migration: {}

@@ -1,0 +1,23 @@
+# Main configuration for twisstntern_simulate
+# This uses Hydra's config composition to combine simulation, analysis, and visualization settings
+
+defaults:
+  - simulation: locus  # Default to locus mode
+  - analysis: default
+  - visualization: default
+  - _self_
+
+# Output settings
+output_dir: Results
+verbose: false
+quiet: false
+
+# Random seed for reproducibility (null = random)
+seed: null
+
+# External config file support
+config_file: null
+
+# Override any nested config values here
+# Example: to override simulation mode, use --config-name=chromosome_config
+# or use command-line overrides: simulation.mode=chromosome

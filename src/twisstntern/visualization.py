@@ -15,7 +15,7 @@ from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.patches import Polygon
 import seaborn as sns  # For color palettes
-from .utils import (
+from ..core.utils import (
     cartizian,
     return_triangle_coord,
     dump_data,
@@ -31,7 +31,7 @@ from .utils import (
     right_triangle_coordinates_list,
     number_triangles,
 )
-from .analysis import fundamental_asymmetry, triangles_analysis
+from ..core.analysis import fundamental_asymmetry, triangles_analysis
 from sklearn.neighbors import NearestNeighbors
 
 # ============================================================================

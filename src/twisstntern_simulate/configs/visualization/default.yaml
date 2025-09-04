@@ -1,0 +1,34 @@
+# Configuration for visualization parameters
+# @package visualization
+
+# Plot settings
+plot_settings:
+  figure_size: [10, 8]
+  dpi: 300
+  alpha: 0.7
+  
+# Color schemes
+colors:
+  # Isocline colors for index plots
+  T1_color: "#7B1E1E"
+  T2_color: "#277DA1" 
+  T3_color: "#F4A261"
+  
+  # Isocline colors for data plots  
+  T1_color_data: "lightgrey"
+  T2_color_data: "lightgrey"
+  T3_color_data: "lightgrey"
+
+# Heatmap settings
+heatmap:
+  colormap: "viridis_r"
+  granularity: 0.02  # Fixed granularity for heatmaps
+  
+# Density plot settings
+density:
+  colormap: "viridis"
+  
+# Output formats
+output:
+  formats: ["png"]  # Can include "pdf", "svg", etc.
+  transparent: false

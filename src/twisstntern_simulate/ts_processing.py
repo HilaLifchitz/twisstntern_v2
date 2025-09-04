@@ -1,29 +1,12 @@
 """
-Tree Processing Module for TWISSTNTERN
-
-This module provides comprehensive functionality for processing phylogenetic trees from various formats
-and converting them to topology weights using the twisst method. Key capabilities include:
-
-1. **Format Detection & Reading**: Automatically detects and reads TreeSequence (.ts), Newick (.newick), 
-   and Nexus (.nexus) format files
-2. **Topology Weight Generation**: Uses twisst to generate topology weights for phylogenetic inference
-3. **User-Defined Topology Mapping**: Allows users to specify custom topology ordering (T1, T2, T3)
-4. **Generator Support**: Efficiently handles both single TreeSequence objects and generators of multiple TreeSequences
-5. **Beautiful Visualization**: Displays topology trees using ASCII art via twisst's built-in rendering
-
-The module supports both TreeSequence data (from msprime/tskit) and Newick format trees, with automatic
-format detection and appropriate processing pipelines for each.
-
-Main Functions:
-- trees_to_twisst_weights_unified(): Main entry point for processing any tree file format
-- ts_to_twisst_weights(): Process TreeSequence objects (single or generator)
-- newick_to_twisst_weights(): Process Newick format trees
-- parse_topology_mapping(): Parse user topology preferences
-- reorder_weights_by_topology_preference(): Apply custom topology ordering
+Module for processing tree sequences and generating topology weights.
+This module provides functionality to:
+1. Read tree sequences from various formats
+2. Generate topology weights using twisst
+3. Convert topology weights to our analysis format
 """
 
 import os
-import sys
 import tempfile
 import numpy as np
 import pandas as pd
@@ -32,145 +15,108 @@ from typing import Union, List, Tuple, Optional
 import tskit
 import ete3
 import msprime
-import re
-import logging
 
+
+# ####################### ts on the spot ##########################
+
+# # KEEP THIS CONSTANT -- SHOULD BE KEPT SMALL FOR TESTING
+# nP1 = 10  # number of samples in population 1
+# nP2 = 10  # number of samples in population 2
+# nP3 = 10  # number of samples in population 3
+# n0 = 10  # number of samples in the outgroup
+
+# # Provide divergence times
+# # WE KEEP CONSTANT FOR THIS RUN
+# t1 = 100  # time of split between population 1 and population 2
+# t2 = 200  # time of split between population (1,2) and population 3
+# t3 = 300  # time of split between population (1,2,3) and the outgroup 0
+
+# # Provide migration rate
+# m = 0.000  # migration rate between population 2 and population 3
+# mig_rate = m
+
+# Ne = 1000  # population size we keep constant for all populations for simplicity
+# # Provide population sizes
+# NeP1 = Ne
+# NeP2 = Ne
+# NeP3 = Ne
+# NeO = Ne
+# NeP12 = Ne
+# NeP123 = Ne
+# NeANC = Ne
+
+
+# COMMENTED OUT: This code was executing simulations at import time, causing unwanted output
+# This appears to be example/test code that should not run during import
+
+# # A demography where (1,2) first coalesce, with our given Ne
+
+# demography = msprime.Demography()
+
+# # initializing populations
+# demography.add_population(name="O", initial_size=NeO)
+# demography.add_population(name="P1", initial_size=NeP1)
+# demography.add_population(name="P2", initial_size=NeP2)
+# demography.add_population(name="P3", initial_size=NeP3)
+# demography.add_population(name="P12", initial_size=NeP12)
+# demography.add_population(name="P123", initial_size=NeP123)
+# demography.add_population(name="ANC", initial_size=NeANC)
+
+# # adding split times
+# demography.add_population_split(time=t1, derived=["P1", "P2"], ancestral="P12")
+# demography.add_population_split(time=t2, derived=["P12", "P3"], ancestral="P123")
+# demography.add_population_split(time=t3, derived=["P123", "O"], ancestral="ANC")
+
+# # setting up gene flow
+# demography.set_migration_rate("P2", "P3", mig_rate)
+
+# ploidy = 1
+# # from collections import defaultdict
+# num_replicates = 10000
+# # For the locus usage -- ts1 is a tskit.generator object !!
+# ts1 = msprime.sim_ancestry(
+#     samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
+#     demography=demography,
+#     num_replicates=num_replicates,
+#     ploidy=ploidy,
+# )
+# # For the Chromosome usage -- ts is a tskit.TreeSequence object
+# ts = msprime.sim_ancestry(
+#     samples={"O": n0, "P1": nP1, "P2": nP2, "P3": nP3},
+#     demography=demography,
+#     sequence_length=100000000,
+#     recombination_rate=0.000000001,
+#     ploidy=ploidy,
+# )
+
+########################################################################################
 
 # Import twisst functions from core external directory
-from ..core.external.twisst import weightTrees, summary
+from ..core.external.twisst import weightTrees
 
-# Import logger
-from ..core.logger import get_logger, log_topologies
-
-
-# to know if the file is a tree sequence or a newick file
-def detect_and_read_trees(
-    file_path: str,
-) -> Tuple[Optional[Union[tskit.TreeSequence, List[str]]], str]:
-    """
-    Automatically detect tree file format and load the appropriate data structure.
-
-    This function serves as the main entry point for reading tree data from files.
-    It supports multiple formats and handles format-specific parsing requirements.
-
-    Supported Formats:
-    - TreeSequence (.trees, .ts): Binary TSKit tree sequence files from msprime/tskit
-    - Newick (.newick, .nwk, .tree): Standard Newick format phylogenetic trees
-    - Nexus (.nexus): Nexus format files containing tree definitions
-
-    Args:
-        file_path (str): Absolute or relative path to the tree file
-
-    Returns:
-        Tuple containing:
-        - Tree data: Either a tskit.TreeSequence object or List[str] of Newick strings
-        - Format label: String indicating detected format ('ts' or 'newick')
-
-    Raises:
-        RuntimeError: If TreeSequence file cannot be loaded
-        ValueError: If Newick/Nexus parsing fails or tree format is invalid
-        IOError: If file cannot be read
-    """
-    path = Path(file_path)
-
-    # Case 1: TreeSequence files (.trees or .ts)
-    if path.suffix in [".trees", ".ts"]:
-        try:
-            ts = tskit.load(file_path)
-            print("✅ Detected format: TreeSequence (.ts/.trees)")
-            return ts, "ts"
-        except Exception as e:
-            raise RuntimeError(f"Failed to load TreeSequence: {e}")
-
-    # Case 2: Newick files by extension
-    if path.suffix in [".newick", ".nwk", ".tree"]:
-        try:
-            with open(file_path, "r") as f:
-                newicks = [line.strip() for line in f if line.strip()]
-                print(f"✅ Detected format: Newick ({path.suffix})")
-                return newicks, "newick"
-        except Exception as e:
-            raise ValueError(
-                f"Failed to read Newick trees from {path.suffix} file: {e}"
-            )
-
-    # Case 3: Content-based detection for files without clear extensions
-    try:
-        with open(file_path, "r") as f:
-            first_line = f.readline()
-            if first_line is not None:
-                first_line = first_line.strip()
-            else:
-                first_line = ""
-            rest = f.read()
-    except Exception as e:
-        raise IOError(f"Could not read file: {e}")
-
-    # Case 3a: Nexus format detection
-    if first_line.upper().startswith("#NEXUS"):
-        try:
-            with open(file_path, "r") as f:
-                lines = f.readlines()
-
-            # Extract tree definitions from Nexus file (lines starting with "tree")
-            newicks = []
-            for line in lines:
-                if line.strip().lower().startswith("tree"):
-                    # Parse tree definition: "tree name = (newick_string);"
-                    newick = line.split("=", 1)[-1].strip()
-                    try:
-                        # Validate Newick string by parsing with ete3
-                        t = ete3.Tree(newick)
-                        newicks.append(t.write(format=0).strip())
-                    except Exception as e:
-                        raise ValueError(f"Invalid Newick tree in Nexus file: {e}")
-
-            print("✅ Detected format: Nexus → Converted to Newick")
-            return newicks, "newick"
-
-        except Exception as e:
-            raise ValueError(f"Failed to parse Nexus file: {e}")
-
-    # Case 3b: Default to Newick format for unknown extensions
-    try:
-        with open(file_path, "r") as f:
-            newicks = [line.strip() for line in f if line.strip()]
-            print("✅ Detected format: Newick (unknown extension, treating as Newick)")
-            return newicks, "newick"
-    except Exception as e:
-        raise ValueError(f"Failed to read Newick trees: {e}")
+# Import logging from twisstntern
+from ..core.logger import get_logger
+from ..core.logger import log_topologies
 
 
+# exrtacting the toplogies as easy strings
 def simplify_topologies(weightsData):
     """
-    Convert twisst topology trees to simplified Newick strings for comparison and display.
-
-    This function processes the topology trees returned by twisst.weightTrees and converts
-    them to standardized Newick strings suitable for:
-    - CSV file headers
-    - Topology comparison and matching
-    - User-friendly display
-
-    The simplification process:
-    1. Removes all branch lengths (sets to 0.0)
-    2. Removes internal node names/labels
-    3. Preserves leaf names exactly as they appear (population IDs or names)
-    4. Uses minimal Newick format (format=9 in ete3)
+    Takes a twisst weightsData dictionary and returns simplified Newick strings
+    for each topology, removing branch lengths and internal node names.
 
     Args:
-        weightsData (dict): Dictionary returned by twisst.weightTrees containing 'topos' key
-                           with ete3.Tree objects representing each topology
+        weightsData (dict): Output dictionary from twisst.weightTrees, must contain 'topos'
 
     Returns:
-        List[str]: Simplified Newick strings, one for each topology in weightsData['topos']
-                  Example: ["(0,(1,(2,3)));", "(0,(2,(1,3)));", "(0,(3,(1,2)));"]
-
-    Note:
-        This function preserves the exact leaf names from the original trees, which may be
-        population IDs (like "0", "1", "2") or population names (like "P1", "P2", "P3").
+        List[str]: Simplified Newick strings for each topology
     """
     simplified_topos = []
     topos = weightsData.get("topos", [])
+    
+    # Handle case where topos might be None
+    if topos is None:
+        return []
 
     for i, tree in enumerate(topos):
         # Clone tree to avoid modifying original
@@ -180,20 +126,14 @@ def simplify_topologies(weightsData):
             node.dist = 0.0  # remove branch lengths
             if not node.is_leaf():
                 node.name = ""  # remove internal node names
-            # Keep leaf names (population names like p1, p2, p3) unchanged
-        simplified = t.write(format=9)  # minimal Newick, preserves leaf names
+        simplified = t.write(format=9)  # minimal Newick
         simplified_topos.append(simplified)
 
     return simplified_topos
 
-
+# this is the main function for the chromosome mode
 def ts_chromosome_to_twisst_weights(
-    ts,
-    outgroup=None,
-    output_file=None,
-    verbose=False,
-    twisst_verbose=False,
-    topology_mapping=None,
+    ts, outgroup=None, output_file=None, verbose=False, twisst_verbose=False, topology_mapping=None, population_labels=None
 ):
     """
     Extract topology weights from any TreeSequence object using twisst.
@@ -203,11 +143,12 @@ def ts_chromosome_to_twisst_weights(
         outgroup (str, optional): Population ID to use as outgroup. If None, uses the first population.
         output_file (str, optional): Path to save CSV file. If None, returns DataFrame.
         verbose (bool): Whether to print verbose output
+        topology_mapping (str or dict, optional): Custom topology mapping for T1/T2/T3
 
     Returns:
         pd.DataFrame: Normalized weights ready for dump_data function, first row is the simplified topologies, the rest are the weights
     """
-
+  
     # Debug info about the TreeSequence
     if verbose:
         print("=== TreeSequence Info ===")
@@ -260,7 +201,7 @@ def ts_chromosome_to_twisst_weights(
         outgroup=outgroup,
         verbose=twisst_verbose,
     )
-
+    
     # Apply topology reordering if user preference is provided
     if topology_mapping is not None:
         if verbose:
@@ -269,14 +210,14 @@ def ts_chromosome_to_twisst_weights(
             weights_norm,
             simplified_topos,
             columns,
-        ) = reorder_weights_by_topology_preference(weightsData, topology_mapping)
+        ) = reorder_weights_by_topology_preference(weightsData, topology_mapping, population_labels)
     else:  # if no topology mapping
         # we just print the default topologies order by twisst
-        print("No topology mapping was provided; displaying the default topology axis")
-        topos = weightsData["topos"]
-        for i, topo in enumerate(topos):
-            print(f"Topology {i+1}")
-            print(topo)
+        # print("No topology mapping was provided; displaying the default topology axis")
+        # topos = weightsData["topos"]
+        # for i, topo in enumerate(topos):
+        #     print(f"Topology {i+1}")
+        #     print(topo)
 
         # Extract normalized weights
         if "weights_norm" in weightsData:
@@ -304,13 +245,18 @@ def ts_chromosome_to_twisst_weights(
 
         # Log topologies to file
         logger = get_logger(__name__)
-        log_topologies(topos, simplified_topos, columns, logger, "TreeSequence topologies (default order)")
+        topos = weightsData["topos"]
+        log_topologies(topos, simplified_topos, columns, logger, "TreeSequence topologies (default order)", population_labels)
 
     # Get number of topologies for reporting (works for both cases)
     n_topos = len(columns)
 
     # Create DataFrame
     df = pd.DataFrame(weights_norm, columns=columns)
+
+    # Add position column: start position of each tree
+    positions = [tree.interval[0] for tree in ts.trees()]
+    df.insert(0, "position", positions)
 
     # Remove any rows with NaN values (trees where no valid topology was found)
     df = df.dropna()
@@ -340,13 +286,12 @@ def ts_chromosome_to_twisst_weights(
     return df
 
 
+##################################################################################
+# main topology weights generating function
+#################################################################################
+
 def ts_to_twisst_weights(
-    input_data,
-    outgroup=None,
-    output_file=None,
-    verbose=False,
-    twisst_verbose=False,
-    topology_mapping=None,
+    input_data, outgroup=None, output_file=None, verbose=False, twisst_verbose=False, topology_mapping=None, population_labels=None
 ):
     """
     Enhanced version of ts_to_twisst_weights that can handle both single TreeSequence objects
@@ -358,6 +303,7 @@ def ts_to_twisst_weights(
         output_file (str, optional): Path to save CSV file. If None, returns DataFrame.
         verbose (bool): Whether to print verbose output
         twisst_verbose (bool): Whether to print verbose twisst output
+        topology_mapping (str or dict, optional): Custom topology mapping for T1/T2/T3
 
     Returns:
         pd.DataFrame: Normalized weights ready for analysis, with consistent topology ordering
@@ -369,26 +315,40 @@ def ts_to_twisst_weights(
     )
 
     if not is_generator:
-        # Single TreeSequence - use original function
-        if verbose:
-            print("Processing single TreeSequence...")
-        return ts_chromosome_to_twisst_weights(
+        # Single TreeSequence case (chromosome mode)
+        df = ts_chromosome_to_twisst_weights(
             input_data,
             outgroup=outgroup,
             output_file=output_file,
             verbose=verbose,
             twisst_verbose=twisst_verbose,
             topology_mapping=topology_mapping,
+            population_labels=population_labels,
         )
+        # Ensure 'position' column is present (should already be added by ts_chromosome_to_twisst_weights)
+        if 'position' not in df.columns:
+            if isinstance(input_data, tskit.TreeSequence):
+                positions = [tree.interval[0] for tree in input_data.trees()]
+                df.insert(0, 'position', positions)
+        return df
     #########################################################
     # Generator case - process multiple TreeSequences
-    input_data = list(input_data)
+    # Convert generator to list for processing - but check if it's actually iterable first
+    if hasattr(input_data, "__iter__"):
+        input_data = list(input_data)
+    else:
+        # This shouldn't happen given our earlier check, but handle it gracefully
+        raise TypeError("Input data is neither a TreeSequence nor an iterable of TreeSequences")
+        
+    if verbose:
+        print("Processing generator of TreeSequences...")
 
     all_weights = []
     canonical_topologies = None
-    canonical_simplified_topos = None
-    columns = None
+    canonical_simplified_topos: Optional[List[str]] = None
+    columns: Optional[List[str]] = None
     total_processed = 0
+
 
     if verbose:
         print(
@@ -397,15 +357,6 @@ def ts_to_twisst_weights(
 
     for i in range(len(input_data)):
         ts = input_data[i]
-        # if verbose:
-        #     print(f"\nProcessing TreeSequence {i+1}...")
-
-        # # Debug info about the TreeSequence
-        # if verbose:
-        #     print(f"  Number of populations: {ts.num_populations}")
-        #     print(f"  Number of samples: {ts.num_samples}")
-        #     print(f"  Number of trees: {ts.num_trees}")
-
         # Get populations that actually have samples
         populations_with_samples = []
         for pop_id in range(ts.num_populations):
@@ -425,7 +376,7 @@ def ts_to_twisst_weights(
         if current_outgroup is None:
             current_outgroup = populations_with_samples[0]
 
-        # # Validate outgroup
+        # Validate outgroup
         # if current_outgroup not in populations_with_samples:
         #     if verbose:
         #         print(
@@ -451,8 +402,6 @@ def ts_to_twisst_weights(
         # Extract simplified topologies for consistency checking
         current_simplified_topos = simplify_topologies(weightsData)
 
-        # special treetments- because its many trees- making ure the topologies order is consistent
-
         # On first iteration, establish canonical topology order
         if canonical_topologies is None:
             canonical_topologies = weightsData["topos"]
@@ -464,6 +413,15 @@ def ts_to_twisst_weights(
                 columns = ["T1", "T2", "T3"]
             else:
                 columns = [f"Topo{i+1}" for i in range(n_topos)]
+
+            # Log canonical topologies
+            logger = get_logger(__name__)
+            log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)", population_labels)
+
+
+        # Type assertion for Pylance
+        assert canonical_simplified_topos is not None
+        assert columns is not None
 
         # Map current topologies to canonical order
         topo_mapping = []
@@ -513,10 +471,14 @@ def ts_to_twisst_weights(
     if not all_weights:
         raise ValueError("No valid topology weights found across all TreeSequences")
 
+    # Type assertion for Pylance
+    assert canonical_simplified_topos is not None
+    assert columns is not None
+
     combined_df = pd.concat(all_weights, ignore_index=True)
     combined_df = combined_df.round(3)
-    combined_df = combined_df.loc[combined_df.iloc[:, 1] != combined_df.iloc[:, 2]]
-
+    combined_df = combined_df.loc[combined_df.iloc[:, 1] != combined_df.iloc[:, 2]] 
+    
     print(f"\nWeights with T2 == T3 removed. Remaining rows: {len(combined_df)}")
 
     # Apply user topology mapping if provided
@@ -535,7 +497,7 @@ def ts_to_twisst_weights(
             reordered_weights,
             reordered_simplified_topos,
             new_columns,
-        ) = reorder_weights_by_topology_preference(temp_weightsData, topology_mapping)
+        ) = reorder_weights_by_topology_preference(temp_weightsData, topology_mapping, population_labels)
 
         # Update combined_df with reordered data
         combined_df = pd.DataFrame(reordered_weights, columns=new_columns)
@@ -548,9 +510,7 @@ def ts_to_twisst_weights(
             print(f"Topology {i+1}")
             print(topo)
         
-        # Log topologies to file
-        logger = get_logger(__name__)
-        log_topologies(canonical_topologies, canonical_simplified_topos, columns, logger, "Multi-TreeSequence canonical topologies (default order)")
+        # Topologies already logged during first iteration, no need to log again
 
     if verbose:
         print(f"\nCombined Results:")
@@ -569,316 +529,66 @@ def ts_to_twisst_weights(
         full_df = pd.concat([header_row, combined_df], ignore_index=True)
 
         # Save to CSV
-        full_df.to_csv(output_file, index=False, float_format="%.3f")
+        full_df.to_csv(output_file, index=False, float_format='%.3f')
 
         if verbose:
             print(f"  Saved results to: {output_file}")
 
     return combined_df
 
-
-def newick_to_twisst_weights(
-    newick_trees,
-    taxon_names,
-    outgroup=None,
-    output_file=None,
-    verbose=False,
-    twisst_verbose=False,
-    topology_mapping=None,
-):
-    """
-    Extract topology weights from Newick tree strings using twisst.
-
-    Args:
-        newick_trees (List[str] or str): List of Newick tree strings or single Newick string
-        taxon_names (List[str]): List of population names. .
-        outgroup (str, optional): Population name to use as outgroup. If None, uses the first population.
-        output_file (str, optional): Path to save CSV file. If None, returns DataFrame.
-        verbose (bool): Whether to print verbose output
-        twisst_verbose (bool): Whether to print verbose twisst output
-        topology_mapping (dict or str, optional): User preference for topology ordering
-
-    Returns:
-        pd.DataFrame: Normalized weights ready for analysis
-    """
-
-    # Handle single tree string
-    if isinstance(newick_trees, str):
-        newick_trees = [newick_trees]
-
-    if len(newick_trees) == 0:
-        raise ValueError("No Newick trees provided")
-
-    if verbose:
-        print("=== Newick Trees Info ===")
-        print(f"Number of trees: {len(newick_trees)}")
-
-    # Extract all sample names from first tree
-    try:
-        first_tree = ete3.Tree(newick_trees[0])
-        all_sample_names = [leaf.name for leaf in first_tree.get_leaves()]
-        if verbose:
-            print(f"Found {len(all_sample_names)} samples in first tree")
-            print(
-                f"Sample names: {all_sample_names[:10]}{'...' if len(all_sample_names) > 10 else ''}"
-            )
-    except Exception as e:
-        raise ValueError(f"Failed to parse first Newick tree: {e}")
-
-    # Group samples by population (infer from sample names like 'P1_1', 'P2_5', etc.)
-    population_samples = {}
-    population_names = []
-
-    for sample in all_sample_names:
-        # Extract population name (part before underscore)
-        if "_" in sample:
-            pop_name = sample.split("_")[0]
-        else:
-            # If no underscore, treat each sample as its own population
-            pop_name = sample
-
-        if pop_name not in population_samples:
-            population_samples[pop_name] = []
-            population_names.append(pop_name)
-
-        population_samples[pop_name].append(sample)
-
-    if verbose:
-        print(f"Detected {len(population_names)} populations: {population_names}")
-        for pop_name in population_names:
-            sample_count = len(population_samples[pop_name])
-            print(f"  {pop_name}: {sample_count} samples")
-
-    # Override with user-provided taxon_names if provided
-    if taxon_names is not None:
-        # Validate that user-provided taxon_names match detected populations
-        if set(taxon_names) != set(population_names):
-            if verbose:
-                print(
-                    f"Warning: User-provided taxon_names {taxon_names} don't match detected populations {population_names}"
-                )
-                print("Using user-provided taxon_names anyway...")
-            population_names = taxon_names
-        else:
-            population_names = taxon_names
-
-    if len(population_names) < 3:
-        raise ValueError(
-            f"Need at least 3 populations for topology analysis. Found {len(population_names)}: {population_names}"
-        )
-
-    # Set default outgroup if not specified
-    if outgroup is None:
-        outgroup = population_names[0]
-        if verbose:
-            print(f"Using {outgroup} as outgroup")
-
-    # Validate outgroup
-    if outgroup not in population_names:
-        raise ValueError(
-            f"Outgroup '{outgroup}' not found in populations: {population_names}"
-        )
-
-    if verbose:
-        print(f"Analyzing {len(population_names)} populations: {population_names}")
-        print(f"Using outgroup: {outgroup}")
-
-    # Validate all trees have the same sample set
-    expected_samples = set(all_sample_names)
-    for i, newick in enumerate(newick_trees):
-        try:
-            tree = ete3.Tree(newick)
-            tree_samples = set(leaf.name for leaf in tree.get_leaves())
-
-            if tree_samples != expected_samples:
-                raise ValueError(
-                    f"Tree {i+1} has different samples than expected. "
-                    f"Expected {len(expected_samples)} samples, got {len(tree_samples)} samples"
-                )
-        except Exception as e:
-            raise ValueError(f"Invalid Newick tree at position {i+1}: {e}")
-
-    # Convert Newick strings to ETE3 tree objects
-    try:
-        ete_trees = [ete3.Tree(newick) for newick in newick_trees]
-        if verbose:
-            print(f"Successfully parsed {len(ete_trees)} Newick trees to ETE3 objects")
-    except Exception as e:
-        raise ValueError(f"Failed to parse Newick trees to ETE3 objects: {e}")
-
-    # Create taxa structure for twisst (list of lists, one per population)
-    taxa = []
-    for pop_name in population_names:
-        taxa.append(population_samples[pop_name])
-
-    # Run twisst analysis
-    if verbose:
-        print("Running twisst analysis on Newick trees...")
-        print(f"Taxa structure for twisst:")
-        for i, (pop_name, samples) in enumerate(zip(population_names, taxa)):
-            print(f"  {pop_name}: {len(samples)} samples")
-
-    weightsData = weightTrees(
-        ete_trees,  # Pass ETE3 tree objects
-        treeFormat="ete3",  # Use ete3 format
-        taxa=taxa,  # Dynamic taxa structure
-        taxonNames=taxon_names,  # Dynamic population names
-        outgroup=outgroup,
-        verbose=twisst_verbose,
-    )
-
-    # explicatly printing the topologies--COME BACK TO THIS- WE WANNA PRINT THIS AFTER THE REORDERING!!
-    # topos = weightsData["topos"]
-    # for i, topo in enumerate(topos):
-    # print(f"Topology {i+1} (T{i+1})")
-    # print(topo)
-
-    # Apply topology reordering if user preference is provided
-    if topology_mapping is not None:
-        print("\nApplying user topology preferences...")
-        (
-            weights_norm,
-            simplified_topos,
-            columns,
-        ) = reorder_weights_by_topology_preference(weightsData, topology_mapping)
-    else:
-        # Use default ordering - always print topologies for Newick case
-        print("No topology mapping was provided; displaying the default topology axis")
-        topos = weightsData["topos"]
-        for i, topo in enumerate(topos):
-            print(f"Topology {i+1}")
-            print(topo)
-
-        # Extract normalized weights
-        if "weights_norm" in weightsData:
-            weights_norm = weightsData["weights_norm"]
-        else:
-            # Normalize manually if not already normalized
-            weights = weightsData["weights"]
-            # Check if all weights are zero (which would cause division by zero)
-            row_sums = weights.sum(axis=1)
-            if np.all(row_sums == 0):
-                raise ValueError(
-                    "All topology weights are zero - this suggests a problem with the analysis"
-                )
-            weights_norm = weights / row_sums[:, np.newaxis]
-
-        # Get simplified topologies for CSV header
-        simplified_topos = simplify_topologies(weightsData)
-        
-        # Create column names based on number of topologies
-        n_topos = weights_norm.shape[1]
-        if n_topos == 3:
-            columns = ["T1", "T2", "T3"]  # Standard 3-topology case (4 populations)
-        else:
-            columns = [f"Topo{i+1}" for i in range(n_topos)]
-        
-        # Log topologies to file
-        logger = get_logger(__name__)
-        log_topologies(topos, simplified_topos, columns, logger, "Newick file topologies (default order)")
-
-    # Create DataFrame
-    df = pd.DataFrame(weights_norm, columns=columns)
-
-    # Remove any rows with NaN values (trees where no valid topology was found)
-    df = df.dropna()
-
-    # Get number of topologies for reporting
-    n_topos = len(columns)
-
-    if verbose:
-        print(f"\nExtracted {len(df)} valid trees with {n_topos} topologies")
-        if len(df) > 0:
-            print(f"Weight summary:")
-            print(df.describe())
-        else:
-            print("WARNING: No valid topology weights found!")
-
-    # Save to file if requested
-    if output_file:
-        # Use the simplified_topos that was already computed above
-        # Create a new DataFrame with that single row
-        header_row = pd.DataFrame([simplified_topos], columns=columns)
-
-        # Concatenate the header and the weights
-        full_df = pd.concat([header_row, df], ignore_index=True)
-
-        # Save
-        full_df.to_csv(output_file, index=False, float_format="%.3f")
-
-        if verbose:
-            print(f"Saved results to: {output_file}")
-
-    return df
-
-
-# the main function(!!!): detecting the format and routing to the appropriate function
-def trees_to_twisst_weights_unified(
-    file_path,
-    taxon_names=None,
-    outgroup=None,
-    output_file=None,
-    verbose=False,
-    twisst_verbose=False,
-    topology_mapping=None,
-):
-    """
-    Unified function to extract topology weights from any tree file format.
-    """
-    if verbose:
-        print(f"Processing tree file: {file_path}")
-
-    # If no output file specified, create default one in Results directory
-    if output_file is None:
-        results_dir = Path("Results")
-        results_dir.mkdir(exist_ok=True)
-        input_filename = Path(file_path).stem  # filename without extension
-        output_file = results_dir / f"{input_filename}_topology_weights.csv"
-
-    if verbose:
-        print(f"Will save results to: {output_file}")
-
-    # Detect format and load trees
-    try:
-        tree_data, format_type = detect_and_read_trees(file_path)
-    except Exception as e:
-        raise ValueError(f"Failed to read tree file '{file_path}': {e}")
-
-    # Route to appropriate processing function based on detected format
-    if format_type == "ts":
-        return ts_to_twisst_weights(
-            tree_data,
-            outgroup=outgroup,
-            output_file=str(output_file),
-            verbose=verbose,
-            twisst_verbose=twisst_verbose,
-            topology_mapping=topology_mapping,
-        )
-    elif format_type == "newick":
-        return newick_to_twisst_weights(
-            tree_data,
-            taxon_names=taxon_names,
-            outgroup=outgroup,
-            output_file=str(output_file),
-            verbose=verbose,
-            twisst_verbose=twisst_verbose,
-            topology_mapping=topology_mapping,
-        )
-    else:
-        raise ValueError(f"Unsupported tree format: {format_type}")
-
-
 # Not used directly, but still good to have:
 # taking in a ts object- not in generator or Newick format- and returning the populations with samples
-# Utility functions for debugging and backward compatibility
+def debug_ts_populations(ts):
+    """
+    Debug function to inspect TreeSequence population structure.
+    Useful for understanding what populations are available.
+    """
+    print("=== TreeSequence Population Debug ===")
+    print(f"Total populations: {ts.num_populations}")
+    print(f"Total samples: {ts.num_samples}")
+    print(f"Total trees: {ts.num_trees}")
+    print()
 
+    # Show population details
+    print("Population details:")
+    for i in range(ts.num_populations):
+        pop = ts.population(i)
+        metadata = pop.metadata if pop.metadata else {}
+        name = metadata.get("name", f"Pop{i}") if metadata else f"Pop{i}"
 
-###########################################################
-# reordering topologies- detmining which is T1, T2 and T3
-###########################################################
+        # Count samples in this population
+        samples = [int(s) for s in ts.samples() if ts.node(s).population == i]
 
+        print(f"  Population {i}: name='{name}', {len(samples)} samples")
+        if len(samples) > 0:
+            print(f"    Sample IDs: {samples[:5]}{'...' if len(samples) > 5 else ''}")
 
-# turns the input string of topologies order from the user into a dictionary
+    print()
+
+    # Show what twisst would extract
+    populations_with_samples = []
+    for pop_id in range(ts.num_populations):
+        samples = [s for s in ts.samples() if ts.node(s).population == pop_id]
+        if len(samples) > 0:
+            populations_with_samples.append(str(pop_id))
+
+    print(f"Populations with samples (for twisst): {populations_with_samples}")
+
+    if len(populations_with_samples) >= 3:
+        print(
+            f"✓ Ready for topology analysis ({len(populations_with_samples)} populations)"
+        )
+    else:
+        print(
+            f"✗ Need at least 3 populations with samples (found {len(populations_with_samples)})"
+        )
+
+    return populations_with_samples
+
+######################################################################################
+# TOPOLOGY MAPPING FUNCTIONS (copied from twisstntern)
+######################################################################################
+
 def parse_topology_mapping(mapping_string):
     """
     Parse user-specified topology mapping from a string like:
@@ -942,11 +652,6 @@ def parse_topology_mapping(mapping_string):
     return mapping
 
 
-# SHOULDNT BE NECESSARY!
-# Legacy functions - kept for backward compatibility but not actively used
-
-
-# so we can compare topologies
 def normalize_topology_string(topo_str):
     """
     Normalize topology string for comparison by standardizing population names to lowercase.
@@ -972,7 +677,6 @@ def normalize_topology_string(topo_str):
     return normalized
 
 
-# needed for reordering topologies
 def compare_topologies(topo1, topo2):
     """
     Compare two topology strings, accounting for different population naming conventions.
@@ -987,8 +691,7 @@ def compare_topologies(topo1, topo2):
     return normalize_topology_string(topo1) == normalize_topology_string(topo2)
 
 
-# The main one here: reordering the weights by the topology mapping and printing the trees
-def reorder_weights_by_topology_preference(weightsData, topology_mapping):
+def reorder_weights_by_topology_preference(weightsData, topology_mapping, population_labels=None):
     """
     Reorder topology weights according to user preference.
     This should be called BEFORE creating the DataFrame.
@@ -996,17 +699,13 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
     Args:
         weightsData (dict): Output from twisst.weightTrees containing 'topos' and 'weights'
         topology_mapping (dict): Mapping from T1/T2/T3 to desired topology strings
+        population_labels (dict, optional): Mapping from population IDs to descriptive labels
         
     Returns:
         tuple: (reordered_weights, reordered_simplified_topos, column_names)
     """
     # Get current topologies and weights
     original_topos = weightsData["topos"]
-    # we could print these if we want to see the original topologies
-    # for i, topo in enumerate(original_topos):
-    #     print(f"Topology {i+1} (T{i+1})")
-    #     print(topo)
-
     original_simplified_topos = simplify_topologies(weightsData)
     
     # Parse topology mapping if it's a string (do this FIRST)
@@ -1068,14 +767,13 @@ def reorder_weights_by_topology_preference(weightsData, topology_mapping):
         original_simplified_topos[i] for i in new_column_order
     ]
 
-    # Print beautiful tree representation
-    print_topology_mapping_with_trees(weightsData, topology_mapping)
+    # Print beautiful tree representation (this function also handles logging)
+    print_topology_mapping_with_trees(weightsData, topology_mapping, population_labels)
 
     return reordered_weights, reordered_simplified_topos, ["T1", "T2", "T3"]
 
 
-# nice printing of the topologies to the terminal
-def print_topology_mapping_with_trees(weightsData, topology_mapping):
+def print_topology_mapping_with_trees(weightsData, topology_mapping, population_labels=None):
     """
     Print topology mapping with beautiful ASCII tree representations.
     Uses twisst's built-in tree rendering to show the actual tree structure.
@@ -1083,6 +781,7 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
     Args:
         weightsData (dict): Output from twisst.weightTrees containing 'topos'
         topology_mapping (dict): Mapping from T1/T2/T3 to desired topology strings
+        population_labels (dict, optional): Mapping from population IDs to descriptive labels
     """
     # Get original topologies and simplified versions
     original_topos = weightsData[
@@ -1096,8 +795,8 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
 
     print("Applied topology mapping:")
     print("=" * 50)
-
-    # Prepare data for logging
+    
+    # Collect topology information for logging
     mapped_topos = []
     mapped_simplified = []
     mapped_columns = []
@@ -1118,7 +817,7 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
             print(original_topos[original_index].get_ascii())
             print(f"String: {original_simplified_topos[original_index]}")
             
-            # Collect data for logging
+            # Collect for logging
             mapped_topos.append(original_topos[original_index])
             mapped_simplified.append(original_simplified_topos[original_index])
             mapped_columns.append(target_label)
@@ -1127,7 +826,7 @@ def print_topology_mapping_with_trees(weightsData, topology_mapping):
 
     print("=" * 50)
     
-    # Log the reordered topologies
-    if mapped_topos:  # Only log if we have valid mappings
+    # Log the applied topology mapping
+    if mapped_topos:
         logger = get_logger(__name__)
-        log_topologies(mapped_topos, mapped_simplified, mapped_columns, logger, "Applied topology mapping")
+        log_topologies(mapped_topos, mapped_simplified, mapped_columns, logger, "Applied topology mapping", population_labels)

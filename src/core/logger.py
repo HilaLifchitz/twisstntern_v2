@@ -288,4 +288,89 @@ def log_error(error: Exception, context: str = ""):
         logger.error(f"Error: {str(error)}")
     
     # Log traceback in debug mode
-    logger.debug("Exception details:", exc_info=True) 
+    logger.debug("Exception details:", exc_info=True)
+
+
+def log_topologies(topos, simplified_topos, columns, logger, message_prefix="", population_labels=None):
+    """
+    Log topology information both as strings and ASCII trees to the log file ONLY.
+    This avoids duplicating the console output that's already handled by print() statements.
+    
+    Args:
+        topos: List of topology objects with get_ascii() method
+        simplified_topos: List of simplified topology strings  
+        columns: List of column names (T1, T2, T3, etc.)
+        logger: Logger instance
+        message_prefix: Optional prefix for log messages
+        population_labels: Optional dict mapping population IDs to descriptive labels
+    """
+    # Get a file-only logger to avoid duplicating console output
+    file_logger = logging.getLogger(f"{logger.name}.topologies")
+    
+    # Remove any console handlers from this specific logger
+    for handler in file_logger.handlers[:]:
+        if isinstance(handler, logging.StreamHandler) and handler.stream.name == '<stdout>':
+            file_logger.removeHandler(handler)
+    
+    # Ensure it only logs to file by setting propagate=False and using parent's file handler
+    file_logger.propagate = False
+    
+    # Add only the file handler from the parent logger
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers:
+        if isinstance(handler, logging.FileHandler):
+            file_logger.addHandler(handler)
+            break
+    
+    file_logger.setLevel(logging.INFO)
+    
+    if message_prefix:
+        file_logger.info(f"{message_prefix}")
+    else:
+        file_logger.info("Discovered topologies:")
+    
+    file_logger.info("="*50)
+    
+    # Always add population legend - extract all leaf names from topologies
+    leaf_names = set()
+    for topo in topos:
+        leaf_names.update([leaf.name for leaf in topo.get_leaves()])
+    
+    # Sort leaf names for consistent output
+    sorted_leaf_names = sorted(leaf_names)
+    
+    file_logger.info("Population Legend:")
+    file_logger.info("-" * 20)
+    
+    if population_labels:
+        # Use custom population labels if provided
+        for leaf_name in sorted_leaf_names:
+            if leaf_name in population_labels:
+                file_logger.info(f"  {leaf_name} = {population_labels[leaf_name]}")
+            else:
+                file_logger.info(f"  {leaf_name} = Population {leaf_name}")
+    else:
+        # Create basic legend with numeric IDs
+        for leaf_name in sorted_leaf_names:
+            file_logger.info(f"  {leaf_name} = Population {leaf_name}")
+    
+    file_logger.info("")
+    
+    for i, (topo, simplified, col_name) in enumerate(zip(topos, simplified_topos, columns)):
+        file_logger.info(f"{col_name}:")
+        file_logger.info(f"  String: {simplified}")
+        
+        # Get ASCII representation
+        try:
+            ascii_tree = topo.get_ascii()
+            # Log each line of the ASCII tree
+            file_logger.info("  ASCII Tree:")
+            for line in ascii_tree.split('\n'):
+                if line.strip():  # Only log non-empty lines
+                    file_logger.info(f"    {line}")
+        except Exception as e:
+            file_logger.warning(f"  Could not generate ASCII tree: {e}")
+        
+        file_logger.info("")  # Empty line for readability
+    
+    file_logger.info("="*50) 

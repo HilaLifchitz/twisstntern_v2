@@ -9,7 +9,7 @@ import time
 
 from .config import TwisstnternConfig
 from .pipeline import run_analysis, ensure_twisst_available
-from .logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
+from ..core.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="default")

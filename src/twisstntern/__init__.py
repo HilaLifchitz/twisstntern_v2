@@ -18,14 +18,16 @@ The package automatically detects file format and processes accordingly.
 """
 
 from .pipeline import run_analysis, detect_file_type, process_tree_file
-from .utils import (
+# Import from core instead of local modules
+from ..core import (
     cartizian,
     return_triangle_coord,
     dump_data,
     number_triangles,
     right_triangle_coordinates_list,
+    fundamental_asymmetry,
+    triangles_analysis,
 )
-from .analysis import fundamental_asymmetry, triangles_analysis
 from .visualization import (
     plot,
     plot_results,

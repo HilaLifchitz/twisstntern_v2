@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+"""
+Core analysis functions for ternary data and symmetry testing.
+
+This module provides shared analysis functions used by both twisstntern and
+twisstntern_simulate packages for statistical analysis of topology weight data.
+"""
+
 import os
 from pathlib import Path
 import numpy as np
@@ -54,7 +61,7 @@ def fundamental_asymmetry(data):
     # Perform likelihood ratio test
     main_g_test, main_p_value = log_likelihood_ratio_test(main_n_r, main_n_l)
 
-    return main_n_r, main_n_l, main_d_lr, main_g_test, main_p_value
+    return int(main_n_r), int(main_n_l), float(main_d_lr), float(main_g_test), float(main_p_value)
 
 
 def triangles_analysis(data, granularity):
@@ -156,7 +163,7 @@ def triangles_analysis(data, granularity):
         ],
     )
 
-    # Assign descending index for plotting (bottom-up row indexing)
-    triangles["index"] = list(range(len(triangles), 0, -1))
+    # Assign descending index for plotting (bottom-up row indexing)  
+    triangles["index"] = list(range(number_triangles(alpha), 0, -1))
 
     return triangles
