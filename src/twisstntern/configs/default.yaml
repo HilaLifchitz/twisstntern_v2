@@ -1,0 +1,62 @@
+# Default configuration for twisstntern analysis
+# Override parameters using command line: python -m twisstntern file=data.csv analysis.granularity=0.05
+
+# Required: Input file path
+file: ???  # Must be specified via command line or config override
+
+# Analysis configuration
+analysis:
+  granularity: 0.1  # Main granularity setting
+  superfine_granularity: 0.05
+  fine_granularity: 0.1 
+  coarse_granularity: 0.25
+  heatmap_granularity: 0.02  # Fixed for heatmap visualization
+
+# Visualization configuration
+visualization:
+  # Colormaps
+  style: "RdBu_r"  # Colormap for D-LR plots (diverging)
+  style_heatmap: "viridis_r"  # Colormap for heatmaps (sequential)
+  
+  # Colors for isoclines and labels
+  t1_color: "#7B1E1E"  # Crimson for T1
+  t2_color: "#277DA1"  # Blue for T2  
+  t3_color: "#F4A261"  # Orange for T3
+  
+  t1_color_data: "lightgrey"  # Grid color in data plots
+  t2_color_data: "lightgrey"
+  t3_color_data: "lightgrey"
+  
+  # Plot styling
+  figure_size: [8, 7]  # Width, height in inches
+  dpi: 300  # Resolution for saved plots
+  point_size: 2  # Size of data points
+  point_alpha: 0.3  # Transparency of data points
+  line_width: 0.4  # Line width for plot elements
+  label_size: 14  # Font size for axis labels
+
+# Output configuration
+output:
+  output_dir: "Results"  # Directory for all output files
+  log_file: true  # Whether to create log files
+  verbose: false  # Verbose logging output
+
+# Data processing configuration
+processing:
+  downsample_n: null  # Sample every Nth row (null = no downsampling)
+  downsample_i: null  # Starting index for downsampling
+  normalize_data: true  # Normalize ternary coordinates to sum to 1
+  remove_equal_t2_t3: true  # Remove points where T2 == T3
+
+# Tree processing configuration (for tree input files)
+tree_processing:
+  taxon_names: null  # List of population names (required for Newick)
+  outgroup: null  # Outgroup population name (required for Newick)
+  topology_mapping: null  # Custom topology ordering string
+
+# Hydra configuration for output directory structure
+hydra:
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    chdir: false  # Don't change working directory
