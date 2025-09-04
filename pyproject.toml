@@ -40,6 +40,8 @@ dependencies = [
     "ete3>=3.1.0",
     "pyyaml>=6.0.0",
     "requests>=2.25.0",
+    "hydra-core>=1.3.0",
+    "omegaconf>=2.3.0",
 ]
 
 [project.optional-dependencies]
@@ -70,8 +72,8 @@ docs = [
 # CLI entry points
 [project.scripts]
 # Main analysis commands
-twisstntern = "twisstntern.__main__:main"
-twisst-analyze = "twisstntern.__main__:main"
+twisstntern = "src.twisstntern.__main__:main"
+twisst-analyze = "src.twisstntern.__main__:main"
 
 # Simulation commands
 twisstntern-simulate = "twisstntern_simulate.__main__:main"
@@ -86,10 +88,11 @@ twisst-simulate = "twisstntern_simulate.__main__:main"
 # twisst-convert = "twisstntern.cli.convert:main"
 
 [tool.setuptools.packages.find]
-include = ["twisstntern*", "twisstntern_simulate*"]
+where = ["."]
+include = ["src*", "twisstntern_simulate*"]
 
 [tool.setuptools.package-data]
-"twisstntern" = ["external/*"]
+"src.twisstntern" = ["external/*", "configs/*.yaml", "configs/**/*.yaml"]
 "twisstntern_simulate" = ["external/*"]
 
 # Development tools configuration
