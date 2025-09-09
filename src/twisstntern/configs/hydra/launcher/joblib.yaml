@@ -1,0 +1,7 @@
+# Configurable parallel execution with Joblib
+# Override from CLI: hydra.launcher.n_jobs=4 hydra.launcher.backend=multiprocessing
+# @package hydra/launcher
+_target_: hydra_plugins.hydra_joblib_launcher.joblib_launcher.JoblibLauncher
+n_jobs: -1  # -1 = all cores, or specify exact number
+backend: "loky"  # "loky", "multiprocessing", "threading"
+verbose: 0  # 0=quiet, 10=verbose
