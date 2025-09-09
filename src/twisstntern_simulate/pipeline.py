@@ -267,15 +267,15 @@ def run_pipeline(
             logger.info(f"Note: {n_filtered} trees were filtered out (trees where T2 = T3, which fall exactly on the y-axis in ternary space)")
                 
         elif mode == "locus":
-            logger.info(f"n_loci simulated: {config.n_loci}, total trees analyzed: {n_total_trees} (n_right + n_left = {n_trees_used})")
+            logger.info(f"n_loci simulated: {config.simulation.n_loci}, total trees analyzed: {n_total_trees} (n_right + n_left = {n_trees_used})")
             
             # Always explain T2=T3 filtering (even when 0)
             n_filtered = n_total_trees - n_trees_used
             logger.info(f"Note: {n_filtered} trees were filtered out (trees where T2 = T3, which fall exactly on the y-axis in ternary space)")
             
             # Also show if loci were filtered during processing
-            if n_total_trees < config.n_loci:
-                n_loci_filtered = config.n_loci - n_total_trees
+            if n_total_trees < config.simulation.n_loci:
+                n_loci_filtered = config.simulation.n_loci - n_total_trees
                 logger.info(f"Additional note: {n_loci_filtered} loci were filtered out during processing.")
         
         logger.info(f"n_right: {fundamental_results[0]}")

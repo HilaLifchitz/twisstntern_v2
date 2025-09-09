@@ -1,5 +1,6 @@
-# Main configuration for twisstntern_simulate
-# This uses Hydra's config composition to combine simulation, analysis, and visualization settings
+# TWISSTNTERN Simulate Configuration
+# Single run: python -m src.twisstntern_simulate.main analysis.granularity=0.05
+# Parameter sweep: python -m src.twisstntern_simulate.main --multirun hydra/launcher=joblib analysis.granularity=0.05,0.1,0.2
 
 defaults:
   - simulation: locus  # Default to locus mode
@@ -8,7 +9,7 @@ defaults:
   - _self_
 
 # Output settings
-output_dir: Results
+output_dir: "outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}"
 verbose: false
 quiet: false
 
@@ -18,6 +19,13 @@ seed: null
 # External config file support
 config_file: null
 
-# Override any nested config values here
-# Example: to override simulation mode, use --config-name=chromosome_config
-# or use command-line overrides: simulation.mode=chromosome
+# Hydra configuration
+hydra:
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ./outputs/sweep/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: granularity_${analysis.granularity}
+  job:
+    chdir: false
+    name: twisstntern_simulate_${analysis.granularity}

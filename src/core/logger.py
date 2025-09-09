@@ -212,21 +212,28 @@ def log_simulation_config(config, overrides=None):
     logger.info("="*60)
     
     # Basic simulation parameters
-    logger.info(f"Simulation mode: {config.simulation_mode}")
+    simulation_mode = getattr(config, 'simulation_mode', None)
+    if simulation_mode is None and hasattr(config, 'simulation'):
+        simulation_mode = config.simulation.mode
+    logger.info(f"Simulation mode: {simulation_mode}")
     logger.info(f"Random seed: {config.seed}")
     
     # Population parameters
-    logger.info(f"Number of populations: {len(config.populations)}")
-    for pop_config in config.populations:
-        # Use population label if available, otherwise just the name
-        pop_display = pop_config.name
-        if hasattr(pop_config, 'label') and pop_config.label and pop_config.label != pop_config.name:
-            pop_display = f"{pop_config.name} ({pop_config.label})"
-        
-        if hasattr(pop_config, 'sample_size') and pop_config.sample_size is not None:
-            logger.info(f"  {pop_display}: Ne={pop_config.Ne}, samples={pop_config.sample_size}")
-        else:
-            logger.info(f"  {pop_display}: Ne={pop_config.Ne} (ancestral)")
+    populations = getattr(config, 'populations', None)
+    if populations is None and hasattr(config, 'simulation'):
+        populations = getattr(config.simulation, 'populations', [])
+    if populations:
+        logger.info(f"Number of populations: {len(populations)}")
+        for pop_config in populations:
+            # Use population label if available, otherwise just the name
+            pop_display = pop_config.name
+            if hasattr(pop_config, 'label') and pop_config.label and pop_config.label != pop_config.name:
+                pop_display = f"{pop_config.name} ({pop_config.label})"
+            
+            if hasattr(pop_config, 'sample_size') and pop_config.sample_size is not None:
+                logger.info(f"  {pop_display}: Ne={pop_config.Ne}, samples={pop_config.sample_size}")
+            else:
+                logger.info(f"  {pop_display}: Ne={pop_config.Ne} (ancestral)")
     
     # Migration parameters
     if hasattr(config, 'migration') and config.migration:
@@ -250,17 +257,40 @@ def log_simulation_config(config, overrides=None):
             logger.info(f"  {route_display}: {rate}")
     
     # Simulation-specific parameters
-    if config.simulation_mode == "chromosome":
-        logger.info(f"Chromosome length: {config.chromosome_length}")
-        logger.info(f"Recombination rate: {config.rec_rate}")
-        if hasattr(config, 'mutation_rate'):
-            logger.info(f"Mutation rate: {config.mutation_rate}")
-    elif config.simulation_mode == "locus":
-        logger.info(f"Number of loci: {config.n_loci}")
-        logger.info(f"Locus length: {config.locus_length}")
+    if simulation_mode == "chromosome":
+        chromosome_length = getattr(config, 'chromosome_length', None)
+        if chromosome_length is None and hasattr(config, 'simulation'):
+            chromosome_length = getattr(config.simulation, 'chromosome_length', None)
+        rec_rate = getattr(config, 'rec_rate', None)
+        if rec_rate is None and hasattr(config, 'simulation'):
+            rec_rate = getattr(config.simulation, 'rec_rate', None)
+        if chromosome_length:
+            logger.info(f"Chromosome length: {chromosome_length}")
+        if rec_rate:
+            logger.info(f"Recombination rate: {rec_rate}")
+        mutation_rate = getattr(config, 'mutation_rate', None)
+        if mutation_rate is None and hasattr(config, 'simulation'):
+            mutation_rate = getattr(config.simulation, 'mutation_rate', None)
+        if mutation_rate:
+            logger.info(f"Mutation rate: {mutation_rate}")
+    elif simulation_mode == "locus":
+        n_loci = getattr(config, 'n_loci', None)
+        if n_loci is None and hasattr(config, 'simulation'):
+            n_loci = getattr(config.simulation, 'n_loci', None)
+        locus_length = getattr(config, 'locus_length', None)
+        if locus_length is None and hasattr(config, 'simulation'):
+            locus_length = getattr(config.simulation, 'locus_length', None)
+        if n_loci:
+            logger.info(f"Number of loci: {n_loci}")
+        if locus_length:
+            logger.info(f"Locus length: {locus_length}")
     
     # Ploidy
-    logger.info(f"Ploidy: {config.ploidy}")
+    ploidy = getattr(config, 'ploidy', None)
+    if ploidy is None and hasattr(config, 'simulation'):
+        ploidy = getattr(config.simulation, 'ploidy', None)
+    if ploidy:
+        logger.info(f"Ploidy: {ploidy}")
     
     # Demographic events
     if hasattr(config, 'demographic_events') and config.demographic_events:

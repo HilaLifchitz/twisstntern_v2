@@ -123,7 +123,7 @@ def simulate_locus(config: DictConfig):
     # Simulate tree sequence
     ts = msprime.sim_ancestry(
         samples={
-            pop.name: pop.sample_size for pop in config.simulation.populations if pop.sample_size
+            pop.name: getattr(pop, 'sample_size', 0) for pop in config.simulation.populations if getattr(pop, 'sample_size', 0) > 0
         },
         demography=demography,
         num_replicates=config.simulation.n_loci,
@@ -195,7 +195,7 @@ def simulate_chromosome(config: DictConfig) -> tskit.TreeSequence:
     # Simulate tree sequence
     ts = msprime.sim_ancestry(
         samples={
-            pop.name: pop.sample_size for pop in config.simulation.populations if pop.sample_size
+            pop.name: getattr(pop, 'sample_size', 0) for pop in config.simulation.populations if getattr(pop, 'sample_size', 0) > 0
         },
         demography=demography,
         sequence_length=config.simulation.chromosome_length,
