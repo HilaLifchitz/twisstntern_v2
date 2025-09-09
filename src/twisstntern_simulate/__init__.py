@@ -28,7 +28,6 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("msprime").setLevel(logging.WARNING)
 logging.getLogger("msprime.ancestry").setLevel(logging.WARNING)
 
-from .config import Config
 from .hydra_config import TwisstnternSimulateConfig
 # Lazy import of pipeline to avoid early dependency loading
 # from .pipeline import run_pipeline
@@ -36,7 +35,6 @@ from .simulation import run_simulation, simulate_locus, simulate_chromosome
 
 # Define what gets imported with "from twisstntern_simulate import *"
 __all__ = [
-    "Config",
     "TwisstnternSimulateConfig",
     "run_simulation",
     "simulate_locus", 

@@ -25,19 +25,19 @@ The simulation module supports two main modes:
      * rec_rate: Recombination rate per base per generation
 
 Example usage:
-    from twisstntern_simulate.config import Config
+    from omegaconf import DictConfig
     from twisstntern_simulate.simulation import run_simulation
 
     # Load configuration from YAML file
-    config = Config("config.yaml")
+    # config is now passed as a Hydra DictConfig object
 
     # Run simulation (trees are automatically saved)
     results = run_simulation(config, output_dir="results")
 
     # Access results
-    if config.simulation_mode == 'locus':
+    if config.simulation.mode == 'locus':
         ts_locus = results['locus']
-    elif config.simulation_mode == 'chromosome':
+    elif config.simulation.mode == 'chromosome':
         ts_chrom = results['chromosome']
 """
 
@@ -49,7 +49,7 @@ import pandas as pd
 from typing import Dict, List, Union, Tuple, Optional, Literal
 from pathlib import Path
 import logging
-from .config import Config 
+from omegaconf import DictConfig 
 import random
 import ete3
 
@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 # SIMULATION FUNCTIONS
 ######################################################################################
 
-def simulate_locus(config: Config):
+def simulate_locus(config: DictConfig):
     """
     Simulates independent non-recombining loci.
 
@@ -79,13 +79,13 @@ def simulate_locus(config: Config):
     demography = msprime.Demography()
 
     # Add populations
-    for pop in config.populations:
+    for pop in config.simulation.populations:
         demography.add_population(
             name=pop.name, initial_size=pop.Ne, growth_rate=pop.growth_rate
         )
 
     # Add population splits
-    for split in config.splits:
+    for split in config.simulation.splits:
         demography.add_population_split(
             time=split.time,
             derived=[split.derived_pop1, split.derived_pop2],
@@ -93,22 +93,22 @@ def simulate_locus(config: Config):
         )
 
     # Add migration rates
-    if hasattr(config, 'migration') and config.migration:
-        for migration_route, rate in config.migration.items():
+    if hasattr(config.simulation, 'migration') and config.simulation.migration:
+        for migration_route, rate in config.simulation.migration.items():
             if rate > 0:  # Only add non-zero migration rates
                 # Parse migration route like "p1>p2" -> source="p1", dest="p2"
                 source, dest = migration_route.split('>')
                 demography.set_migration_rate(source=source, dest=dest, rate=rate)
 
     # Default values, in case the user hasn't specified them
-    if config.locus_length:
-        locus_length = config.locus_length
+    if config.simulation.locus_length:
+        locus_length = config.simulation.locus_length
     else:
         locus_length = 1  # we don't need a locus length, all we care about are the trees themselves -> it is 1 by default
 
     # Default is haploid
-    if config.ploidy:
-        ploidy = config.ploidy
+    if config.simulation.ploidy:
+        ploidy = config.simulation.ploidy
     else:
         ploidy = 1
 
@@ -123,10 +123,10 @@ def simulate_locus(config: Config):
     # Simulate tree sequence
     ts = msprime.sim_ancestry(
         samples={
-            pop.name: pop.sample_size for pop in config.populations if pop.sample_size
+            pop.name: pop.sample_size for pop in config.simulation.populations if pop.sample_size
         },
         demography=demography,
-        num_replicates=config.n_loci,
+        num_replicates=config.simulation.n_loci,
         sequence_length=locus_length,
         ploidy=ploidy,
         random_seed=seed,
@@ -136,7 +136,7 @@ def simulate_locus(config: Config):
     return ts
 
 
-def simulate_chromosome(config: Config) -> tskit.TreeSequence:
+def simulate_chromosome(config: DictConfig) -> tskit.TreeSequence:
     """
     Simulates a chromosome with recombination.
 
@@ -157,13 +157,13 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
     demography = msprime.Demography()
 
     # Add populations
-    for pop in config.populations:
+    for pop in config.simulation.populations:
         demography.add_population(
             name=pop.name, initial_size=pop.Ne, growth_rate=pop.growth_rate
         )
 
     # Add population splits
-    for split in config.splits:
+    for split in config.simulation.splits:
         demography.add_population_split(
             time=split.time,
             derived=[split.derived_pop1, split.derived_pop2],
@@ -171,16 +171,16 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
         )
 
     # Add migration rates
-    if hasattr(config, 'migration') and config.migration:
-        for migration_route, rate in config.migration.items():
+    if hasattr(config.simulation, 'migration') and config.simulation.migration:
+        for migration_route, rate in config.simulation.migration.items():
             if rate > 0:  # Only add non-zero migration rates
                 # Parse migration route like "p1>p2" -> source="p1", dest="p2"
                 source, dest = migration_route.split('>')
                 demography.set_migration_rate(source=source, dest=dest, rate=rate)
 
     # Default is haploid
-    if config.ploidy:
-        ploidy = config.ploidy
+    if config.simulation.ploidy:
+        ploidy = config.simulation.ploidy
     else:
         ploidy = 1
 
@@ -195,11 +195,11 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
     # Simulate tree sequence
     ts = msprime.sim_ancestry(
         samples={
-            pop.name: pop.sample_size for pop in config.populations if pop.sample_size
+            pop.name: pop.sample_size for pop in config.simulation.populations if pop.sample_size
         },
         demography=demography,
-        sequence_length=config.chromosome_length,
-        recombination_rate=config.rec_rate,
+        sequence_length=config.simulation.chromosome_length,
+        recombination_rate=config.simulation.rec_rate,
         ploidy=ploidy,
         random_seed=seed,
     )
@@ -210,7 +210,7 @@ def simulate_chromosome(config: Config) -> tskit.TreeSequence:
 ######################################################################################
 
 
-def run_simulation(config: Config, output_dir: str, mode_override: Optional[str] = None) -> dict:
+def run_simulation(config: DictConfig, output_dir: str, mode_override: Optional[str] = None) -> dict:
     """
     Runs simulation based on the specified mode in config.
     This function acts as a dispatcher for different simulation modes,
@@ -229,7 +229,7 @@ def run_simulation(config: Config, output_dir: str, mode_override: Optional[str]
             - 'newick_file': Path to saved Newick file
 
     Note:
-        Only one mode (locus OR chromosome) will be run based on config.simulation_mode.
+        Only one mode (locus OR chromosome) will be run based on config.simulation.mode.
     """
     results = {}
     
@@ -237,13 +237,13 @@ def run_simulation(config: Config, output_dir: str, mode_override: Optional[str]
     if mode_override is not None:
         # Type assertion for Pylance - we know mode_override is a string here
         assert isinstance(mode_override, str)
-        config.simulation_mode = mode_override
+        config.simulation.mode = mode_override
     
     # Run locus simulation if requested
-    if config.simulation_mode == "locus":
+    if config.simulation.mode == "locus":
         print("Simulating independent non-recombining loci...")
         ts_locus = simulate_locus(config)
-        print(f"Generated {config.n_loci} non-recombining loci")
+        print(f"Generated {config.simulation.n_loci} non-recombining loci")
 
         # Convert generator to list once for both saving and processing
         ts_list = list(ts_locus)
@@ -255,7 +255,7 @@ def run_simulation(config: Config, output_dir: str, mode_override: Optional[str]
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
         # Save trees as Newick format
-        newick_path = Path(output_dir) / f"{config.simulation_mode}_trees.newick"
+        newick_path = Path(output_dir) / f"{config.simulation.mode}_trees.newick"
         newick_file = save_ts_LOCUS_as_plain_newick(ts_list, newick_path)
         
         print(f"✅ Saved trees: {newick_file}")
@@ -263,21 +263,21 @@ def run_simulation(config: Config, output_dir: str, mode_override: Optional[str]
         results["newick_file"] = newick_file
 
     # Run chromosome simulation if requested
-    elif config.simulation_mode == "chromosome":
+    elif config.simulation.mode == "chromosome":
         print("Simulating recombining chromosome...")
         ts_chrom = simulate_chromosome(config)
         results["chromosome"] = ts_chrom
-        print(f"Generated chromosome of length {config.chromosome_length:.1e} with reocmbination rate of {config.rec_rate:.1e}")
+        print(f"Generated chromosome of length {config.simulation.chromosome_length:.1e} with reocmbination rate of {config.simulation.rec_rate:.1e}")
         
         # Always save trees
         # Ensure output directory exists
         Path(output_dir).mkdir(parents=True, exist_ok=True)
-        newick_path = Path(output_dir) / f"{config.simulation_mode}_trees.newick"
+        newick_path = Path(output_dir) / f"{config.simulation.mode}_trees.newick"
         newick_file = save_ts_CHROM_as_newick(ts_chrom, newick_path)
         results["newick_file"] = newick_file
     
     else:
-        raise ValueError(f"Unknown simulation mode: {config.simulation_mode}. Must be 'locus' or 'chromosome'")
+        raise ValueError(f"Unknown simulation mode: {config.simulation.mode}. Must be 'locus' or 'chromosome'")
 
     return results
 

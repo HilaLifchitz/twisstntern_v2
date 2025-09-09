@@ -72,12 +72,12 @@ docs = [
 # CLI entry points
 [project.scripts]
 # Main analysis commands
-twisstntern = "src.twisstntern.__main__:main"
-twisst-analyze = "src.twisstntern.__main__:main"
+twisstntern = "src.twisstntern.main:main"
+twisst-analyze = "src.twisstntern.main:main"
 
-# Simulation commands
-twisstntern-simulate = "twisstntern_simulate.__main__:main"
-twisst-simulate = "twisstntern_simulate.__main__:main"
+# Simulation commands (now using Hydra)
+twisstntern-simulate = "src.twisstntern_simulate.main:main"
+twisst-simulate = "src.twisstntern_simulate.main:main"
 
 # Custom command placeholders (uncomment to enable)
 # Note: You need to implement the corresponding command classes in cli/base.py
@@ -89,11 +89,11 @@ twisst-simulate = "twisstntern_simulate.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*", "twisstntern_simulate*"]
+include = ["src*"]
 
 [tool.setuptools.package-data]
 "src.twisstntern" = ["external/*", "configs/*.yaml", "configs/**/*.yaml"]
-"twisstntern_simulate" = ["external/*"]
+"src.twisstntern_simulate" = ["external/*", "configs/*.yaml", "configs/**/*.yaml"]
 
 # Development tools configuration
 [tool.black]

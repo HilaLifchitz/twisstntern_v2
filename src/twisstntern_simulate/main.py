@@ -16,7 +16,7 @@ from omegaconf import DictConfig, OmegaConf
 from hydra.core.config_store import ConfigStore
 
 from .hydra_config import TwisstnternSimulateConfig
-from .config import Config
+# Legacy Config import removed - using pure Hydra configuration
 from .pipeline import run_pipeline
 
 # Import twisstntern logging
@@ -179,77 +179,6 @@ def parse_downsampleKB_arg(downsampleKB_str: Optional[str]) -> Tuple[Optional[in
     raise ValueError(f"Invalid downsampleKB format '{downsampleKB_str}': expected 'Nkb' or 'Nkb+ikb'")
 
 
-def convert_hydra_to_legacy_config(cfg: DictConfig) -> Config:
-    """
-    Convert Hydra config to legacy Config object by creating a temporary YAML.
-    
-    This maintains exact compatibility with existing pipeline code.
-    """
-    import tempfile
-    import yaml
-    
-    # Convert to legacy YAML format
-    sim_cfg = cfg.simulation
-    config_dict = {
-        'simulation_mode': sim_cfg.mode,
-        'mutation_rate': sim_cfg.mutation_rate,
-        'ploidy': sim_cfg.ploidy,
-        'seed': cfg.seed,
-        'populations': [],
-        'splits': [],
-        'migration': {}
-    }
-    
-    # Add mode-specific parameters
-    if sim_cfg.mode == 'locus':
-        config_dict.update({
-            'n_loci': sim_cfg.n_loci,
-            'locus_length': sim_cfg.locus_length,
-        })
-    elif sim_cfg.mode == 'chromosome':
-        config_dict.update({
-            'chromosome_length': sim_cfg.chromosome_length,
-            'rec_rate': sim_cfg.rec_rate,
-        })
-    
-    # Convert populations
-    for pop in sim_cfg.populations:
-        pop_dict = {
-            'name': pop.name,
-            'Ne': pop.Ne,
-            'growth_rate': pop.growth_rate,
-        }
-        if pop.sample_size is not None:
-            pop_dict['sample_size'] = pop.sample_size
-        config_dict['populations'].append(pop_dict)
-    
-    # Convert splits
-    for split in sim_cfg.splits:
-        config_dict['splits'].append({
-            'time': split.time,
-            'derived_pop1': split.derived_pop1,
-            'derived_pop2': split.derived_pop2,
-            'ancestral_pop': split.ancestral_pop,
-        })
-    
-    # Convert migration
-    if sim_cfg.migration:
-        config_dict['migration'] = sim_cfg.migration
-    
-    # Create temporary YAML file
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-        yaml.dump(config_dict, f, default_flow_style=False)
-        temp_file = f.name
-    
-    try:
-        # Load using existing Config class
-        config = Config(temp_file)
-        return config
-    finally:
-        # Clean up temporary file
-        Path(temp_file).unlink(missing_ok=True)
-
-
 def handle_get_config() -> None:
     """Handle --get-config command for downloading template configuration."""
     from .utils import download_config_template
@@ -293,26 +222,8 @@ def hydra_main(cfg: DictConfig) -> None:
     logger = get_logger(__name__)
     log_system_info()
     
-    # Handle external config file if provided
-    config_path = None
-    if hasattr(cfg, 'config_file') and cfg.config_file:
-        config_path = cfg.config_file
-        if not Path(config_path).exists():
-            logger.error(f"Configuration file not found: {config_path}")
-            sys.exit(1)
-        
-        # Load external config - Hydra overrides are already applied
-        legacy_config = Config(config_path)
-        
-        # Apply Hydra overrides to the loaded config
-        if cfg.seed is not None:
-            legacy_config.seed = cfg.seed
-        if hasattr(cfg, 'simulation') and cfg.simulation.mode != 'locus':
-            legacy_config.simulation_mode = cfg.simulation.mode
-    else:
-        # Convert Hydra config to legacy format
-        legacy_config = convert_hydra_to_legacy_config(cfg)
-        config_path = "hydra_config"
+    # Use Hydra config directly - no conversion needed
+    config_source = "hydra_config"
     
     # Convert granularity to float if needed (exactly like original)
     granularity = cfg.analysis.granularity
@@ -349,7 +260,7 @@ def hydra_main(cfg: DictConfig) -> None:
     
     # Log analysis start (exactly like original)
     log_analysis_start(
-        input_file=str(config_path),
+        input_file=config_source,
         output_dir=str(output_dir),
         granularity=granularity,
         seed_override=cfg.seed,
@@ -364,9 +275,9 @@ def hydra_main(cfg: DictConfig) -> None:
     created_files = []
     
     try:
-        # Run the pipeline (exactly same interface as original)
+        # Run the pipeline with Hydra config directly
         results = run_pipeline(
-            config_path=str(config_path),
+            config=cfg,
             output_dir=str(output_dir),
             seed_override=cfg.seed,
             mode_override=cfg.simulation.mode if hasattr(cfg, 'simulation') else None,

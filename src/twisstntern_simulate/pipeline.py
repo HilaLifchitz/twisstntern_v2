@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 # Import simulation components
-from .config import Config
+from omegaconf import DictConfig
 from .simulation import run_simulation
 from .ts_processing import ts_to_twisst_weights
 from ..core.analysis import triangles_analysis, fundamental_asymmetry
@@ -33,122 +33,8 @@ from ..core.logger import get_logger, log_analysis_start, log_analysis_complete,
 logger = logging.getLogger(__name__)
 
 
-def apply_config_overrides(config, overrides_list):
-    """
-    Apply configuration overrides to a config object.
-    
-    Args:
-        config: Configuration object to modify
-        overrides_list: List of override strings in format 'key=value' or 'nested.key=value'
-        
-    Returns:
-        dict: Dictionary of applied overrides for logging
-    """
-    if not overrides_list:
-        return {}
-    
-    applied_overrides = {}
-    
-    for override_str in overrides_list:
-        if '=' not in override_str:
-            raise ValueError(f"Invalid override format: {override_str}. Expected 'key=value'")
-            
-        key_path, value = override_str.split('=', 1)
-        
-        # Validate that key and value are not empty
-        if not key_path.strip():
-            raise ValueError(f"Invalid override: empty key in '{override_str}'")
-        if not value.strip():
-            raise ValueError(f"Invalid override: empty value in '{override_str}'")
-        
-        key_path = key_path.strip()
-        value = value.strip()
-        
-        try:
-            # Convert value to appropriate type
-            if value.lower() in ['true', 'false']:
-                value = value.lower() == 'true'
-            else:
-                # Try to convert to number (handles scientific notation like 1e-7)
-                try:
-                    # First try int conversion
-                    if '.' not in value and 'e' not in value.lower():
-                        value = int(value)
-                    else:
-                        # Use float for decimals and scientific notation
-                        value = float(value)
-                except ValueError:
-                    # Keep as string if conversion fails
-                    pass
-            
-            # Handle nested keys like 'migration.p1>p2' or 'populations.p1.Ne'
-            if '.' in key_path:
-                parts = key_path.split('.')
-                
-                if parts[0] == 'migration':
-                    # Handle migration overrides: migration.p1>p2=0.5
-                    migration_key = parts[1]
-                    if hasattr(config, 'migration') and config.migration:
-                        old_value = config.migration.get(migration_key, 0.0)
-                        config.migration[migration_key] = value
-                        applied_overrides[f"migration.{migration_key}"] = f"{old_value} -> {value}"
-                        logger.info(f"Override applied: migration.{migration_key}: {old_value} -> {value}")
-                    else:
-                        raise ValueError(f"Migration configuration not found for override: {override_str}")
-                        
-                elif parts[0] == 'populations':
-                    # Handle population overrides: populations.p1.Ne=15000
-                    if len(parts) >= 3:
-                        pop_name = parts[1]
-                        pop_attr = parts[2]
-                        
-                        # Find the population in the list
-                        for pop in config.populations:
-                            if pop.name == pop_name:
-                                old_value = getattr(pop, pop_attr, None)
-                                setattr(pop, pop_attr, value)
-                                applied_overrides[f"populations.{pop_name}.{pop_attr}"] = f"{old_value} -> {value}"
-                                logger.info(f"Override applied: populations.{pop_name}.{pop_attr}: {old_value} -> {value}")
-                                break
-                        else:
-                            raise ValueError(f"Population '{pop_name}' not found for override: {override_str}")
-                    else:
-                        raise ValueError(f"Invalid population override format: {override_str}")
-                else:
-                    raise ValueError(f"Unsupported nested override: {override_str}")
-            else:
-                # Handle top-level overrides like 'ploidy=2', 'seed=1234', 'samplesize=20'
-                if key_path == 'samplesize':
-                    # Handle samplesize override: samplesize=20 (applies to all non-ancestral populations)
-                    logger.info(f"Overriding sample size for all populations: {value}")
-                    # Apply to all non-ancestral populations
-                    for pop in config.populations:
-                        if not pop.is_ancestral and pop.sample_size is not None:
-                            old_size = pop.sample_size
-                            pop.sample_size = value
-                            applied_overrides[f"samplesize.{pop.name}"] = f"{old_size} -> {value}"
-                            logger.info(f"  {pop.name}: {old_size} -> {value}")
-                elif hasattr(config, key_path):
-                    old_value = getattr(config, key_path)
-                    setattr(config, key_path, value)
-                    applied_overrides[key_path] = f"{old_value} -> {value}"
-                    logger.info(f"Override applied: {key_path}: {old_value} -> {value}")
-                else:
-                    raise ValueError(f"Unknown configuration key: {key_path}")
-                    
-        except ValueError as e:
-            # Re-raise ValueError exceptions to fail the pipeline
-            logger.error(f"Failed to apply override '{override_str}': {e}")
-            raise e
-        except Exception as e:
-            # Log other exceptions and continue (for backward compatibility)
-            logger.error(f"Failed to apply override '{override_str}': {e}")
-    
-    return applied_overrides
-
-
 def run_pipeline(
-    config_path: str,
+    config: DictConfig,
     output_dir: str,
     seed_override: Optional[int] = None,
     mode_override: Optional[str] = None,
@@ -166,7 +52,7 @@ def run_pipeline(
     Run the complete twisstntern_simulate pipeline.
 
     Args:
-        config_path: Path to configuration YAML file
+        config: Hydra configuration object
         output_dir: Directory for output files
         seed_override: Override random seed from config file
         mode_override: Override simulation mode from config file
@@ -196,38 +82,31 @@ def run_pipeline(
     logger.info("---------------------------------------------------------")
 
     results = {
-        "config_path": config_path,
+        "config_source": "hydra_config",
         "output_dir": output_dir,
         "errors": [],
     }
 
     try:
         # ====================================================================
-        # STEP 1: Load and validate configuration
+        # STEP 1: Apply configuration overrides
         # ====================================================================
-        logger.info("Loading configuration...")
-
-        if not os.path.exists(config_path):
-            raise FileNotFoundError(f"Configuration file not found: {config_path}") 
-        config = Config(config_path)
+        logger.info("Processing configuration...")
         
-        # Apply configuration overrides first
-        applied_config_overrides = apply_config_overrides(config, config_overrides)
-        
-        # Apply command-line overrides
+        # Apply command-line overrides (Hydra handles most overrides automatically)
         if seed_override is not None:
             logger.info(f"Overriding seed: {config.seed} -> {seed_override}")
             config.seed = seed_override
 
         if mode_override is not None:
-            logger.info(f"Overriding simulation mode: {config.simulation_mode} -> {mode_override}")
-            config.simulation_mode = mode_override
+            logger.info(f"Overriding simulation mode: {config.simulation.mode} -> {mode_override}")
+            config.simulation.mode = mode_override
 
-        logger.info(f"Configuration loaded - Mode: {config.simulation_mode}, Seed: {config.seed}")
+        logger.info(f"Configuration processed - Mode: {config.simulation.mode}, Seed: {config.seed}")
         results["config"] = config
 
         # Log detailed configuration with all overrides
-        all_overrides = applied_config_overrides.copy()
+        all_overrides = {}
         if seed_override is not None:
             all_overrides["seed_override"] = seed_override
         if mode_override is not None:
@@ -243,7 +122,7 @@ def run_pipeline(
         # Ensure Results directory exists
         output_dir = Path(output_dir)
         output_dir.mkdir(exist_ok=True)
-        simulation_results = run_simulation(config, output_dir=output_dir, mode_override=config.simulation_mode)
+        simulation_results = run_simulation(config, output_dir=output_dir, mode_override=config.simulation.mode)
         results["simulation_results"] = simulation_results
 
         logger.info(f"Simulation completed")
@@ -258,7 +137,7 @@ def run_pipeline(
         logger.info("Processing tree sequences...")
         
         # Extract only the TreeSequence objects for processing (exclude newick_file path)
-        mode = config.simulation_mode
+        mode = config.simulation.mode
         if mode == "locus":
             ts_data = simulation_results["locus"]
             n_before = len(ts_data)
@@ -468,17 +347,17 @@ def _generate_summary_report(results: Dict[str, Any], output_file: str) -> None:
         f.write("TWISSTNTERN_SIMULATE PIPELINE SUMMARY\n")
         f.write("=" * 50 + "\n\n")
 
-        f.write(f"Configuration file: {results['config_path']}\n")
+        f.write(f"Configuration source: {results['config_source']}\n")
         f.write(f"Output directory: {results['output_dir']}\n\n")
 
         if "config" in results:
             config = results["config"]
             f.write("CONFIGURATION:\n")
-            f.write(f"  Simulation mode: {config.simulation_mode}\n")
+            f.write(f"  Simulation mode: {config.simulation.mode}\n")
             f.write(f"  Random seed: {config.seed}\n")
-            f.write(f"  Number of populations: {len(config.populations)}\n")
-            if hasattr(config, "n_loci"):
-                f.write(f"  Number of loci: {config.n_loci}\n")
+            f.write(f"  Number of populations: {len(config.simulation.populations)}\n")
+            if hasattr(config.simulation, "n_loci"):
+                f.write(f"  Number of loci: {config.simulation.n_loci}\n")
             f.write("\n")
 
         if "topology_weights" in results:

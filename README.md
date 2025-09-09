@@ -53,11 +53,29 @@ cd twisstntern_v2
 pip install -e .[dev]
 ```
 
-### 🎯 Multiple CLI Commands Available
-
 After installation, you can use any of these equivalent commands:
 
 ```bash
+# Download to current directory  
+python -m src.twisstntern_simulate --get-config
+
+# Download to specific location
+python -m src.twisstntern_simulate --get-config /path/to/my_config.yaml
+```
+
+**Or use the Python interface:**
+
+```python
+from src.twisstntern_simulate.utils import download_config_template
+
+# Download to current directory
+config_path = download_config_template()
+
+# Download to specific location  
+config_path = download_config_template("my_simulation_config.yaml")
+```
+
+This automatically downloads the latest `config_template.yaml` from GitHub, ensuring you always have the most up-to-date configuration options.
 # Main analysis commands
 twisstntern your_data.csv              # Direct command (recommended)
 twisst-analyze your_data.csv           # Alternative command
@@ -93,12 +111,40 @@ twisstntern trees.newick --taxon-names O P1 P2 P3 --outgroup O --granularity fin
 ### 🧬 Simulate and Analyze Data
 
 ```bash
-# Get configuration template
-twisstntern-simulate --get-config
+# Get configuration template (for external configs)
+python -m src.twisstntern_simulate --get-config
 
-# Edit config_template.yaml to your needs, then run:
-twisstntern-simulate -c config_template.yaml -o my_simulation
+# New Hydra approach - no config file needed
+python -m src.twisstntern_simulate simulation=chromosome analysis.granularity=0.05
+
+# Or use external config with overrides
+python -m src.twisstntern_simulate config_file=config_template.yaml simulation.mode=chromosome
 ```
+
+## 📦 **What Changed in v2**
+
+### **🔄 Refactored `twisstntern_simulate`**
+
+The simulation package has been completely refactored:
+
+**Before (v1):**
+- Argparse-based CLI with limited override options
+- Single monolithic configuration approach
+- Located in root directory: `twisstntern_simulate/`
+
+**After (v2):**
+- **Hydra-based configuration system** with powerful composition
+- **Modular config structure** in `src/twisstntern_simulate/configs/`
+- **Advanced parameter overrides** without editing files
+- **Same functionality, better interface**
+
+### **🎯 Benefits of Hydra System**
+
+- **Config composition**: `simulation=chromosome` switches entire mode
+- **Deep overrides**: `simulation.populations[0].Ne=5000` 
+- **Parameter sweeps**: Easy batch experiments with different parameters
+- **Type safety**: Structured configs with validation
+- **Backwards compatible**: Existing YAML files still work via `config_file=`
 
 ---
 # TWISSTNTERN
@@ -283,103 +329,130 @@ Results_2025-07-03_14-30-25/
 
 # 🧬 Simulating Data with `twisstntern_simulate`
 
-Generate and analyze simulated tree sequence data with demographic modeling using `msprime`.
+Generate and analyze simulated tree sequence data with demographic modeling using `msprime`. **Now uses Hydra configuration system for powerful parameter management.**
 
 **Key Features:**
 - 🔬 **Demographic modeling**: Population sizes, migration, growth rates
 - 🧬 **Flexible simulation modes**: Independent loci or chromosome with recombination
-- 🎯 **Parameter overrides**: Command-line parameter sweeps without editing config files
+- 🎯 **Hydra configuration**: Advanced parameter composition and override system
 - 🎨 **Integrated analysis**: Automatic topology weight calculation and ternary plotting
 - 📊 **Consistent output**: Same visualization pipeline as main package
 
 ## 🔧 twisstntern_simulate Command-Line Usage
 
-```bash
-twisstntern-simulate -c CONFIG [OPTIONS]
-```
+### **⚡ New Hydra Configuration System**
 
-### **Essential Parameters**
-
-- `-c`, `--config`: **(Required)** YAML configuration file
-- `-o`, `--output`: Output directory (default: auto-generated `Results_YYYY-MM-DD_HH-MM-SS/`)
-- `--granularity`: Analysis resolution (default: `0.1`)
-
-### 🔧 Getting the Configuration Template
-
-For simulation workflows, easily download the latest configuration template:
+The package now uses [Hydra](https://hydra.cc) for configuration management, providing powerful config composition and override capabilities.
 
 ```bash
-# Download to current directory
-twisstntern-simulate --get-config
+# Basic usage with config composition
+python -m src.twisstntern_simulate simulation=chromosome
 
-# Download to specific location
-twisstntern-simulate --get-config /path/to/my_config.yaml
+# Parameter overrides (no config file needed)
+python -m src.twisstntern_simulate simulation.n_loci=1000 seed=12345 verbose=true
+
+# External config file with overrides
+python -m src.twisstntern_simulate config_file=my_config.yaml simulation.mode=chromosome
 ```
 
-**Or use the Python interface:**
+### **🗂️ Configuration Structure**
 
-```python
-import twisstntern_simulate.utils as utils
+Configs are stored in `src/twisstntern_simulate/configs/`:
 
-# Download to current directory
-config_path = utils.download_config_template()
-
-# Download to specific location  
-config_path = utils.download_config_template("my_simulation_config.yaml")
+```
+configs/
+├── config.yaml              # Main config with defaults
+├── simulation/
+│   ├── locus.yaml           # Locus mode parameters
+│   └── chromosome.yaml      # Chromosome mode parameters
+├── analysis/
+│   └── default.yaml         # Analysis settings (granularity, downsampling)
+└── visualization/
+    └── default.yaml         # Plot settings and colormaps
 ```
 
-This automatically downloads the latest `config_template.yaml` from GitHub, ensuring you always have the most up-to-date configuration options.
-
-### **Parameter Overrides**
+### **🎛️ Parameter Override Examples**
 
 ```bash
+# Simulation mode switching
+python -m src.twisstntern_simulate simulation=chromosome
+python -m src.twisstntern_simulate simulation=locus
+
 # Population parameters
---override "populations.p1.Ne=2000"           # Effective population size
---override "populations.p2.sample_size=15"    # Sample size
+python -m src.twisstntern_simulate simulation.populations[0].Ne=10000
+python -m src.twisstntern_simulate simulation.populations[0].sample_size=20
 
-# Migration rates
---override "migration.p1>p2=0.05"             # Migration from p1 to p2
+# Analysis parameters
+python -m src.twisstntern_simulate analysis.granularity=0.05
+python -m src.twisstntern_simulate analysis.downsampling.tree_interval=10
 
-# Simulation parameters  
---override "seed=12345"                        # Random seed
---override "n_loci=1000"                       # Number of loci
---override "mutation_rate=1e-7"                # Mutation rate
+# Visualization settings
+python -m src.twisstntern_simulate visualization.heatmap.colormap=plasma
+python -m src.twisstntern_simulate visualization.colors.T1_color="#FF5733"
+
+# Multiple overrides
+python -m src.twisstntern_simulate \
+  simulation=chromosome \
+  simulation.chromosome_length=2000000 \
+  analysis.granularity=0.02 \
+  seed=12345 \
+  verbose=true
 ```
 
-### **Data Processing**
+### **📁 External Config Files**
 
-- `--downsample N`: Keep every Nth tree/locus
-- `--downsample "N+i"`: Keep every Nth starting from index i
-- `--downsampleKB "100kb"`: *(chromosome mode)* Sample every 100kb
-- `--downsampleKB "100kb+50kb"`: *(chromosome mode)* Every 100kb starting from 50kb
-
-### **Examples**
+Use existing YAML configs with Hydra overrides:
 
 ```bash
-# Basic simulation (creates Results_2025-07-03_14-30-25/)
-twisstntern-simulate -c config_template.yaml
+# Legacy config support
+python -m src.twisstntern_simulate config_file=my_demographic_model.yaml
 
-# Custom output directory
-twisstntern-simulate -c config_template.yaml -o my_simulation
-
-# Parameter sweep with overrides
-twisstntern-simulate -c config_template.yaml \
-  --override "migration.p1>p2=0.05" \
-  --override "populations.p1.Ne=2000" \
-  --override "seed=12345"
-
-# Downsampled chromosome analysis
-twisstntern-simulate -c config_template.yaml \
-  --downsampleKB "50kb" \
-  --granularity superfine
+# With additional overrides
+python -m src.twisstntern_simulate \
+  config_file=my_config.yaml \
+  simulation.mode=chromosome \
+  seed=42
 ```
+
+### **🔍 Configuration Help**
+
+```bash
+# View current config structure
+python -m src.twisstntern_simulate --help
+
+# Print resolved config without running
+python -m src.twisstntern_simulate simulation=chromosome --cfg job
+```
+
+### **📂 Output Directory Management**
+
+**Default behavior:**
+- Outputs go to `Results/` directory (configurable via `output_dir=path`)
+- Hydra does NOT change working directories (unlike default Hydra behavior)
+- All file paths work as expected
+
+```bash
+# Custom output directory
+python -m src.twisstntern_simulate output_dir=MyResults simulation=chromosome
+
+# Outputs will be in: MyResults/
+#   ├── locus_topology_weights.csv
+#   ├── locus_trees.newick  
+#   ├── locus_analysis_granularity_0.1.png
+#   └── ... (same files as before)
+```
+
+**Hydra integration notes:**
+- Configuration is managed by Hydra but outputs remain in your specified directory
+- No `.hydra/` directories created in your workspace
+- Same output structure as original version
 
 ---
 
 ## 🐍 twisstntern_simulate Python Interface
 
 ```python
-from twisstntern_simulate.pipeline import run_pipeline
+from src.twisstntern_simulate.pipeline import run_pipeline
 ```
 Like with twisstntern's run_analysis, returns:
  - results: pandas.DataFrame (triangle analysis)
@@ -387,7 +460,7 @@ Like with twisstntern's run_analysis, returns:
  - csv_file: str (path to topology weights CSV) -->
 
 ```python
-# Basic simulation and analysis
+# Basic simulation and analysis (same interface)
 results, fundamental_results, csv_file = run_pipeline(
     config_path="config.yaml",
     output_dir="simulation_results",
@@ -401,8 +474,19 @@ results, fundamental_results, csv_file = run_pipeline(
     granularity=0.1,
     seed_override=12345,
     config_overrides=["populations.p1.Ne=2000", "migration.p1>p2=0.05"],
-    colormap="plasma"  # Same colormap options as main package
+    heatmap_colormap="plasma"
 )
+
+# Using Hydra structured configs
+from src.twisstntern_simulate.hydra_config import TwisstnternSimulateConfig
+from omegaconf import OmegaConf
+
+# Create programmatic config
+cfg = OmegaConf.structured(TwisstnternSimulateConfig)
+cfg.simulation.mode = "chromosome"
+cfg.simulation.chromosome_length = 2000000
+cfg.analysis.granularity = 0.05
+cfg.seed = 12345
 ```
 
 ---
@@ -533,6 +617,8 @@ And acknowledge the **TWISST** software available at:
 ### **Configuration & Data**
 - PyYAML ≥ 6.0.0
 - requests ≥ 2.25.0
+- hydra-core ≥ 1.3.0 *(for twisstntern_simulate)*
+- omegaconf ≥ 2.3.0 *(for twisstntern_simulate)*
 
 **Note**: `twisst.py` is included automatically - no manual installation required.
 
