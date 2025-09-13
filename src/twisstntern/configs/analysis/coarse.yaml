@@ -1,0 +1,3 @@
+# Configuration for coarse-grained analysis
+# @package analysis  
+granularity: 0.25

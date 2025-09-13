@@ -1,0 +1,3 @@
+# Configuration for superfine-grained analysis
+# @package analysis
+granularity: 0.05

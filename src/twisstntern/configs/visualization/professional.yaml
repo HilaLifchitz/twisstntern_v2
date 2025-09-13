@@ -1,0 +1,7 @@
+# Professional visualization settings
+# @package visualization
+style: "RdBu_r"
+style_heatmap: "Blues" 
+dpi: 300
+point_size: 1.5
+point_alpha: 0.4

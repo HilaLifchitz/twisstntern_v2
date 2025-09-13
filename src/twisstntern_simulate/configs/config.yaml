@@ -1,0 +1,31 @@
+# TWISSTNTERN Simulate Configuration
+# Single run: python -m src.twisstntern_simulate.main analysis.granularity=0.05
+# Parameter sweep: python -m src.twisstntern_simulate.main --multirun hydra/launcher=joblib analysis.granularity=0.05,0.1,0.2
+
+defaults:
+  - simulation: locus  # Default to locus mode
+  - analysis: default
+  - visualization: default
+  - _self_
+
+# Output settings
+output_dir: "outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}"
+verbose: false
+quiet: false
+
+# Random seed for reproducibility (null = random)
+seed: null
+
+# External config file support
+config_file: null
+
+# Hydra configuration
+hydra:
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ./outputs/sweep/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: granularity_${analysis.granularity}
+  job:
+    chdir: false
+    name: twisstntern_simulate_${analysis.granularity}

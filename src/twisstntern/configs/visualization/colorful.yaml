@@ -1,0 +1,6 @@
+# Colorful visualization settings
+# @package visualization  
+style: "coolwarm"
+style_heatmap: "viridis"
+point_size: 3
+point_alpha: 0.6
