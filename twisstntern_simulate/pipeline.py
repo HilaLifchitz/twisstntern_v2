@@ -179,7 +179,7 @@ def run_pipeline(
     downsample_i: Optional[int] = None,
     downsample_kb: Optional[int] = None,
     downsample_kb_i: Optional[int] = None,
-    colormap: str = "viridis_r",
+    colormap: Optional[str] = None,
 ) -> tuple:
     """
     Run the complete twisstntern_simulate pipeline.
@@ -199,7 +199,8 @@ def run_pipeline(
         downsample_kb_i: Starting position in kilobases for KB-based downsampling (offset)
         colormap: Colormap for the ternary heatmap.
                          Options: 'viridis', 'viridis_r', 'plasma',
-                         'inferno', 'Blues', 'Greys'. Default: 'viridis_r'.
+                         'inferno', 'Blues', 'Greys'.
+                         If None, uses the global style_heatmap setting from visualization.py.
 
     Returns:
         tuple: (triangles_results, fundamental_results, weights_file) - same format as twisstntern.run_analysis()
@@ -485,9 +486,11 @@ def run_pipeline(
         plot_fundamental_asymmetry(topology_weights, output_prefix)
         plot(topology_weights, granularity, output_prefix)
         # New: Ternary heatmap (count, no grid) - always uses 0.02 granularity
-        plot_ternary_heatmap_data(
-            topology_weights, 0.02, output_prefix, heatmap_colormap=colormap
-        )
+        # Uses the global style_heatmap setting from visualization.py, unless overridden by command-line
+        if colormap is not None:
+            plot_ternary_heatmap_data(topology_weights, 0.02, output_prefix, heatmap_colormap=colormap)
+        else:
+            plot_ternary_heatmap_data(topology_weights, 0.02, output_prefix)  # Uses global style_heatmap
         # New: Density radcount plot - always uses fixed parameters
         plot_density_colored_radcount(
             topology_weights, output_prefix, colormap=colormap

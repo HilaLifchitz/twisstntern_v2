@@ -161,6 +161,12 @@ When no `-o` flag is provided, TWISSTNTERN automatically creates timestamped dir
 - `--downsample N`: Keep every Nth data point
 - `--downsample "N+i"`: Keep every Nth starting from index i, i<N
 
+### **Visualization Customization**
+
+- `--colormap COLORMAP`: Customize ternary heatmap colors
+  - **Options**: `viridis`, `viridis_r`, `plasma`, `inferno`, `Blues`, `Greys`
+  - **Default**: Uses global setting from `visualization.py` (currently `viridis`)
+
 ### **Examples**
 
 ```bash
@@ -175,6 +181,12 @@ twisstntern trees.newick --taxon-names O P1 P2 P3 --outgroup O --granularity 0.0
 
 # Downsampled analysis with verbose output
 twisstntern large_dataset.csv --downsample "100+5" --verbose
+
+# Custom heatmap colormap  
+twisstntern data.csv --colormap plasma
+
+# Combined options
+twisstntern trees.newick --taxon-names O P1 P2 P3 --outgroup O --colormap Blues --granularity fine
 ```
 
 ---
@@ -231,15 +243,15 @@ Customize ternary heatmap and radcount colors through the Python interface:
 
 | Colormap      |  Best For |
 |---------------|---------|
-| `"viridis_r"` |  Reversed viridis (default) | General use, colorblind-friendly |
-| `"viridis"`   | Modern purple-to-yellow | Scientific publications |
+| `"viridis"`   | Modern purple-to-yellow (default) | Scientific publications |
+| `"viridis_r"` |  Reversed viridis | General use, colorblind-friendly |
 | `"plasma"`    | Vibrant purple-pink-yellow | Eye-catching presentations |
 | `"inferno"`   | Dark dramatic gradient | High contrast needed |
 | `"Blues"`     |  Classic sequential blue | Publication-ready, minimal |
 | `"Greys"`     |  Clean grayscale | Print-friendly, minimal |
 
 
-**Note**: Colormap customization is available only through the Python interface to keep the CLI focused on core parameters.
+**Note**: Colormap customization is available through both the command-line interface (`--colormap`) and Python interface. The restricted colormap list ensures validation and consistency.
 
 ---
 
@@ -353,6 +365,15 @@ This automatically downloads the latest `config_template.yaml` from GitHub, ensu
 - `--downsampleKB "100kb"`: *(chromosome mode)* Sample every 100kb
 - `--downsampleKB "100kb+50kb"`: *(chromosome mode)* Every 100kb starting from 50kb
 
+### **Visualization Customization**
+
+- `--colormap COLORMAP`: Customize ternary heatmap colors
+  - **Options**: `viridis`, `viridis_r`, `plasma`, `inferno`, `Blues`, `Greys`
+  - **Default**: Uses global setting from `visualization.py` (currently `viridis`)
+- `--density-colormap COLORMAP`: Customize radcount density plot colors
+  - **Options**: Broader selection including `coolwarm`, `RdBu_r`, etc.
+  - **Default**: `viridis`
+
 ### **Examples**
 
 ```bash
@@ -372,6 +393,15 @@ twisstntern-simulate -c config_template.yaml \
 twisstntern-simulate -c config_template.yaml \
   --downsampleKB "50kb" \
   --granularity superfine
+
+# Custom heatmap colormap
+twisstntern-simulate -c config_template.yaml --colormap inferno
+
+# Combined options with parameter sweep and custom colormap
+twisstntern-simulate -c config_template.yaml \
+  --override "migration.p1>p2=0.05" \
+  --colormap Blues \
+  --granularity 0.05
 ```
 
 ---

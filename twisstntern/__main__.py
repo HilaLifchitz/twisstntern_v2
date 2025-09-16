@@ -131,6 +131,12 @@ def main():
         default=["T1", "T2", "T3"],
         help="Order of axes for CSV columns. Example: --axis T2 T1 T3 (default: T1 T2 T3)",
     )
+    parser.add_argument(
+        "--colormap",
+        type=str,
+        default=None,
+        help="Colormap for the ternary heatmap. Options: 'viridis', 'viridis_r', 'plasma', 'inferno', 'Blues', 'Greys'. If not specified, uses the global style_heatmap setting from visualization.py.",
+    )
 
     args = parser.parse_args()
 
@@ -207,7 +213,7 @@ def main():
             topology_mapping=args.topology_mapping,
             downsample_N=downsample_N,
             downsample_i=downsample_i,
-            colormap="viridis_r",
+            colormap=args.colormap,  # Use command-line colormap or None
             axis_order=args.axis,  # <--- ADD THIS LINE
         )
 

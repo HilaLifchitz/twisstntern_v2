@@ -107,7 +107,7 @@ def run_analysis(  # add plot functions here 25.6
     topology_mapping=None,
     downsample_N=None,
     downsample_i=None,
-    colormap="viridis_r",
+    colormap=None,
     axis_order=None,  # <--- ADD THIS PARAMETER
 ):
     """
@@ -129,7 +129,7 @@ def run_analysis(  # add plot functions here 25.6
         colormap (str, optional): Colormap for the ternary heatmap.
                                          Options: 'viridis', 'viridis_r', 'plasma',
                                          'inferno', 'Blues', 'Greys'.
-                                         Default: 'viridis_r'.
+                                         If None, uses the global style_heatmap setting from visualization.py.
 
     Returns:
         tuple: (results, fundamental_results, csv_file_used)
@@ -312,7 +312,11 @@ def run_analysis(  # add plot functions here 25.6
     # plot_genome_position_2d(data, output_prefix, genome_positions=None, colormap=colormap)
     # logger.debug("Generated genome position plot")
     # New: Ternary heatmap (count, no grid) - always uses 0.02 granularity
-    plot_ternary_heatmap_data(data, 0.02, output_prefix, heatmap_colormap=colormap)
+    # Uses the global style_heatmap setting from visualization.py, unless overridden by command-line
+    if colormap is not None:
+        plot_ternary_heatmap_data(data, 0.02, output_prefix, heatmap_colormap=colormap)
+    else:
+        plot_ternary_heatmap_data(data, 0.02, output_prefix)  # Uses global style_heatmap
     logger.debug("Generated ternary heatmap (count, no grid) - fixed 0.02 granularity")
 
     # New: Density radcount plot - always uses fixed parameters

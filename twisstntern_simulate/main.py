@@ -322,6 +322,12 @@ Examples:
         help="Colormap for density-colored ternary plot. Options: 'viridis', 'plasma', 'inferno', "
         "'magma', 'coolwarm', 'RdBu_r', 'Blues', 'Reds', 'Greens', etc. Default: 'viridis'",
     )
+    parser.add_argument(
+        "--colormap",
+        type=str,
+        default=None,
+        help="Colormap for the ternary heatmap. Options: 'viridis', 'viridis_r', 'plasma', 'inferno', 'Blues', 'Greys'. If not specified, uses the global style_heatmap setting from visualization.py.",
+    )
 
     args = parser.parse_args()
 
@@ -432,6 +438,7 @@ Examples:
             downsample_i=downsample_i,
             downsample_kb=downsampleKB_N,
             downsample_kb_i=downsampleKB_i,
+            colormap=args.colormap,  # Pass colormap parameter
         )
 
         # Calculate duration

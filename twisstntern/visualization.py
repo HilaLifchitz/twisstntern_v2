@@ -44,7 +44,8 @@ T3_color_data = "lightgrey"  # for the data plot
 
 
 style = "RdBu_r"  # for D-LR plots (=plot results + plot_fundamental_asymmetry)- the colormap
-style_heatmap = "viridis_r"  # for heatmap (=plot_ternary_heatmap_data)- the colormap
+style_heatmap = "viridis"  # for heatmap (=plot_ternary_heatmap_data)- the colormap
+                           # ALLOWED OPTIONS: "viridis", "viridis_r", "plasma", "inferno", "Blues", "Greys"
 truncate = False  # for heatmap -whether to chop off the edges of the gradient map
 
 
@@ -377,7 +378,7 @@ def plotting_triangle_index(granularity, file_name):
 
     Parameters:
         granularity (str or float): One of {"superfine", "fine", "coarse"} or a float value indicating alpha.
-    Returns:
+    Returns:u
         matplotlib Figure object
     """
     # Map preset granularity labels to alpha values and adjust figure size/font accordingly
@@ -706,7 +707,7 @@ def plot_results(res, granularity, file_name):
 
 
 def plot_ternary_heatmap_data(
-    data, granularity, file_name, grid_color="#3E3E3E", heatmap_colormap="viridis_r"
+    data, granularity, file_name, grid_color="#3E3E3E", heatmap_colormap=style_heatmap
 ):
     """
     Plot a ternary heatmap: each subtriangle is colored by the number of data points it contains.
