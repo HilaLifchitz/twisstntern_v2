@@ -92,8 +92,8 @@ migration:
   "p2>p1": 0.000
   "p1>p3": 0.000
   "p3>p1": 0.000
-  "p2>p3": 0.000
-  "p3>p2": 0.000
+  "p2>p3": 0.100
+  "p3>p2": 0.100
 
   # Migration between outgroup and extant populations
   "O>p1": 0.000
@@ -114,7 +114,7 @@ migration:
 ###################################################################################
 
 #=== Simulation Mode ===#
-simulation_mode: "locus" # Choose: "locus", "chromosome"
+simulation_mode: "chromosome" # Choose: "locus", "chromosome"
 
 #=== Common Parameters ===#
 ploidy: 1 # Ploidy level: 1 for haploid, 2 for diploid -- if non specified default is 1
@@ -122,7 +122,7 @@ seed: 4576 # Random seed for simulation (optional)
 
 #=== Simulation mode "locus" ===#
 # msprime will simulate independent non-recombining loci with length 10k
-n_loci: 1000 # Number of loci / windows to simulate (default 10000)
+n_loci: 5000 # Number of loci / windows to simulate (default 10000)
 locus_length: 1 # Length of each locus in base pairs
 
 #=== Simulation mode "chromosome" ===#
@@ -130,7 +130,7 @@ locus_length: 1 # Length of each locus in base pairs
 # corresponding to breaks in recombination, genomic length of the loci simulated
 # here will vary
 rec_rate: 1e-8 # Recombination rate per base per generation
-chromosome_length: 1e8 # Length of the chromosome to simulate (in base pairs)
+chromosome_length: 5e7 # Length of the chromosome to simulate (in base pairs)
 mutation_rate: 0 # Mutation rate per base per generation (optional)
 
 ###################################################################################
@@ -177,7 +177,7 @@ mutation_rate: 0 # Mutation rate per base per generation (optional)
 #   - Topology X will be plotted as T1 (top of triangle)
 #   - Topology Y will be plotted as T2 (bottom-left)
 #   - Topology Z will be plotted as T3 (bottom-right)
-topology_axis_order: ["Y", "X", "Z"]  # Must be exactly ["X", "Y", "Z"] in any order
+topology_axis_order: ["Z", "X", "Y"]  # Must be exactly ["X", "Y", "Z"] in any order
 
 ###################################################################################
 # END OF CONFIGURATION

@@ -424,7 +424,12 @@ def run_pipeline(
 
         # Reorder columns if axis_order is specified
         if axis_order is not None:
-            topology_weights = dump_data(weights_file, logger=logger, axis_order=axis_order)
+            # Reorder DataFrame columns directly (avoiding dump_data call that expects 3 columns)
+            topology_weights = topology_weights[axis_order]
+            
+            # Log axis order if logger is provided
+            if logger:
+                logger.info(f"Using axis order: {axis_order}")
             
             # Log the effective topology mapping after axis reordering
             if axis_order != ["T1", "T2", "T3"]:  # Only if different from default

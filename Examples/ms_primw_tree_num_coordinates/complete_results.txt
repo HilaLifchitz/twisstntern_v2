@@ -1,0 +1,35 @@
+Complete results for ~10000 trees:
+
+Best combination:
+  rec_rate: 1.00e-03
+  chromosome_length: 1e+04
+  product: 1.00e+01
+  Expected trees: ~10000
+  Error from target: 0.0%
+
+All tested combinations:
+ 1. rec_rate=1.00e-08, chromosome_length=1e+08, product=1.00e+00, trees=11478, error=15.0%
+ 2. rec_rate=1.00e-07, chromosome_length=1e+07, product=1.00e+00, trees=11555, error=16.0%
+ 3. rec_rate=1.00e-05, chromosome_length=1e+05, product=1.00e+00, trees=11250, error=13.0%
+ 4. rec_rate=2.00e-05, chromosome_length=5e+04, product=1.00e+00, trees=10289, error=3.0%
+ 5. rec_rate=1.00e-04, chromosome_length=1e+04, product=1.00e+00, trees=6858, error=31.0%
+ 6. rec_rate=2.00e-04, chromosome_length=5e+03, product=1.00e+00, trees=4466, error=55.0%
+ 7. rec_rate=5.00e-05, chromosome_length=2e+04, product=1.00e+00, trees=8684, error=13.0%
+ 8. rec_rate=5.00e-04, chromosome_length=2e+03, product=1.00e+00, trees=1990, error=80.0%
+ 9. rec_rate=1.00e-03, chromosome_length=1e+03, product=1.00e+00, trees=1000, error=90.0%
+10. rec_rate=1.00e-04, chromosome_length=2e+04, product=2.00e+00, trees=13442, error=34.0%
+11. rec_rate=2.00e-04, chromosome_length=1e+04, product=2.00e+00, trees=8918, error=11.0%
+12. rec_rate=2.00e-05, chromosome_length=1e+05, product=2.00e+00, trees=20388, error=104.0%
+13. rec_rate=1.00e-03, chromosome_length=2e+03, product=2.00e+00, trees=2000, error=80.0%
+14. rec_rate=2.00e-03, chromosome_length=1e+03, product=2.00e+00, trees=1000, error=90.0%
+15. rec_rate=1.00e-05, chromosome_length=2e+05, product=2.00e+00, trees=21758, error=118.0%
+16. rec_rate=1.00e-07, chromosome_length=1e+08, product=1.00e+01, trees=114406, error=1044.0%
+17. rec_rate=1.00e-04, chromosome_length=1e+05, product=1.00e+01, trees=68026, error=580.0%
+18. rec_rate=5.00e-05, chromosome_length=2e+05, product=1.00e+01, trees=87524, error=775.0%
+19. rec_rate=2.00e-05, chromosome_length=5e+05, product=1.00e+01, trees=103250, error=932.0%
+20. rec_rate=1.00e-05, chromosome_length=1e+06, product=1.00e+01, trees=109606, error=996.0%
+21. rec_rate=5.00e-04, chromosome_length=2e+04, product=1.00e+01, trees=19904, error=99.0%
+22. rec_rate=2.00e-04, chromosome_length=5e+04, product=1.00e+01, trees=44706, error=347.0%
+23. rec_rate=1.00e-03, chromosome_length=1e+04, product=1.00e+01, trees=10000, error=0.0%
+24. rec_rate=2.00e-03, chromosome_length=5e+03, product=1.00e+01, trees=5000, error=50.0%
+25. rec_rate=5.00e-03, chromosome_length=2e+03, product=1.00e+01, trees=2000, error=80.0%

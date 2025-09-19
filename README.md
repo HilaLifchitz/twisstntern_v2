@@ -373,6 +373,9 @@ This automatically downloads the latest `config_template.yaml` from GitHub, ensu
 - `--density-colormap COLORMAP`: Customize radcount density plot colors
   - **Options**: Broader selection including `coolwarm`, `RdBu_r`, etc.
   - **Default**: `viridis`
+- `--axis AXIS1 AXIS2 AXIS3`: Specify the order of axes for CSV columns
+  - **Default**: `T1 T2 T3` (first column is T1, second is T2, third is T3)
+  - **Example**: `--axis T2 T1 T3` to interpret first column as T2, second as T1, third as T3
 
 ### **Examples**
 
@@ -397,11 +400,12 @@ twisstntern-simulate -c config_template.yaml \
 # Custom heatmap colormap
 twisstntern-simulate -c config_template.yaml --colormap inferno
 
-# Combined options with parameter sweep and custom colormap
+# Combined options with parameter sweep, custom colormap, and axis order
 twisstntern-simulate -c config_template.yaml \
   --override "migration.p1>p2=0.05" \
   --colormap Blues \
-  --granularity 0.05
+  --granularity 0.05 \
+  --axis T2 T1 T3  # Reorder axes in output
 ```
 
 ---
@@ -431,7 +435,8 @@ results, fundamental_results, csv_file = run_pipeline(
     granularity=0.1,
     seed_override=12345,
     config_overrides=["populations.p1.Ne=2000", "migration.p1>p2=0.05"],
-    colormap="plasma"  # Same colormap options as main package
+    colormap="plasma",  # Same colormap options as main package
+    axis_order=["T2", "T1", "T3"]  # Reorder axes in output
 )
 ```
 
