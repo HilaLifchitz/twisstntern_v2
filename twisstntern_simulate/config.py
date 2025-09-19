@@ -162,6 +162,28 @@ class Config:
             "ploidy", 1
         )  # Default to haploid if not specified
 
+        # Load topology axis mapping
+        self.topology_axis_order = self.config.get("topology_axis_order", ["X", "Y", "Z"])
+        
+        # Validate topology axis mapping
+        if not isinstance(self.topology_axis_order, list) or len(self.topology_axis_order) != 3:
+            raise ValueError("topology_axis_order must be a list of exactly 3 elements")
+        if not all(x in ["X", "Y", "Z"] for x in self.topology_axis_order):
+            raise ValueError("topology_axis_order elements must be 'X', 'Y', or 'Z'")
+        if len(set(self.topology_axis_order)) != 3:
+            raise ValueError("topology_axis_order elements must be unique")
+
+        # Create topology mapping string for twisstntern
+        self.topology_strings = {
+            "X": "(0,(1,(2,3)))",  # Using numeric IDs internally
+            "Y": "(0,(2,(1,3)))",
+            "Z": "(0,(3,(1,2)))"
+        }
+        self.topology_mapping = "; ".join([
+            f'T{i+1}="{self.topology_strings[topo]}"'
+            for i, topo in enumerate(self.topology_axis_order)
+        ])
+
         # Load populations
         self.populations = []
         for pop in self.config.get("populations", []):

@@ -180,17 +180,7 @@ def ts_chromosome_to_twisst_weights(
         else:
             columns = [f"Topo{i+1}" for i in range(n_topos)]
 
-        # Log topologies to file
-        logger = get_logger(__name__)
-        topos = weightsData["topos"]
-        log_topologies(
-            topos,
-            simplified_topos,
-            columns,
-            logger,
-            "TreeSequence topologies (default order)",
-            population_labels,
-        )
+        # Skip logging since we use the config file's topology mapping
 
     # Get number of topologies for reporting (works for both cases)
     n_topos = len(columns)
@@ -366,16 +356,7 @@ def ts_to_twisst_weights(
             else:
                 columns = [f"Topo{i+1}" for i in range(n_topos)]
 
-            # Log canonical topologies
-            logger = get_logger(__name__)
-            log_topologies(
-                canonical_topologies,
-                canonical_simplified_topos,
-                columns,
-                logger,
-                "Multi-TreeSequence canonical topologies (default order)",
-                population_labels,
-            )
+            # Skip logging since we use the config file's topology mapping
 
         # Type assertion for Pylance
         assert canonical_simplified_topos is not None
@@ -762,13 +743,9 @@ def print_topology_mapping_with_trees(
     if isinstance(topology_mapping, str):
         topology_mapping = parse_topology_mapping(topology_mapping)
 
-    print("Applied topology mapping:")
     print("=" * 50)
-
-    # Collect topology information for logging
-    mapped_topos = []
-    mapped_simplified = []
-    mapped_columns = []
+    logger = get_logger(__name__)
+    logger.info("=" * 50)
 
     # For each T1, T2, T3, find the corresponding original topology index
     for target_label in ["T1", "T2", "T3"]:
@@ -782,27 +759,17 @@ def print_topology_mapping_with_trees(
                 break
 
         if original_index is not None:
-            print(f"\n{target_label}:")
-            print(original_topos[original_index].get_ascii())
-            print(f"String: {original_simplified_topos[original_index]}")
-
-            # Collect for logging
-            mapped_topos.append(original_topos[original_index])
-            mapped_simplified.append(original_simplified_topos[original_index])
-            mapped_columns.append(target_label)
+            # Get logger once at the start
+            logger = get_logger(__name__)
+            
+            # Build the tree string
+            tree_str = f"\n{target_label}:\n\n"
+            tree_str += original_topos[original_index].get_ascii() + "\n"
+            tree_str += f"String: {original_simplified_topos[original_index]}"
+            
+            # Log to file (which also prints to terminal)
+            logger.info(tree_str)
         else:
-            print(f"\n{target_label}: ERROR - topology not found!")
+            logger.error(f"\n{target_label}: ERROR - topology not found!")
 
-    print("=" * 50)
-
-    # Log the applied topology mapping
-    if mapped_topos:
-        logger = get_logger(__name__)
-        log_topologies(
-            mapped_topos,
-            mapped_simplified,
-            mapped_columns,
-            logger,
-            "Applied topology mapping",
-            population_labels,
-        )
+    logger.info("=" * 50)

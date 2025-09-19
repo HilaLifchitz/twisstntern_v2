@@ -230,11 +230,14 @@ def mid_point_triangle(a1, b1, a2, b2, a3, b3):
 ###########################################
 
 
-def dump_data(file):
+def dump_data(file, logger=None, axis_order=None):
     """Load and process data from CSV file.
 
     Args:
         file: Path to the input CSV file
+        logger: Optional logger instance for logging messages
+        axis_order: Optional list of column names to reorder axes (e.g., ["T2", "T1", "T3"])
+                   Default is ["T1", "T2", "T3"]
 
     Returns:
         pandas.DataFrame: Processed data with normalized coordinates
@@ -333,8 +336,14 @@ def dump_data(file):
             # Use the same columns we found in our test
             data = data[best_data.columns]
 
-    # Rename columns to standard format
-    data.columns = ["T1", "T2", "T3"]
+    # Rename columns to standard format or use provided axis order
+    if axis_order is None:
+        axis_order = ["T1", "T2", "T3"]
+    data.columns = axis_order
+
+    # Log axis order if logger is provided
+    if logger:
+        logger.info(f"Using axis order: {axis_order}")
 
     # Convert to numeric and handle any non-numeric values
     for col in data.columns:

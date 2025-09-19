@@ -329,6 +329,15 @@ Examples:
         help="Colormap for the ternary heatmap. Options: 'viridis', 'viridis_r', 'plasma', 'inferno', 'Blues', 'Greys'. If not specified, uses the global style_heatmap setting from visualization.py.",
     )
 
+    parser.add_argument(
+        "--axis",
+        type=str,
+        nargs=3,
+        metavar=("AXIS1", "AXIS2", "AXIS3"),
+        default=["T1", "T2", "T3"],
+        help="For a swift shuffeling of the axis in the plot and in the csv file",
+    )
+
     args = parser.parse_args()
 
     # Handle --get-config command
@@ -439,6 +448,7 @@ Examples:
             downsample_kb=downsampleKB_N,
             downsample_kb_i=downsampleKB_i,
             colormap=args.colormap,  # Pass colormap parameter
+            axis_order=args.axis,  # Pass axis order parameter
         )
 
         # Calculate duration

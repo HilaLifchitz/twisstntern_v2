@@ -10,13 +10,14 @@ import logging
 import time
 import pandas as pd
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 # Import simulation components
 from twisstntern_simulate.config import Config
 from twisstntern_simulate.simulation import run_simulation
 from twisstntern_simulate.ts_processing import ts_to_twisst_weights
 from twisstntern_simulate.analysis import triangles_analysis, fundamental_asymmetry
+from twisstntern_simulate.utils import dump_data
 from twisstntern_simulate.visualization import (
     plot_fundamental_asymmetry,
     plot,
@@ -180,6 +181,7 @@ def run_pipeline(
     downsample_kb: Optional[int] = None,
     downsample_kb_i: Optional[int] = None,
     colormap: Optional[str] = None,
+    axis_order: Optional[List[str]] = None,
 ) -> tuple:
     """
     Run the complete twisstntern_simulate pipeline.
@@ -240,16 +242,16 @@ def run_pipeline(
         # Apply configuration overrides first
         applied_config_overrides = apply_config_overrides(config, config_overrides)
 
-        # Apply command-line overrides
+        # Apply command-line overrides (silently)
         if seed_override is not None:
-            logger.info(f"Overriding seed: {config.seed} -> {seed_override}")
             config.seed = seed_override
 
         if mode_override is not None:
-            logger.info(
-                f"Overriding simulation mode: {config.simulation_mode} -> {mode_override}"
-            )
-            config.simulation_mode = mode_override
+            config.simulation_mode = mode_override            
+        # Use topology mapping from config if not overridden by command line
+        if topology_mapping is None and hasattr(config, 'topology_mapping'):
+            topology_mapping = config.topology_mapping
+            logger.info(f"Using topology mapping from config: {topology_mapping}")
 
         logger.info(
             f"Configuration loaded - Mode: {config.simulation_mode}, Seed: {config.seed}"
@@ -419,6 +421,26 @@ def run_pipeline(
 
         # Use downsampled data for all further analysis
         topology_weights = topology_weights_downsampled
+
+        # Reorder columns if axis_order is specified
+        if axis_order is not None:
+            topology_weights = dump_data(weights_file, logger=logger, axis_order=axis_order)
+            
+            # Log the effective topology mapping after axis reordering
+            if axis_order != ["T1", "T2", "T3"]:  # Only if different from default
+                logger.info("Axis reordering applied:")
+                
+                # Get the original mapping from config
+                # config.topology_axis_order = ["X", "Y", "Z"] and config.topology_strings = {"X": "...", "Y": "...", "Z": "..."}
+                original_mapping = {}
+                for i, topology_label in enumerate(config.topology_axis_order):
+                    original_mapping[f"T{i+1}"] = config.topology_strings[topology_label]
+                
+                for i, source_label in enumerate(axis_order):
+                    topology_string = original_mapping[source_label]
+                    logger.info(f"• New T{i+1} = {topology_string} # was originally {source_label}")
+                
+                logger.info("")
 
         logger.info(f"Tree processing completed - weights saved to: {weights_file}")
 
