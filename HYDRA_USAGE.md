@@ -71,6 +71,33 @@ python -m src.twisstntern_simulate.main --multirun hydra/launcher=joblib analysi
 python -m src.twisstntern_simulate.main simulation=chromosome analysis.granularity=0.1 simulation.chromosome_length=1000000
 ```
 
+#### Mode-Specific Sweeps
+
+**Locus sweep (granularity × n_loci)** – explores how changing locus counts affects topology weights while keeping locus length fixed. Results are grouped under `outputs/simulate_sweeps/locus/` with the Hydra configs that produced them.
+```bash
+python -m src.twisstntern_simulate.main --multirun \
+  hydra/launcher=joblib hydra.launcher.n_jobs=4 \
+  hydra.sweep.dir=./outputs/simulate_sweeps \
+  'hydra.sweep.subdir=locus/granularity_${analysis.granularity}' \
+  simulation=locus \
+  analysis.granularity=0.05,0.1 \
+  simulation.n_loci=1000,5000 \
+  simulation.locus_length=5000 \
+  analysis.downsampling.tree_interval=10
+```
+
+**Chromosome sweep (granularity × chromosome length)** – runs the recombination-aware mode with longer chromosomes to reveal how genome length influences recovered trees. Outputs land in `outputs/simulate_sweeps/chromosome/` alongside per-run Hydra metadata.
+```bash
+python -m src.twisstntern_simulate.main --multirun \
+  hydra/launcher=joblib hydra.launcher.n_jobs=4 \
+  hydra.sweep.dir=./outputs/simulate_sweeps \
+  'hydra.sweep.subdir=chromosome/granularity_${analysis.granularity}' \
+  simulation=chromosome \
+  analysis.granularity=0.05,0.1 \
+  simulation.chromosome_length=1000000 \
+  analysis.downsampling.tree_interval=10
+```
+
 ### Resource Management
 
 **For TWISSTNTERN (Analysis):**
