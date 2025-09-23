@@ -77,14 +77,14 @@ config_path = download_config_template("my_simulation_config.yaml")
 
 This automatically downloads the latest `config_template.yaml` from GitHub, ensuring you always have the most up-to-date configuration options.
 # Main analysis commands
-twisstntern your_data.csv              # Direct command (recommended)
-twisst-analyze your_data.csv           # Alternative command
-python -m twisstntern your_data.csv    # Module command
+twisstntern your_data.csv              # Hydra CLI (recommended)
+twisst-analyze your_data.csv           # Alias for Hydra CLI
+python -m legacy.twisstntern your_data.csv    # Legacy argparse module
 
 # Simulation commands  
-twisstntern-simulate -c config.yaml    # Direct command (recommended)
-twisst-simulate -c config.yaml         # Alternative command
-python -m twisstntern_simulate -c config.yaml  # Module command
+twisstntern-simulate -c config.yaml    # Hydra CLI (recommended)
+twisst-simulate -c config.yaml         # Alias for Hydra CLI
+python -m legacy.twisstntern_simulate -c config.yaml  # Legacy argparse module
 ```
 
 ### 🧬 Automatic twisst.py Handling
@@ -130,7 +130,7 @@ The simulation package has been completely refactored:
 **Before (v1):**
 - Argparse-based CLI with limited override options
 - Single monolithic configuration approach
-- Located in root directory: `twisstntern_simulate/`
+- Now preserved under `legacy/twisstntern_simulate/`
 
 **After (v2):**
 - **Hydra-based configuration system** with powerful composition
@@ -230,7 +230,7 @@ twisstntern large_dataset.csv --downsample "100+5" --verbose
 ### **Basic Usage**
 
 ```python
-from twisstntern import run_analysis
+from legacy.twisstntern import run_analysis
 ```
 This outputs:
  - results: pandas.DataFrame (grid of subtriangle analysis)

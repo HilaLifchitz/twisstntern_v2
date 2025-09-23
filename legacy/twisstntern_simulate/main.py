@@ -6,10 +6,10 @@ This module provides the command-line interface for running the complete
 twisstntern_simulate pipeline: simulation -> twisst processing -> analysis.
 
 Usage:
-    python -m twisstntern_simulate -c config.yaml -o Results/
+    python -m legacy.twisstntern_simulate -c config.yaml -o Results/
     
     # Or with additional options:
-    python -m twisstntern_simulate -c config.yaml -o Results/ --force-download --verbose
+    python -m legacy.twisstntern_simulate -c config.yaml -o Results/ --force-download --verbose
 """
 
 import argparse
@@ -18,10 +18,10 @@ import time
 import re
 from pathlib import Path
 
-from twisstntern_simulate.pipeline import run_pipeline
+from .pipeline import run_pipeline
 
 # Import twisstntern logging
-from twisstntern.logger import (
+from ..twisstntern.logger import (
     setup_logging,
     get_logger,
     log_system_info,
@@ -211,17 +211,17 @@ def main():
         epilog="""
 Examples:
   # Get configuration template
-  python -m twisstntern_simulate --get-config
-  python -m twisstntern_simulate --get-config my_config.yaml
+  python -m legacy.twisstntern_simulate --get-config
+  python -m legacy.twisstntern_simulate --get-config my_config.yaml
   
   # Basic usage with config file
-  python -m twisstntern_simulate -c config.yaml -o Results/
+  python -m legacy.twisstntern_simulate -c config.yaml -o Results/
   
   # With verbose output
-  python -m twisstntern_simulate -c config.yaml -o Results/ --verbose
+  python -m legacy.twisstntern_simulate -c config.yaml -o Results/ --verbose
   
   # Using default timestamped Results directory
-  python -m twisstntern_simulate -c config.yaml
+  python -m legacy.twisstntern_simulate -c config.yaml
         """,
     )
 
@@ -344,7 +344,7 @@ Examples:
             print("\n💡 Next steps:")
             print("   1. Edit the configuration file to match your simulation needs")
             print(
-                "   2. Run: python -m twisstntern_simulate -c config_template.yaml -o results"
+                "   2. Run: python -m legacy.twisstntern_simulate -c config_template.yaml -o results"
             )
         sys.exit(0)
 

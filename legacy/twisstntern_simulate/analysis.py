@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import pandas as pd
-from twisstntern.utils import (
+from ..twisstntern.utils import (
     cartizian,
     return_triangle_coord,
     n,

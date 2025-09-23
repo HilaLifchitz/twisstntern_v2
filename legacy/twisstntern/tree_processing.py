@@ -40,7 +40,7 @@ sys.path.append(str(EXTERNAL_DIR))
 from twisst import weightTrees, summary  # type: ignore
 
 # Import logger
-from twisstntern.logger import get_logger
+from .logger import get_logger
 
 
 def log_topologies(

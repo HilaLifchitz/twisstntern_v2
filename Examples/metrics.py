@@ -116,9 +116,10 @@ except ImportError:
         return decorator
     prange = range
 
-# Add parent directory for twisstntern import
-sys.path.append(str(Path(__file__).parent.parent))
-from twisstntern.utils import dump_data
+# Add repository root for legacy twisstntern import
+repo_root = Path(__file__).parent.parent
+sys.path.append(str(repo_root))
+from legacy.twisstntern.utils import dump_data
 
 # Suppress warnings for clean output
 warnings.filterwarnings("ignore")
@@ -126,7 +127,7 @@ warnings.filterwarnings("ignore")
 
 def load_data(filepath, verbose=False):
     """
-    Fast data loading using twisstntern's dump_data.
+    Fast data loading using legacy twisstntern's dump_data.
     
     Args:
         filepath (str): Path to CSV file
@@ -141,7 +142,7 @@ def load_data(filepath, verbose=False):
     start_time = time.time()
     
     try:
-        # Use twisstntern's optimized dump_data
+        # Use legacy twisstntern's optimized dump_data
         data_array = dump_data(str(filepath))
         data = pd.DataFrame(data_array, columns=['T1', 'T2', 'T3'])
         

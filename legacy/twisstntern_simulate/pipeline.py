@@ -13,11 +13,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 # Import simulation components
-from twisstntern_simulate.config import Config
-from twisstntern_simulate.simulation import run_simulation
-from twisstntern_simulate.ts_processing import ts_to_twisst_weights
-from twisstntern_simulate.analysis import triangles_analysis, fundamental_asymmetry
-from twisstntern_simulate.visualization import (
+from .config import Config
+from .simulation import run_simulation
+from .ts_processing import ts_to_twisst_weights
+from .analysis import triangles_analysis, fundamental_asymmetry
+from .visualization import (
     plot_fundamental_asymmetry,
     plot,
     plot_results,
@@ -28,7 +28,7 @@ from twisstntern_simulate.visualization import (
 
 
 # Import logging from twisstntern
-from twisstntern.logger import log_simulation_config
+from ..twisstntern.logger import log_simulation_config
 
 # Get logger (logging configured in __init__.py)
 logger = logging.getLogger(__name__)

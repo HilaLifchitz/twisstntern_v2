@@ -26,7 +26,7 @@ def main(cfg: DictConfig) -> None:
     # Validate required parameters
     if not cfg.file:
         print("Error: Input file must be specified")
-        print("Either set 'file' in config or use: python -m twisstntern file=path/to/file")
+        print("Either set 'file' in config or use: python -m legacy.twisstntern file=path/to/file")
         sys.exit(1)
     
     # Check if input file exists

@@ -835,7 +835,7 @@ def download_config_template(destination_path=None):
         str: Path where the config file was saved
 
     Examples:
-        >>> import twisstntern_simulate.utils as utils
+        >>> import legacy.twisstntern_simulate.utils as utils
         >>> config_path = utils.download_config_template()
         >>> print(f"Config template downloaded to: {config_path}")
     """

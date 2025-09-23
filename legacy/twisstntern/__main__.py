@@ -8,8 +8,8 @@ import time
 import re
 from pathlib import Path
 
-from twisstntern.pipeline import run_analysis
-from twisstntern.logger import (
+from .pipeline import run_analysis
+from .logger import (
     setup_logging,
     get_logger,
     log_system_info,

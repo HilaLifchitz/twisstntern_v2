@@ -89,7 +89,7 @@ twisst-simulate = "src.twisstntern_simulate.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "legacy*"]
 
 [tool.setuptools.package-data]
 "src.twisstntern" = ["external/*", "configs/*.yaml", "configs/**/*.yaml"]

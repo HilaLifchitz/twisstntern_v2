@@ -7,7 +7,7 @@ from .utils import download_config_template
 
 
 def main():
-    """Main entry point for twisstntern_simulate command-line interface."""
+    """Main entry point for legacy twisstntern_simulate command-line interface."""
 
     # Check for special commands first
     if len(sys.argv) > 1 and sys.argv[1] == "--get-config":
@@ -27,7 +27,7 @@ def main():
             print("\n💡 Next steps:")
             print("   1. Edit the configuration file to match your simulation needs")
             print(
-                "   2. Run: python -m twisstntern_simulate -c config_template.yaml -o results"
+                "   2. Run: python -m legacy.twisstntern_simulate -c config_template.yaml -o results"
             )
         sys.exit(0)
 

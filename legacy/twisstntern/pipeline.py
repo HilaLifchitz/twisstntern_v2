@@ -5,9 +5,9 @@ import time
 from pathlib import Path
 import pandas as pd
 
-from twisstntern.utils import dump_data
-from twisstntern.analysis import triangles_analysis, fundamental_asymmetry
-from twisstntern.visualization import (  # add the plot functions here 25.6
+from .utils import dump_data
+from .analysis import triangles_analysis, fundamental_asymmetry
+from .visualization import (  # add the plot functions here 25.6
     plot,
     plot_results,
     plotting_triangle_index,
@@ -15,11 +15,11 @@ from twisstntern.visualization import (  # add the plot functions here 25.6
     plot_ternary_heatmap_data,
     plot_density_colored_radcount,
 )
-from twisstntern.tree_processing import (
+from .tree_processing import (
     detect_and_read_trees,
     trees_to_twisst_weights_unified,
 )
-from twisstntern.logger import get_logger
+from .logger import get_logger
 
 
 def detect_file_type(file_path):

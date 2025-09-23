@@ -11,7 +11,7 @@ from mpl_toolkits.mplot3d import Axes3D  # Add 3D plotting capability
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.patches import Polygon
 import seaborn as sns  # For color palettes
-from twisstntern.utils import (
+from ..twisstntern.utils import (
     cartizian,
     return_triangle_coord,
     T2,
@@ -24,7 +24,7 @@ from twisstntern.utils import (
     mid_point_triangle,
     right_triangle_coordinates_list,
 )
-from twisstntern.analysis import fundamental_asymmetry
+from ..twisstntern.analysis import fundamental_asymmetry
 from sklearn.neighbors import NearestNeighbors
 
 # ============================================================================

@@ -23,8 +23,8 @@ sys.path.append(str(EXTERNAL_DIR))
 from twisst import weightTrees
 
 # Import logging from twisstntern
-from twisstntern.logger import get_logger
-from twisstntern.tree_processing import log_topologies
+from ..twisstntern.logger import get_logger
+from ..twisstntern.tree_processing import log_topologies
 
 
 # exrtacting the toplogies as easy strings

@@ -3,8 +3,14 @@
 
 import os
 from pathlib import Path
-import twisstntern
 import glob
+
+# Ensure repository root is on the module search path
+import sys
+repo_root = Path(__file__).parent.parent
+sys.path.insert(0, str(repo_root))
+
+import legacy.twisstntern as twisstntern
 
 def list_supported_files():
     """List all supported files (CSV and tree files) in the current directory and subdirectories, 
