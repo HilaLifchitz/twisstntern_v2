@@ -160,9 +160,10 @@ def cartizian(T1, T2, T3):
     Returns:
         tuple: (x, y) Cartesian coordinates
     """
-    x = T3 - T2
+    # Match legacy mapping so points stay within the [-0.5, 0.5] triangle bounds.
+    x = (T3 - T2) / 2
     y = T1 * h
-    
+
     return x, y
 
 
