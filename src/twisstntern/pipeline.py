@@ -7,14 +7,7 @@ from omegaconf import DictConfig
 
 from ..core.utils import dump_data
 from ..core.analysis import triangles_analysis, fundamental_asymmetry
-from .visualization import (
-    plot,
-    plot_results,
-    plotting_triangle_index,
-    plot_fundamental_asymmetry,
-    plot_ternary_heatmap_data,
-    plot_density_colored_radcount
-)
+from . import visualization as viz
 from .tree_processing import (
     detect_and_read_trees,
     trees_to_twisst_weights_unified,
@@ -121,6 +114,16 @@ def run_analysis(cfg: DictConfig):
         tuple: (results, fundamental_results, csv_file_used)
     """
     logger = get_logger(__name__) if cfg.output.log_file else None
+
+    # Sync visualization module styling with configuration to mirror legacy defaults
+    viz.style = cfg.visualization.style
+    viz.style_heatmap = cfg.visualization.style_heatmap
+    viz.T1_color = cfg.visualization.t1_color
+    viz.T2_color = cfg.visualization.t2_color
+    viz.T3_color = cfg.visualization.t3_color
+    viz.T1_color_data = cfg.visualization.t1_color_data
+    viz.T2_color_data = cfg.visualization.t2_color_data
+    viz.T3_color_data = cfg.visualization.t3_color_data
     
     # Ensure Results directory exists
     results_dir = Path(cfg.output.output_dir)
@@ -190,7 +193,14 @@ def run_analysis(cfg: DictConfig):
     if logger:
         logger.info(f"Loading data from: {csv_file}")
     print(f"Loading data from: {csv_file}")
-    data = dump_data(csv_file, logger=logger)
+    axis_order = cfg.processing.axis_order if cfg.processing.axis_order else ["T1", "T2", "T3"]
+    data = dump_data(
+        csv_file,
+        logger=logger,
+        axis_order=axis_order,
+        normalize=cfg.processing.normalize_data,
+        remove_equal_t2_t3=cfg.processing.remove_equal_t2_t3,
+    )
     n_before_trim = len(data)
     if logger:
         logger.info(f"Loaded data shape: {data.shape}")
@@ -267,30 +277,38 @@ def run_analysis(cfg: DictConfig):
     print("Generating visualizations...")
     
     # Update visualization functions to accept config parameters
-    plot_fundamental_asymmetry(data, output_prefix)
+    viz.plot_fundamental_asymmetry(data, output_prefix)
     if logger:
         logger.debug("Generated fundamental asymmetry plot")
         
-    plot(data, cfg.analysis.granularity, output_prefix)
+    viz.plot(data, cfg.analysis.granularity, output_prefix)
     if logger:
         logger.debug("Generated ternary plot")
 
     # Ternary heatmap with fixed granularity and configurable colormap
-    plot_ternary_heatmap_data(data, cfg.analysis.heatmap_granularity, output_prefix, 
-                              heatmap_colormap=cfg.visualization.style_heatmap)
+    viz.plot_ternary_heatmap_data(
+        data,
+        cfg.analysis.heatmap_granularity,
+        output_prefix,
+        heatmap_colormap=cfg.visualization.style_heatmap,
+    )
     if logger:
         logger.debug("Generated ternary heatmap")
 
     # Density radcount plot
-    plot_density_colored_radcount(data, output_prefix)
+    viz.plot_density_colored_radcount(
+        data,
+        output_prefix,
+        colormap=cfg.visualization.style_heatmap,
+    )
     if logger:
         logger.debug("Generated density radcount plot")
     
-    plot_results(results, cfg.analysis.granularity, output_prefix)
+    viz.plot_results(results, cfg.analysis.granularity, output_prefix)
     if logger:
         logger.debug("Generated results plot")
         
-    plotting_triangle_index(cfg.analysis.granularity, output_prefix)
+    viz.plotting_triangle_index(cfg.analysis.granularity, output_prefix)
     if logger:
         logger.debug("Generated triangle index plot")
 

@@ -60,6 +60,7 @@ class ProcessingConfig:
     downsample_i: Optional[int] = None
     normalize_data: bool = True
     remove_equal_t2_t3: bool = True
+    axis_order: Optional[List[str]] = None
     
 
 @dataclass

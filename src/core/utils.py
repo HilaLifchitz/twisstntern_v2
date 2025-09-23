@@ -345,136 +345,134 @@ def n(a1, b1, a2, b2, a3, b3, data):
     return int(n_r), int(n_l)
 
 
-def dump_data(file_path, logger=None):
-    """
-    Load and validate ternary data from CSV file.
-    
-    This function reads a CSV file containing topology weights or ternary coordinates
-    and performs basic validation to ensure the data is suitable for analysis.
-    
-    Args:
-        file_path (str): Path to the CSV file to load
-        logger: Optional logger to log messages (default: None)
-        
-    Returns:
-        pandas.DataFrame: Loaded and validated data with columns T1, T2, T3
-        
-    Raises:
-        FileNotFoundError: If the file doesn't exist
-        ValueError: If the data format is invalid or missing required columns
-        
-    Expected CSV format:
-        - Must contain columns named 'T1', 'T2', 'T3' (case-sensitive)
-        - Each row represents one data point with ternary coordinates
-        - Values should be numeric and ideally sum to ~1.0 (barycentric constraint)
-        
-    Example:
-        T1,T2,T3
-        0.333,0.333,0.334
-        0.5,0.25,0.25
-        ...
-    """
-    # Check if file exists
-    file_path = Path(file_path)
+def dump_data(file, logger=None, axis_order=None, normalize=True, remove_equal_t2_t3=True):
+    """Load and process data from CSV file, matching legacy heuristics."""
+    warnings.filterwarnings("ignore", category=FutureWarning)
+
+    file_path = Path(file)
     if not file_path.exists():
-        error_msg = f"File not found: {file_path}"
+        msg = f"File not found: {file_path}"
         if logger:
-            logger.error(error_msg)
-        raise FileNotFoundError(error_msg)
-    
+            logger.error(msg)
+        raise FileNotFoundError(msg)
+
+    print(f"\nAttempting to read file: {file_path}")
     if logger:
-        logger.info(f"Loading data from: {file_path}")
-    
-    # Try to detect delimiter
-    try:
-        with open(file_path, 'r') as f:
-            first_line = f.readline().strip()
-            
-        # Check common delimiters
-        if ',' in first_line:
-            delimiter = ','
-        elif '\t' in first_line:
-            delimiter = '\t'
-        elif ';' in first_line:
-            delimiter = ';'
-        elif '|' in first_line:
-            delimiter = '|'
-        else:
-            if logger:
-                logger.warning("Could not detect delimiter, assuming comma")
-            delimiter = ","  # default to comma if no delimiter found
-            
+        logger.info(f"Attempting to read file: {file_path}")
+
+    best_delimiter = None
+    best_skiprows = 0
+    best_data = None
+
+    # Legacy heuristic: probe several delimiters and skipped header rows
+    for delimiter in [",", "\t", ";", " "]:
+        print(f"\nTrying delimiter: '{delimiter}'")
         if logger:
-            logger.debug(f"Detected delimiter: '{delimiter}'")
-            
-    except Exception as e:
-        if logger:
-            logger.warning(f"Could not detect delimiter: {e}, assuming comma")
-        delimiter = ","
-    
-    # Load the data
-    try:
-        data = pd.read_csv(file_path, delimiter=delimiter)
-        if logger:
-            logger.info(f"Successfully loaded CSV with shape: {data.shape}")
-            
-    except Exception as e:
-        error_msg = f"Failed to load CSV file: {e}"
-        if logger:
-            logger.error(error_msg)
-        raise ValueError(error_msg)
-    
-    # Validate required columns
-    required_columns = ['T1', 'T2', 'T3']
-    missing_columns = [col for col in required_columns if col not in data.columns]
-    
-    if missing_columns:
-        error_msg = f"Missing required columns: {missing_columns}. Found columns: {list(data.columns)}"
-        if logger:
-            logger.error(error_msg)
-        raise ValueError(error_msg)
-    
-    if logger:
-        logger.info(f"Found required columns: {required_columns}")
-    
-    # Convert to numeric if needed
-    for col in required_columns:
-        if not pd.api.types.is_numeric_dtype(data[col]):
+            logger.debug(f"Trying delimiter: '{delimiter}'")
+
+        for skiprows in range(10):
             try:
-                data[col] = pd.to_numeric(data[col], errors='coerce')
+                test_data = pd.read_csv(
+                    file_path, sep=delimiter, skiprows=skiprows, nrows=10
+                )
+            except Exception:
+                continue
+
+            # Coerce to numeric and drop empty columns
+            for col in test_data.columns:
+                test_data[col] = pd.to_numeric(test_data[col], errors="coerce")
+            test_data = test_data.dropna(axis=1, how="all")
+
+            numeric_cols = [col for col in test_data.columns if test_data[col].notna().any()]
+            print(f"  Skip {skiprows} rows: Found {len(numeric_cols)} numeric columns")
+            if logger:
+                logger.debug(
+                    "Skip %d rows: found %d numeric columns", skiprows, len(numeric_cols)
+                )
+
+            if len(numeric_cols) == 3:
+                best_delimiter = delimiter
+                best_skiprows = skiprows
+                best_data = test_data[numeric_cols]
+                print(
+                    f"  Found 3 numeric columns with delimiter '{delimiter}' skipping {skiprows} rows"
+                )
                 if logger:
-                    logger.info(f"Converted column '{col}' to numeric")
-            except Exception as e:
-                error_msg = f"Could not convert column '{col}' to numeric: {e}"
-                if logger:
-                    logger.error(error_msg)
-                raise ValueError(error_msg)
-    
-    # Check for missing values
-    missing_count = data[required_columns].isnull().sum().sum()
-    if missing_count > 0:
+                    logger.info(
+                        "Using delimiter '%s' skipping %d rows", delimiter, skiprows
+                    )
+                break
+
+        if best_data is not None:
+            break
+
+    if best_data is None:
+        raise ValueError(
+            "Could not find 3 numeric columns in the first 10 rows with any common delimiter. "
+            "Please check your data format."
+        )
+
+    print(f"\nUsing delimiter: '{best_delimiter}', skipping {best_skiprows} rows")
+
+    try:
+        data = pd.read_csv(file_path, sep=best_delimiter, skiprows=best_skiprows)
         if logger:
-            logger.warning(f"Found {missing_count} missing values in ternary columns")
-        data = data.dropna(subset=required_columns)
-        if logger:
-            logger.info(f"Dropped rows with missing values. New shape: {data.shape}")
-    
-    # Basic validation: check if coordinates sum approximately to 1
-    coordinate_sums = data[required_columns].sum(axis=1)
-    deviation_from_1 = np.abs(coordinate_sums - 1.0)
-    max_deviation = deviation_from_1.max()
-    
-    if max_deviation > 0.01:  # Allow for small floating point errors
-        if logger:
-            logger.warning(f"Some coordinates don't sum to 1.0 (max deviation: {max_deviation:.6f})")
-            logger.warning("This might indicate non-normalized barycentric coordinates")
+            logger.info("Successfully read entire file with detected parameters")
+    except Exception as exc:
+        raise ValueError(f"Failed to read file with best parameters: {exc}")
+
+    # Reduce to three numeric columns, matching legacy behaviour
+    if len(data.columns) > 3:
+        t_cols = [col for col in data.columns if any(f"T{i}" in str(col).upper() for i in [1, 2, 3])]
+        if len(t_cols) == 3:
+            data = data[t_cols]
+        else:
+            data = data[best_data.columns]
+
+    if axis_order is None:
+        axis_order = ["T1", "T2", "T3"]
+
+    data.columns = axis_order
+
+    for col in data.columns:
+        data[col] = pd.to_numeric(data[col], errors="coerce")
+
+    data = data.dropna()
+    if len(data) == 0:
+        raise ValueError("No valid numeric data found after processing")
+
+    if normalize:
+        n_rows = data.shape[0]
+        for i in range(n_rows):
+            row_sum = data.iloc[i, :].sum()
+            if row_sum == 0:
+                continue
+            data.iloc[i, :] = data.iloc[i, :] / row_sum
+
+    if remove_equal_t2_t3 and data.shape[1] >= 3:
+        before = len(data)
+        data = data.loc[data.iloc[:, 1] != data.iloc[:, 2]]
+        removed = before - len(data)
     else:
-        if logger:
-            logger.info("All coordinates sum approximately to 1.0 ✓")
-    
+        removed = 0
+
+    status_parts = ["Data loaded"]
+    if normalize:
+        status_parts.append("normalized")
+    if remove_equal_t2_t3:
+        status_parts.append(f"removed {removed} points where T2 == T3")
+
+    status_message = ". ".join(status_parts) + f". Remaining rows: {len(data)}"
+    print(f"\n{status_message}")
     if logger:
-        logger.info(f"Data validation completed. Final shape: {data.shape}")
-    
+        logger.info(
+            "%s | normalize=%s remove_equal_t2_t3=%s remaining=%d",
+            status_message,
+            normalize,
+            remove_equal_t2_t3,
+            len(data),
+        )
+
     return data
 
 
@@ -600,51 +598,22 @@ def right_triangle_coordinates_list(alpha):
     return coords_list
 
 
-def log_likelihood_ratio_test(n_left, n_right):
-    """
-    Perform G-test (likelihood ratio test) for symmetry.
-    
-    Tests the null hypothesis that the probability of falling on either side
-    is equal (p = 0.5) against the alternative that they differ.
-    
-    Args:
-        n_left (int): Number of observations on the left side
-        n_right (int): Number of observations on the right side
-        
-    Returns:
-        tuple: (G_statistic, p_value) where:
-               - G_statistic: The G-test statistic (follows chi-square distribution)
-               - p_value: Two-tailed p-value from chi-square distribution
-               
-    The G-test is more appropriate than chi-square test for count data and
-    has better properties for small sample sizes.
-    
-    Mathematical formulation:
-        - Null hypothesis: p = 0.5 (symmetric)
-        - G = 2 * Σ(observed * ln(observed/expected))
-        - Under H0: G ~ χ²(df=1)
-    """
-    total = n_left + n_right
-    
-    if total == 0:
-        return np.nan, 1.0
-        
-    # Expected counts under null hypothesis (p = 0.5)
-    expected = total / 2.0
-    
-    # Handle zero counts (add small constant to avoid log(0))
-    n_left_adj = max(n_left, 1e-10)
-    n_right_adj = max(n_right, 1e-10)
-    
-    # G-statistic calculation
-    G = 2 * (n_left_adj * log(n_left_adj / expected) + 
-             n_right_adj * log(n_right_adj / expected))
-    
-    # Calculate p-value using chi-square distribution with df=1
-    p_value = 1.0 - chi2.cdf(G, df=1)
-    
-    # For two-tailed test
-    if p_value > 0.5:
+def log_likelihood_ratio_test(n_r, n_l):
+    """Compute likelihood ratio (G) statistic and p-value for asymmetry."""
+    N = n_r + n_l
+
+    if N == 0:
+        return np.nan, np.nan
+
+    p_null = 0.5
+    p_alt = n_l / N
+
+    L_null = binom.pmf(n_l, N, p_null)
+    L_alt = binom.pmf(n_l, N, p_alt)
+
+    if L_alt == 0 or L_null == 0 or L_null / L_alt < 1e-16:
         return np.nan, 0.0
-        
-    return G, p_value
+
+    test_stat = -2 * log(L_null / L_alt)
+    p_value = 1 - chi2.cdf(test_stat, df=1)
+    return float(test_stat), float(p_value)

@@ -12,11 +12,10 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import hydra
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from hydra.core.config_store import ConfigStore
 
 from .hydra_config import TwisstnternSimulateConfig
-# Legacy Config import removed - using pure Hydra configuration
 from .pipeline import run_pipeline
 
 # Import twisstntern logging
@@ -221,7 +220,7 @@ def hydra_main(cfg: DictConfig) -> None:
     
     logger = get_logger(__name__)
     log_system_info()
-    
+
     # Use Hydra config directly - no conversion needed
     config_source = "hydra_config"
     
@@ -284,7 +283,6 @@ def hydra_main(cfg: DictConfig) -> None:
             granularity=granularity,
             verbose=cfg.verbose,
             topology_mapping=cfg.analysis.topology_mapping,
-            config_overrides=None,  # Hydra handles overrides directly
             downsample_N=downsample_N,
             downsample_i=downsample_i,
             downsample_kb=downsampleKB_N,

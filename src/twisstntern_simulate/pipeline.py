@@ -16,6 +16,7 @@ from omegaconf import DictConfig
 from .simulation import run_simulation
 from .ts_processing import ts_to_twisst_weights
 from ..core.analysis import triangles_analysis, fundamental_asymmetry
+from . import visualization as viz
 from .visualization import (
     plot_fundamental_asymmetry,
     plot,
@@ -41,7 +42,6 @@ def run_pipeline(
     granularity: float = 0.1,
     verbose: bool = False,
     topology_mapping: Optional[str] = None,
-    config_overrides: Optional[list] = None,
     downsample_N: Optional[int] = None,
     downsample_i: Optional[int] = None,
     downsample_kb: Optional[int] = None,
@@ -59,7 +59,6 @@ def run_pipeline(
         granularity: Granularity for ternary analysis
         verbose: Enable verbose output
         topology_mapping: Custom topology mapping string for T1/T2/T3
-        config_overrides: List of config override strings in format 'key=value'
         downsample_N: Downsample interval (sample every Nth tree/locus)
         downsample_i: Starting index for downsampling (offset)
         downsample_kb: Downsample interval in kilobases (sample every N kb)
@@ -80,6 +79,16 @@ def run_pipeline(
     logger.info("---------------------------------------------------------")
     logger.info("Starting twisstntern_simulate pipeline")
     logger.info("---------------------------------------------------------")
+
+    # Sync visualization module styling with configuration so plots match legacy output
+    if hasattr(config, "visualization"):
+        viz.T1_color = config.visualization.colors.T1_color
+        viz.T2_color = config.visualization.colors.T2_color
+        viz.T3_color = config.visualization.colors.T3_color
+        viz.T1_color_data = config.visualization.colors.T1_color_data
+        viz.T2_color_data = config.visualization.colors.T2_color_data
+        viz.T3_color_data = config.visualization.colors.T3_color_data
+        viz.style_heatmap = config.visualization.heatmap.colormap
 
     results = {
         "config_source": "hydra_config",
@@ -160,7 +169,11 @@ def run_pipeline(
             # Create mapping: numeric_id -> descriptive_label 
             # The numeric ID corresponds to the order populations were added to the demography
             population_labels = {}
-            populations_with_samples = [pop for pop in config.populations if not pop.is_ancestral and pop.sample_size and pop.sample_size > 0]
+            populations_with_samples = [
+                pop for pop in config.simulation.populations
+                if getattr(pop, 'sample_size', 0) is not None
+                and getattr(pop, 'sample_size', 0) > 0
+            ]
             
             for idx, pop in enumerate(populations_with_samples):
                 pop_id = str(idx)  # TreeSequence uses string IDs like "0", "1", "2"
@@ -292,10 +305,13 @@ def run_pipeline(
         # Generate all plots (exactly like main twisstntern - always generate)
         plot_fundamental_asymmetry(topology_weights, output_prefix)
         plot(topology_weights, granularity, output_prefix)
-        # New: Ternary heatmap (count, no grid) - always uses 0.02 granularity
+        # Ternary heatmap (count, no grid) - always uses 0.02 granularity
         plot_ternary_heatmap_data(topology_weights, 0.02, output_prefix, heatmap_colormap=heatmap_colormap)
-        # New: Density radcount plot - always uses fixed parameters
-        plot_density_colored_radcount(topology_weights, output_prefix)
+        # Density radcount plot - mirrors legacy colormap behaviour
+        density_colormap = "viridis"
+        if hasattr(config, "visualization") and hasattr(config.visualization, "density"):
+            density_colormap = config.visualization.density.colormap
+        plot_density_colored_radcount(topology_weights, output_prefix, colormap=density_colormap)
         plot_results(triangles_results, granularity, output_prefix)
         plotting_triangle_index(granularity, output_prefix)
 
@@ -335,7 +351,7 @@ def run_pipeline(
 
     except Exception as e:
         error_msg = f"Pipeline failed: {str(e)}"
-        logger.error(error_msg)
+        logger.exception(error_msg)
         results["errors"].append(str(e))
         raise RuntimeError(error_msg) from e
 

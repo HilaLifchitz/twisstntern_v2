@@ -48,6 +48,7 @@ processing:
   downsample_i: null  # Starting index for downsampling
   normalize_data: true  # Normalize ternary coordinates to sum to 1
   remove_equal_t2_t3: true  # Remove points where T2 == T3
+  axis_order: ["T1", "T2", "T3"]  # Column order when loading CSV files
 
 # Tree processing configuration (for tree input files)
 tree_processing:

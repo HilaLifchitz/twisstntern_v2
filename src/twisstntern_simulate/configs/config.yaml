@@ -15,9 +15,7 @@ quiet: false
 
 # Random seed for reproducibility (null = random)
 seed: null
-
-# External config file support
-config_file: null
+population_labels: {}
 
 # Hydra configuration
 hydra:

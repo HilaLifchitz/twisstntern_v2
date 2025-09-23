@@ -121,10 +121,16 @@ def simulate_locus(config: DictConfig):
         print(f"Using random seed: {seed}")  # for the user to see
 
     # Simulate tree sequence
+    samples = {}
+    for pop in config.simulation.populations:
+        sample_size = getattr(pop, 'sample_size', 0)
+        if sample_size is None:
+            sample_size = 0
+        if sample_size > 0:
+            samples[pop.name] = sample_size
+
     ts = msprime.sim_ancestry(
-        samples={
-            pop.name: getattr(pop, 'sample_size', 0) for pop in config.simulation.populations if getattr(pop, 'sample_size', 0) > 0
-        },
+        samples=samples,
         demography=demography,
         num_replicates=config.simulation.n_loci,
         sequence_length=locus_length,
@@ -193,10 +199,16 @@ def simulate_chromosome(config: DictConfig) -> tskit.TreeSequence:
         print(f"Using random seed: {seed}")  # for the user to see
 
     # Simulate tree sequence
+    samples = {}
+    for pop in config.simulation.populations:
+        sample_size = getattr(pop, 'sample_size', 0)
+        if sample_size is None:
+            sample_size = 0
+        if sample_size > 0:
+            samples[pop.name] = sample_size
+
     ts = msprime.sim_ancestry(
-        samples={
-            pop.name: getattr(pop, 'sample_size', 0) for pop in config.simulation.populations if getattr(pop, 'sample_size', 0) > 0
-        },
+        samples=samples,
         demography=demography,
         sequence_length=config.simulation.chromosome_length,
         recombination_rate=config.simulation.rec_rate,
@@ -357,7 +369,7 @@ def create_newick_with_sample_labels(tree, pop_map):
                 if child_str:  # Only add if not empty
                     # Add branch length if available
                     branch_length = tree.branch_length(child)
-                    if branch_length > 0:
+                    if branch_length is not None and branch_length > 0:
                         child_str += f":{branch_length}"
                     child_strings.append(child_str)
 
@@ -410,5 +422,3 @@ def save_ts_LOCUS_as_plain_newick(ts_list, output_path):
                 file.write(labeled_newick + "\n")
     
     return str(output_path)
-
-

@@ -7,7 +7,6 @@ parameters, providing type safety and validation.
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union, Any
-from omegaconf import MISSING
 
 
 @dataclass 
@@ -133,6 +132,7 @@ class TwisstnternSimulateConfig:
     verbose: bool = False
     quiet: bool = False
     seed: Optional[int] = None
+    population_labels: Dict[str, str] = field(default_factory=dict)
     
     # Sub-configurations
     simulation: SimulationConfig = field(default_factory=SimulationConfig)
