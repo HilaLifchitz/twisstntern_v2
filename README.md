@@ -39,19 +39,69 @@ In an idealized four population model (3 splits with no migration), we expect th
 
 ## Installation
 
-### 🛠️ Option 1: Install from GitHub (Recommended)
+### ⚠️ **Important: Python Version Compatibility**
+
+**TWISSTNTERN requires Python 3.8-3.11** due to dependency compatibility:
+- **Python 3.13+**: Not supported (ete3 compatibility issues)
+- **Python 3.12**: May work but not officially tested
+- **Python 3.11**: ✅ **Recommended** (fully tested and stable)
+- **Python 3.8-3.10**: ✅ Supported
+
+### 🛠️ **Option 1: Conda Environment (Recommended)**
+
+**For new users or clean setup:**
+
+```bash
+# Create environment with Python 3.11
+conda create -n twisstntern python=3.11 -y
+
+# Activate environment
+conda activate twisstntern
+
+# Install from GitHub
+pip install git+https://github.com/HilaLifchitz/twisstntern_v2
+```
+
+**For development:**
+
+```bash
+# Create environment with Python 3.11
+conda create -n twisstntern python=3.11 -y
+
+# Activate environment
+conda activate twisstntern
+
+# Clone and install in development mode
+git clone https://github.com/HilaLifchitz/twisstntern_v2.git
+cd twisstntern_v2
+pip install -e .[dev]
+```
+
+### 🛠️ **Option 2: Direct pip install (Advanced users)**
+
+**Only if you have Python 3.8-3.11 in your system:**
 
 ```bash
 pip install git+https://github.com/HilaLifchitz/twisstntern_v2
 ```
 
-### 🛠️ Option 2: Development Mode (for contributors)
+### 🛠️ **Option 3: Development Mode (for contributors)**
 
 ```bash
 git clone https://github.com/HilaLifchitz/twisstntern_v2.git
 cd twisstntern_v2
 pip install -e .[dev]
 ```
+
+### 🔧 **Troubleshooting Installation**
+
+**If you get `ete3` import errors:**
+- You're likely using Python 3.13+
+- **Solution**: Use conda to create a Python 3.11 environment (Option 1 above)
+
+**If conda is not found:**
+- Install Miniconda: https://docs.conda.io/en/latest/miniconda.html
+- Or use your system's package manager
 
 ### 🎯 Multiple CLI Commands Available
 
@@ -552,8 +602,12 @@ And acknowledge the **TWISST** software available at:
 
 ## Dependencies
 
+### **Python Version Requirements**
+- **Python 3.8-3.11**: ✅ Fully supported
+- **Python 3.12**: ⚠️ May work but not officially tested
+- **Python 3.13+**: ❌ **Not supported** (ete3 compatibility issues)
+
 ### **Core Requirements**
-- Python ≥ 3.8
 - NumPy ≥ 1.21.0
 - Pandas ≥ 1.3.0
 - SciPy ≥ 1.7.0
@@ -563,11 +617,18 @@ And acknowledge the **TWISST** software available at:
 ### **Tree Processing**
 - tskit ≥ 0.4.0
 - msprime ≥ 1.0.0 *(for simulations)*
-- ete3 ≥ 3.1.0
+- ete3 ≥ 3.1.0 *(requires Python ≤ 3.11)*
 
 ### **Configuration & Data**
 - PyYAML ≥ 6.0.0
 - requests ≥ 2.25.0
+
+### **Development Tools**
+- pytest ≥ 6.0.0
+- black ≥ 22.0.0
+- flake8 ≥ 4.0.0
+- mypy ≥ 0.910
+- pre-commit ≥ 2.15.0
 
 **Note**: `twisst.py` is included automatically - no manual installation required.
 
