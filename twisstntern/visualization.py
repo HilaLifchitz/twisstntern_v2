@@ -939,8 +939,68 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
 
     # === STEP 1: Draw grid lines FIRST (zorder=1) ===
     if grid:
-        # Use grey grid lines with fixed granularity 0.1
-        draw_grey_grid_lines(ax, alpha=0.1)
+        # Use same grid styling as heatmap for consistency, but make it subtle
+        grid_color = "#3E3E3E"
+        grid_alpha = 0.3
+        grid_linewidth = 0.8
+
+        # Add subtle median line (central vertical line)
+        ax.vlines(
+            x=0,
+            ymin=0,
+            ymax=h,
+            colors=grid_color,
+            linestyles=":",
+            linewidth=grid_linewidth,
+            alpha=grid_alpha,
+            zorder=2,
+        )
+
+        # Draw grey grid lines (fixed granularity 0.1)
+        for i in range(1, int(1 / 0.1)):
+            y = i * 0.1
+            # T1 lines (horizontal)
+            ax.hlines(
+                y=y * h,
+                xmin=T1_lim(y)[0],
+                xmax=T1_lim(y)[1],
+                color=grid_color,
+                linewidth=grid_linewidth,
+                alpha=grid_alpha,
+                zorder=1,
+            )
+            # T2 lines
+            x2 = np.linspace(T2_lim(y)[0], T2_lim(y)[1], 100)
+            ax.plot(
+                x2,
+                T2(y, x2),
+                color=grid_color,
+                linewidth=grid_linewidth,
+                alpha=grid_alpha,
+                zorder=1,
+            )
+            # T3 lines
+            x3 = np.linspace(T3_lim(y)[0], T3_lim(y)[1], 100)
+            ax.plot(
+                x3,
+                T3(y, x3),
+                color=grid_color,
+                linewidth=grid_linewidth,
+                alpha=grid_alpha,
+                zorder=1,
+            )
+
+        # Central vertical line at grid layer
+        ax.vlines(
+            x=0,
+            ymin=0,
+            ymax=h,
+            colors=grid_color,
+            ls=":",
+            linewidth=grid_linewidth,
+            alpha=grid_alpha,
+            zorder=1,
+        )
 
     # === STEP 2: Plot scatter points SECOND (zorder=2) ===
     # Convert data points from ternary to cartesian coordinates
@@ -971,19 +1031,8 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
     triangle_y = [h, 0, 0, h]
     ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
 
-    # === STEP 4: Draw median line LAST and FAINTLY on top (zorder=4) ===
-    ax.vlines(
-        x=0,
-        ymin=0,
-        ymax=h,
-        colors="lightgrey",
-        linestyles="-",
-        linewidth=0.8,
-        alpha=0.6,
-        zorder=4,
-    )
-    # Add subtle median line (central vertical line) - dotted and thinner like in plot function
-    ax.vlines(x=0, ymin=0, ymax=h, colors="gray", linestyles=":", linewidth=1, zorder=4)
+    # Note: Do not draw additional median lines here; the background grid already
+    # includes the central dotted line with the unified grid color and z-order.
 
     ax.set_xticks([])
     ax.set_yticks([])

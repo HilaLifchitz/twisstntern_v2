@@ -11,7 +11,7 @@ from mpl_toolkits.mplot3d import Axes3D  # Add 3D plotting capability
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.patches import Polygon
 import seaborn as sns  # For color palettes
-from twisstntern.utils import (
+from twisstntern_simulate.utils import (
     cartizian,
     return_triangle_coord,
     T2,
@@ -24,7 +24,7 @@ from twisstntern.utils import (
     mid_point_triangle,
     right_triangle_coordinates_list,
 )
-from twisstntern.analysis import fundamental_asymmetry
+from twisstntern_simulate.analysis import fundamental_asymmetry
 from sklearn.neighbors import NearestNeighbors
 
 # ============================================================================
@@ -78,6 +78,9 @@ def draw_grey_grid_lines(ax, alpha=0.1):
     Uses fixed granularity of 0.1 as requested.
     Grid lines are drawn with zorder=1 to ensure they appear under data points.
     """
+    # Use same grid color as heatmap for consistency
+    grid_color = "#3E3E3E"
+    
     # Draw grid lines using twisstntern functions (all grey, under data points)
     for i in range(1, int(1 / alpha)):
         y = i * alpha
@@ -86,19 +89,19 @@ def draw_grey_grid_lines(ax, alpha=0.1):
             y=y * h,
             xmin=T1_lim(y)[0],
             xmax=T1_lim(y)[1],
-            color="grey",
+            color=grid_color,
             linewidth=1,
             zorder=1,
         )
         # T2 lines
         x2 = np.linspace(T2_lim(y)[0], T2_lim(y)[1], 100)
-        ax.plot(x2, T2(y, x2), color="grey", linewidth=1, zorder=1)
+        ax.plot(x2, T2(y, x2), color=grid_color, linewidth=1, zorder=1)
         # T3 lines
         x3 = np.linspace(T3_lim(y)[0], T3_lim(y)[1], 100)
-        ax.plot(x3, T3(y, x3), color="grey", linewidth=1, zorder=1)
+        ax.plot(x3, T3(y, x3), color=grid_color, linewidth=1, zorder=1)
 
     # Central vertical line
-    ax.vlines(x=0, ymin=0, ymax=h, colors="grey", ls=":", zorder=1)
+    ax.vlines(x=0, ymin=0, ymax=h, colors=grid_color, ls=":", zorder=1)
 
 
 def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
@@ -128,8 +131,68 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
 
     # === STEP 1: Draw grid lines FIRST (zorder=1) ===
     if grid:
-        # Use grey grid lines with fixed granularity 0.1
-        draw_grey_grid_lines(ax, alpha=0.1)
+        # Use same grid styling as heatmap for consistency
+        grid_color = "#3E3E3E"
+        grid_alpha = 0.3
+        grid_linewidth = 0.8
+
+        # Add subtle median line (central vertical line) - same style as heatmap
+        ax.vlines(
+            x=0,
+            ymin=0,
+            ymax=h,
+            colors=grid_color,
+            linestyles=":",
+            linewidth=grid_linewidth,
+            alpha=grid_alpha,
+            zorder=2,
+        )
+
+        # Draw grey grid lines (fixed granularity 0.1)
+        for i in range(1, int(1 / 0.1)):
+            y = i * 0.1
+            # T1 lines (horizontal)
+            ax.hlines(
+                y=y * h,
+                xmin=T1_lim(y)[0],
+                xmax=T1_lim(y)[1],
+                color=grid_color,
+                linewidth=grid_linewidth,
+                alpha=grid_alpha,
+                zorder=1,
+            )
+            # T2 lines
+            x2 = np.linspace(T2_lim(y)[0], T2_lim(y)[1], 100)
+            ax.plot(
+                x2,
+                T2(y, x2),
+                color=grid_color,
+                linewidth=grid_linewidth,
+                alpha=grid_alpha,
+                zorder=1,
+            )
+            # T3 lines
+            x3 = np.linspace(T3_lim(y)[0], T3_lim(y)[1], 100)
+            ax.plot(
+                x3,
+                T3(y, x3),
+                color=grid_color,
+                linewidth=grid_linewidth,
+                alpha=grid_alpha,
+                zorder=1,
+            )
+
+        # Central vertical line at grid layer
+        ax.vlines(
+            x=0,
+            ymin=0,
+            ymax=h,
+            colors=grid_color,
+            ls=":",
+            linewidth=grid_linewidth,
+            alpha=grid_alpha,
+            zorder=1,
+        )
 
     # === STEP 2: Plot scatter points SECOND (zorder=2) ===
     # Convert data points from ternary to cartesian coordinates
@@ -160,17 +223,9 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
     triangle_y = [h, 0, 0, h]
     ax.plot(triangle_x, triangle_y, color="k", linewidth=1, zorder=3)
 
-    # === STEP 4: Draw median line LAST and FAINTLY on top (zorder=4) ===
-    ax.vlines(
-        x=0,
-        ymin=0,
-        ymax=h,
-        colors="lightgrey",
-        linestyles=":",
-        linewidth=0.8,
-        alpha=0.6,
-        zorder=4,
-    )
+    # Note: Do not draw any additional median line here.
+    # The background grid (including the central dotted line) has already been drawn
+    # above with the same styling as the heatmap for visual consistency.
 
     ax.set_xticks([])
     ax.set_yticks([])
@@ -970,7 +1025,7 @@ def plot_ternary_heatmap_data(
     ax.set_yticks([])
 
     # Add subtle median line (central vertical line) - dotted and thinner like in plot function
-    ax.vlines(x=0, ymin=0, ymax=h, colors="gray", linestyles=":", linewidth=1, zorder=2)
+    ax.vlines(x=0, ymin=0, ymax=h, colors=grid_color, linestyles=":", linewidth=1, zorder=2)
 
     # Draw grey grid lines (fixed granularity 0.1)
     if grid_color:
