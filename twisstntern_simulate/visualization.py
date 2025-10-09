@@ -59,17 +59,10 @@ def save_figure(fig, filename, dpi=300):
         filename: str — output filename (including .png or .pdf)
         dpi: int — resolution in dots per inch (default: 300)
     """
-    import warnings
-
-    # Suppress tight_layout warnings
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message=".*tight_layout.*")
-        try:
-            fig.tight_layout()  # Try tight_layout, but don't fail if incompatible
-        except:
-            pass  # Skip tight_layout if not compatible (e.g., with inset axes)
-
-    fig.savefig(filename, dpi=dpi, bbox_inches="tight")
+    # Always save as PDF to match twisstntern behavior
+    base, _ext = os.path.splitext(filename)
+    filename = base + ".pdf"
+    fig.savefig(filename, dpi=dpi, bbox_inches=None, format="pdf")
 
 
 def draw_grey_grid_lines(ax, alpha=0.1):
@@ -260,7 +253,7 @@ def plot_density_colored_radcount(data, file_name, colormap="viridis_r"):
     cbar.ax.set_title("Count", fontsize=10, pad=6)
 
     # Save the plot
-    title = f"{file_name}_radcount.png"
+    title = f"{file_name}_radcount.pdf"
     save_figure(fig, title)
     return fig
 
@@ -415,7 +408,7 @@ def plot(data, granularity, file_name):
     ax.spines["top"].set_color("none")
 
     # saving the plot
-    title = file_name + "_granuality_" + str(alpha) + ".png"
+    title = file_name + "_granuality_" + str(alpha) + ".pdf"
     save_figure(fig, title)
     return fig
 
@@ -561,7 +554,7 @@ def plot_fundamental_asymmetry(data, file_name):
         spine.set_color("none")
 
     # Save figure
-    title = f"{file_name}_fundamental_asymmetry.png"
+    title = f"{file_name}_fundamental_asymmetry.pdf"
     save_figure(fig, title)
     return main_d_lr, main_g_test, main_p_value
 
@@ -669,7 +662,7 @@ def plotting_triangle_index(granularity, file_name):
         ax.spines[spine].set_color("none")
 
     # Save and return
-    title = f"{file_name}_index_granularity_{alpha}.png"
+    title = f"{file_name}_index_granularity_{alpha}.pdf"
     save_figure(fig, title)
     return fig
 
@@ -906,7 +899,7 @@ def plot_results(res, granularity, file_name):
     # plt.title(style)
 
     # Save figure
-    title = f"{file_name}_analysis_granularity_{alpha}.png"
+    title = f"{file_name}_analysis_granularity_{alpha}.pdf"
     save_figure(fig, title)
     return fig
 
@@ -1102,6 +1095,6 @@ def plot_ternary_heatmap_data(
     cbar.ax.set_yticklabels([f"{vmin:.2g}", f"{vmax:.2g}"])
 
     # plt.title(style_heatmap)
-    title = f"{file_name}_heatmap.png"
+    title = f"{file_name}_heatmap.pdf"
     save_figure(fig, title)
     return fig

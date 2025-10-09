@@ -19,6 +19,7 @@ import re
 from pathlib import Path
 
 from twisstntern_simulate.pipeline import run_pipeline
+from twisstntern.visualization import set_export_format
 
 # Import twisstntern logging
 from twisstntern.logger import (
@@ -328,6 +329,7 @@ Examples:
         default=None,
         help="Colormap for the ternary heatmap. Options: 'viridis', 'viridis_r', 'plasma', 'inferno', 'Blues', 'Greys'. If not specified, uses the global style_heatmap setting from visualization.py.",
     )
+    # --pdf-plots removed: always exporting PDF now
 
     parser.add_argument(
         "--axis",
@@ -381,6 +383,8 @@ Examples:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Setup logging (like twisstntern)
+    # Always exporting to PDF (no CLI needed)
+    set_export_format("pdf")
     log_file_path = setup_logging(
         output_dir=str(output_dir), verbose=args.verbose, console_output=not args.quiet
     )

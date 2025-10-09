@@ -29,6 +29,13 @@ from twisstntern.analysis import fundamental_asymmetry
 from sklearn.neighbors import NearestNeighbors
 import matplotlib.colors as mcolors
 
+# Always export figures as PDF
+EXPORT_FORMAT = "pdf"
+
+def set_export_format(fmt: str):
+    # Kept for backward-compatibility; no-op since we always export PDF now
+    pass
+
 # ============================================================================
 # GLOBAL STYLE SETTINGS - TWEAK THESE FOR VISUAL CUSTOMIZATION
 # ============================================================================
@@ -123,17 +130,10 @@ def save_figure(fig, filename, dpi=300):
         filename: str — output filename (including .png or .pdf)
         dpi: int — resolution in dots per inch (default: 300)
     """
-    import warnings
-
-    # Suppress tight_layout warnings
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message=".*tight_layout.*")
-        try:
-            fig.tight_layout()  # Try tight_layout, but don't fail if incompatible
-        except:
-            pass  # Skip tight_layout if not compatible (e.g., with inset axes)
-
-    fig.savefig(filename, dpi=dpi, bbox_inches="tight")
+    # Always save as PDF
+    base, _ext = os.path.splitext(filename)
+    filename = base + ".pdf"
+    fig.savefig(filename, dpi=dpi, bbox_inches=None, format="pdf")
 
 
 # Initial plotting of data-points in ternary coordinates
