@@ -268,7 +268,7 @@ def run_simulation(
         ts_chrom = simulate_chromosome(config)
         results["chromosome"] = ts_chrom
         print(
-            f"Generated chromosome of length {config.chromosome_length:.1e} with reocmbination rate of {config.rec_rate:.1e}"
+            f"Generated chromosome of length {config.chromosome_length:.1e} with recombination rate of {config.rec_rate:.1e}"
         )
 
         # Always save trees
