@@ -268,6 +268,15 @@ def run_pipeline(
             all_overrides["topology_mapping"] = topology_mapping
         log_simulation_config(config, all_overrides)
 
+        # Additionally log split times here within twisstntern_simulate
+        # so the information appears even if upstream logging changes.
+        if hasattr(config, "splits") and config.splits:
+            logger.info("Split times (in generations before present):")
+            for split in config.splits:
+                logger.info(
+                    f"  Time {split.time}: {split.ancestral_pop} → {split.derived_pop1} + {split.derived_pop2}"
+                )
+
         # ====================================================================
         # STEP 2: Run simulation
         # ====================================================================
