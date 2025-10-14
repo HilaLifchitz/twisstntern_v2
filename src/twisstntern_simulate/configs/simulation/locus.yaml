@@ -3,7 +3,7 @@
 
 mode: locus
 n_loci: 10000
-locus_length: 10000
+locus_length: 1
 
 # Default demographic parameters (can be overridden)
 mutation_rate: 1e-8
