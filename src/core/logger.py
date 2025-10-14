@@ -339,7 +339,9 @@ def log_topologies(topos, simplified_topos, columns, logger, message_prefix="", 
     
     # Remove any console handlers from this specific logger
     for handler in file_logger.handlers[:]:
-        if isinstance(handler, logging.StreamHandler) and handler.stream.name == '<stdout>':
+        stream = getattr(handler, "stream", None)
+        stream_name = getattr(stream, "name", None) if stream is not None else None
+        if isinstance(handler, logging.StreamHandler) and stream_name == '<stdout>':
             file_logger.removeHandler(handler)
     
     # Ensure it only logs to file by setting propagate=False and using parent's file handler

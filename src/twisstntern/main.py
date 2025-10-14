@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import hydra
-from omegaconf import DictConfig, OmegaConf
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 
-from .config import TwisstnternConfig
+import hydra
+from omegaconf import DictConfig, OmegaConf
+
 from .pipeline import run_analysis, ensure_twisst_available
+from ..core.hydra_utils import build_run_suffix
 from ..core.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
 
 
@@ -35,12 +36,24 @@ def main(cfg: DictConfig) -> None:
         print(f"Error: Input file not found: {file_path}")
         sys.exit(1)
     
+    runtime_output_dir = OmegaConf.select(cfg, "hydra.runtime.output_dir", default=None)
+    base_output_dir = Path(runtime_output_dir) if runtime_output_dir else Path(cfg.output.output_dir)
+
+    run_suffix = build_run_suffix(cfg, include_job_identifier=True)
+    if run_suffix != "run":
+        results_dir = base_output_dir / run_suffix
+    else:
+        results_dir = base_output_dir
+
+    cfg.output.output_dir = str(results_dir)
+    results_dir.mkdir(parents=True, exist_ok=True)
+
     # Set up logging if requested
     logger = None
     log_file_path = None
     if cfg.output.log_file:
         log_file_path = setup_logging(
-            output_dir=cfg.output.output_dir,
+            output_dir=str(results_dir),
             verbose=cfg.output.verbose,
             console_output=True
         )
@@ -51,7 +64,7 @@ def main(cfg: DictConfig) -> None:
     if logger:
         log_analysis_start(
             input_file=str(file_path),
-            output_dir=cfg.output.output_dir,
+            output_dir=str(results_dir),
             granularity=cfg.analysis.granularity,
             taxon_names=cfg.tree_processing.taxon_names,
             outgroup=cfg.tree_processing.outgroup,

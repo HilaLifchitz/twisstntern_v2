@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import shutil
 from pathlib import Path
+from typing import Optional, Union
+
 import pandas as pd
 from omegaconf import DictConfig
 
@@ -11,8 +14,52 @@ from . import visualization as viz
 from .tree_processing import (
     detect_and_read_trees,
     trees_to_twisst_weights_unified,
+    ts_to_twisst_weights,
+    newick_to_twisst_weights,
 )
+from ..core.hydra_utils import build_run_suffix
 from ..core.logger import get_logger
+from ..core.tree_export import save_ts_CHROM_as_newick, save_newick_strings
+
+
+def export_tree_archive(
+    tree_data,
+    tree_type: str,
+    destination: Union[Path, str],
+    source_path: Optional[str] = None,
+    logger=None,
+) -> Optional[str]:
+    """Persist the tree input for reproducibility and sweep audit."""
+
+    dest_path = Path(destination)
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        if tree_type == "ts":
+            saved_path = save_ts_CHROM_as_newick(tree_data, dest_path)
+        else:
+            if source_path is not None:
+                source = Path(source_path)
+                saved_path = str(dest_path)
+                try:
+                    if source.resolve() != dest_path.resolve():
+                        shutil.copy2(source, dest_path)
+                except FileNotFoundError:
+                    # Fall back to writing from in-memory strings when the source cannot be copied.
+                    saved_path = save_newick_strings(tree_data, dest_path)
+            else:
+                saved_path = save_newick_strings(tree_data, dest_path)
+    except Exception as export_error:
+        if logger:
+            logger.warning(f"Failed to export tree archive: {export_error}")
+        else:
+            print(f"Warning: could not export tree archive: {export_error}")
+        return None
+
+    if logger:
+        logger.info(f"Saved tree archive to: {saved_path}")
+
+    return saved_path
 
 
 def detect_file_type(file_path):
@@ -53,7 +100,10 @@ def ensure_twisst_available():
 def process_tree_file(
     tree_file: str,
     cfg: DictConfig,
-    logger=None
+    logger=None,
+    tree_data=None,
+    tree_type: Optional[str] = None,
+    newick_export_path: Optional[str] = None,
 ):
     """
     Process a tree file to generate topology weights CSV file.
@@ -85,15 +135,54 @@ def process_tree_file(
         logger.info(f"Processing tree file: {tree_file}")
         logger.info(f"Output CSV will be saved to: {csv_output}")
 
-    # Process trees using the unified function
-    topology_weights_df = trees_to_twisst_weights_unified(
-        file_path=tree_file,
-        taxon_names=cfg.tree_processing.taxon_names,
-        outgroup=cfg.tree_processing.outgroup,
-        output_file=str(csv_output),
-        verbose=cfg.output.verbose,
-        topology_mapping=cfg.tree_processing.topology_mapping,
-    )
+    if tree_data is None or tree_type is None:
+        tree_data, tree_type = detect_and_read_trees(tree_file)
+
+    exported_archive = None
+    if newick_export_path:
+        exported_archive = export_tree_archive(
+            tree_data,
+            tree_type,
+            newick_export_path,
+            source_path=tree_file,
+            logger=logger,
+        )
+
+    if tree_type == "ts":
+        topology_weights_df = ts_to_twisst_weights(
+            tree_data,
+            outgroup=cfg.tree_processing.outgroup,
+            output_file=str(csv_output),
+            verbose=cfg.output.verbose,
+            twisst_verbose=cfg.output.verbose,
+            topology_mapping=cfg.tree_processing.topology_mapping,
+        )
+    elif tree_type == "newick":
+        topology_weights_df = newick_to_twisst_weights(
+            tree_data,
+            taxon_names=cfg.tree_processing.taxon_names,
+            outgroup=cfg.tree_processing.outgroup,
+            output_file=str(csv_output),
+            verbose=cfg.output.verbose,
+            twisst_verbose=cfg.output.verbose,
+            topology_mapping=cfg.tree_processing.topology_mapping,
+        )
+    else:
+        topology_weights_df = trees_to_twisst_weights_unified(
+            file_path=tree_file,
+            taxon_names=cfg.tree_processing.taxon_names,
+            outgroup=cfg.tree_processing.outgroup,
+            output_file=str(csv_output),
+            verbose=cfg.output.verbose,
+            topology_mapping=cfg.tree_processing.topology_mapping,
+        )
+        if exported_archive is None and newick_export_path:
+            export_tree_archive(
+                *detect_and_read_trees(tree_file),
+                destination=newick_export_path,
+                source_path=tree_file,
+                logger=logger,
+            )
 
     if logger:
         logger.info(f"✓ Successfully generated topology weights CSV: {csv_output}")
@@ -164,16 +253,25 @@ def run_analysis(cfg: DictConfig):
                 logger.info(f"Using taxon names: {cfg.tree_processing.taxon_names}")
                 logger.info(f"Using outgroup: {cfg.tree_processing.outgroup}")
 
+        suffix = build_run_suffix(cfg)
+        archive_name = f"{Path(cfg.file).stem}.newick" if suffix == "run" else f"{Path(cfg.file).stem}_{suffix}.newick"
+        newick_export_path = results_dir / archive_name
+
         # Process tree file to generate CSV
         if logger:
             logger.info("Converting trees to topology weights...")
         csv_file = process_tree_file(
             tree_file=cfg.file,
             cfg=cfg,
-            logger=logger
+            logger=logger,
+            tree_data=tree_data,
+            tree_type=tree_type,
+            newick_export_path=str(newick_export_path),
         )
         if logger:
             logger.info(f"Generated topology weights CSV: {csv_file}")
+
+        print(f"Tree archive saved to: {newick_export_path}")
 
         print("Tree processing complete.")
 

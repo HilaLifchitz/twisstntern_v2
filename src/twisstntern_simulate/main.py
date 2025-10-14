@@ -12,13 +12,14 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from hydra.core.config_store import ConfigStore
 
 from .hydra_config import TwisstnternSimulateConfig
 from .pipeline import run_pipeline
 
 # Import twisstntern logging
+from ..core.hydra_utils import build_run_suffix
 from ..core.logger import setup_logging, get_logger, log_system_info, log_analysis_start, log_analysis_complete, log_error
 
 
@@ -208,7 +209,21 @@ def hydra_main(cfg: DictConfig) -> None:
     Maintains exact functional compatibility with the original argparse version.
     """
     # Setup output directory
-    output_dir = Path(cfg.output_dir)
+    runtime_output_dir = OmegaConf.select(cfg, "hydra.runtime.output_dir", default=None)
+    base_output_dir = Path(runtime_output_dir) if runtime_output_dir else Path(cfg.output_dir)
+
+    run_suffix = build_run_suffix(
+        cfg,
+        extra_parts=[f"seed={cfg.seed}" if cfg.seed is not None else None],
+        include_job_identifier=True,
+    )
+
+    if run_suffix != "run":
+        output_dir = base_output_dir / run_suffix
+    else:
+        output_dir = base_output_dir
+
+    cfg.output_dir = str(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Setup logging (exactly like original)

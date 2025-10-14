@@ -42,16 +42,20 @@ Example usage:
 """
 
 import os
+import logging
+import random
+from pathlib import Path
+from typing import Dict, List, Union, Tuple, Optional, Literal
+
 import msprime
 import tskit
-import numpy as np
-import pandas as pd
-from typing import Dict, List, Union, Tuple, Optional, Literal
-from pathlib import Path
-import logging
 from omegaconf import DictConfig 
-import random
-import ete3
+
+from ..core.hydra_utils import build_run_suffix
+from ..core.tree_export import (
+    save_ts_CHROM_as_newick,
+    save_ts_LOCUS_as_plain_newick,
+)
 
 # Get logger (logging configured in __init__.py)
 logger = logging.getLogger(__name__)
@@ -119,6 +123,7 @@ def simulate_locus(config: DictConfig):
         seed = random.randint(0, 2**32 - 1)
         logger.info(f"Using random seed: {seed}")
         print(f"Using random seed: {seed}")  # for the user to see
+        config.seed = seed
 
     # Simulate tree sequence
     samples = {}
@@ -197,6 +202,7 @@ def simulate_chromosome(config: DictConfig) -> tskit.TreeSequence:
         seed = random.randint(0, 2**32 - 1)
         logger.info(f"Using random seed: {seed}")
         print(f"Using random seed: {seed}")  # for the user to see
+        config.seed = seed
 
     # Simulate tree sequence
     samples = {}
@@ -266,8 +272,14 @@ def run_simulation(config: DictConfig, output_dir: str, mode_override: Optional[
         # Ensure output directory exists
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
-        # Save trees as Newick format
-        newick_path = Path(output_dir) / f"{config.simulation.mode}_trees.newick"
+        # Save trees as Newick format with sweep-aware naming
+        seed_value = getattr(config, "seed", None)
+        extra_parts = [f"seed={seed_value}"] if seed_value is not None else None
+        suffix = build_run_suffix(config, extra_parts=extra_parts)
+        base_name = f"{config.simulation.mode}_trees"
+        if suffix != "run":
+            base_name = f"{base_name}_{suffix}"
+        newick_path = Path(output_dir) / f"{base_name}.newick"
         newick_file = save_ts_LOCUS_as_plain_newick(ts_list, newick_path)
         
         print(f"✅ Saved trees: {newick_file}")
@@ -284,7 +296,13 @@ def run_simulation(config: DictConfig, output_dir: str, mode_override: Optional[
         # Always save trees
         # Ensure output directory exists
         Path(output_dir).mkdir(parents=True, exist_ok=True)
-        newick_path = Path(output_dir) / f"{config.simulation.mode}_trees.newick"
+        seed_value = getattr(config, "seed", None)
+        extra_parts = [f"seed={seed_value}"] if seed_value is not None else None
+        suffix = build_run_suffix(config, extra_parts=extra_parts)
+        base_name = f"{config.simulation.mode}_trees"
+        if suffix != "run":
+            base_name = f"{base_name}_{suffix}"
+        newick_path = Path(output_dir) / f"{base_name}.newick"
         newick_file = save_ts_CHROM_as_newick(ts_chrom, newick_path)
         results["newick_file"] = newick_file
     
@@ -292,133 +310,3 @@ def run_simulation(config: DictConfig, output_dir: str, mode_override: Optional[
         raise ValueError(f"Unknown simulation mode: {config.simulation.mode}. Must be 'locus' or 'chromosome'")
 
     return results
-
-######################################################################################
-# HELPER FUNCTIONS FOR SAVING TREE SEQUENCES AS NEWICK FILES
-######################################################################################
-
-def get_population_map(ts):
-    """
-    Create a mapping from sample ID to unique population sample name for a TreeSequence.
-
-    Args:
-        ts: msprime TreeSequence object
-
-    Returns:
-        dict: Mapping from sample_id (int) to population_sample_name (str) like "P1_1", "P1_2", etc.
-    """
-    pop_map = {}
-
-    # Create mapping from population ID to population name
-    pop_id_to_name = {}
-    for pop_id in range(ts.num_populations):
-        pop = ts.population(pop_id)
-        if pop.metadata and "name" in pop.metadata:
-            pop_name = pop.metadata["name"]
-        else:
-            pop_name = str(pop_id)  # fallback to ID if no name
-        pop_id_to_name[pop_id] = pop_name
-
-    # Count samples within each population to create unique identifiers
-    pop_sample_counts = {}
-    
-    # Map each sample to its unique population sample name
-    for sample_id in ts.samples():
-        node = ts.node(sample_id)
-        pop_name = pop_id_to_name[node.population]
-        
-        # Increment counter for this population
-        if pop_name not in pop_sample_counts:
-            pop_sample_counts[pop_name] = 0
-        pop_sample_counts[pop_name] += 1
-        
-        # Create unique sample identifier like "P1_1", "P1_2", etc.
-        unique_sample_name = f"{pop_name}_{pop_sample_counts[pop_name]}"
-        pop_map[sample_id] = unique_sample_name
-
-    return pop_map
-
-
-def create_newick_with_sample_labels(tree, pop_map):
-    """
-    Create a Newick string from a tskit tree with proper sample labels.
-
-    Args:
-        tree: tskit Tree object
-        pop_map: dict mapping sample_id to population_name
-
-    Returns:
-        str: Newick string with population labels for samples
-    """
-
-    def _get_newick_recursive(node):
-        """Recursively build Newick string"""
-        if tree.is_sample(node):
-            # This is a sample - use population label
-            pop_label = pop_map.get(node, f"Sample_{node}")
-            return pop_label
-        else:
-            # This is an internal node - recurse on children
-            children = tree.children(node)
-            if len(children) == 0:
-                return ""
-
-            child_strings = []
-            for child in children:
-                child_str = _get_newick_recursive(child)
-                if child_str:  # Only add if not empty
-                    # Add branch length if available
-                    branch_length = tree.branch_length(child)
-                    if branch_length is not None and branch_length > 0:
-                        child_str += f":{branch_length}"
-                    child_strings.append(child_str)
-
-            if len(child_strings) == 1:
-                return child_strings[0]
-            else:
-                return f"({','.join(child_strings)})"
-
-    # Start from root
-    root = tree.root
-    newick = _get_newick_recursive(root)
-
-    # Add semicolon at the end
-    if not newick.endswith(";"):
-        newick += ";"
-
-    return newick
-#######################################################################################
-# FOR THE CHROMOSOME MODE:
-def save_ts_CHROM_as_newick(ts, output_path):
-    """
-    Saves marginal trees as Newick format with population labels, no interval annotations.
-    This format is ideal for twisst.
-    """
-    pop_map = get_population_map(ts)
-
-    with open(output_path, "w") as f:
-        for tree in ts.trees():
-            labeled_newick = create_newick_with_sample_labels(tree, pop_map)
-            f.write(labeled_newick + "\n")
-    
-    return str(output_path)
-
-# EXAMPLE:
-#save_ts_chromosome_as_newick(ts, os.path.join(output_dir, "CHROM_pop_plain.newick"))
-##################################################################################
-# LOCUS MODE:
-##################################################################################
-
-def save_ts_LOCUS_as_plain_newick(ts_list, output_path):
-    """
-    Save TreeSequence genealogies as Newick format using plain format.
-    This creates files that work properly with twisst.
-    """
-    with open(output_path, "w") as file:
-        for replicate_index, ts in enumerate(ts_list):
-            pop_map = get_population_map(ts)
-            for tree in ts.trees():
-                labeled_newick = create_newick_with_sample_labels(tree, pop_map)
-                file.write(labeled_newick + "\n")
-    
-    return str(output_path)
