@@ -436,7 +436,7 @@ def plot_ternary_projection(
     density_method = "neighbors"
     bandwidth = 0.02
 
-    import matplotlib.pyplot as plt
+   
     
     # If no axis provided, create a new figure
     if ax is None:
@@ -523,7 +523,7 @@ def plot_ternary_projection(
 ########################################################
 ########################################################
 # PLOTTING THE PANEL OF PLOTS!!! -- FINAL PLOT
-def all_plots(data, t1_idx, colormap="plasma", expectation=None):
+def all_plots(data, t1_idx, colormap="plasma", expectation=None, title=None):
     """
     Create a single panel with all ternary projection plots for all possible T2 (focal) topologies
     given a fixed T1 index. Uses the existing plot_ternary_projection function.
@@ -533,6 +533,7 @@ def all_plots(data, t1_idx, colormap="plasma", expectation=None):
     - t1_idx: int, index of T1 (top vertex)
     - colormap: str, colormap to use
     - expectation: float or None, expectation value for T2 (default None)
+    - title: str or None, title for the entire figure (default None)
     
     Returns:
     - matplotlib figure with subplots arranged in a panel
@@ -556,10 +557,16 @@ def all_plots(data, t1_idx, colormap="plasma", expectation=None):
             print(f"Plotting T1={t1_idx}, T2={t2_idx}")
             
             # Process data manually (same as in plot_ternary_projection)
-            T1 = data[:, t1_idx]
-            T2 = data[:, t2_idx]
-            mask = [j for j in range(data.shape[1]) if j not in (t1_idx, t2_idx)]
-            T3 = data[:, mask].sum(axis=1)
+            # Convert to numpy array if it's a DataFrame
+            if isinstance(data, pd.DataFrame):
+                data_array = data.values
+            else:
+                data_array = data
+                
+            T1 = data_array[:, t1_idx]
+            T2 = data_array[:, t2_idx]
+            mask = [j for j in range(data_array.shape[1]) if j not in (t1_idx, t2_idx)]
+            T3 = data_array[:, mask].sum(axis=1)
             
             # Apply expectation transformation if provided
             if expectation is not None:
@@ -642,8 +649,12 @@ def all_plots(data, t1_idx, colormap="plasma", expectation=None):
         for spine in cbar_ax.spines.values():
             spine.set_visible(False)
     
+    # Add title if provided
+    if title is not None:
+        fig.suptitle(title, fontsize=16, fontweight='bold')
+    
     plt.tight_layout()
-    filename = f"all_plots_t1_{t1_idx}"
+    filename = f"all_plots_t1_{t1_idx}_{title}"
     if expectation is not None:
         filename += f"_exp_{expectation:.2f}"
     plt.savefig(f"{filename}.png", dpi=150, bbox_inches='tight')
@@ -652,9 +663,9 @@ def all_plots(data, t1_idx, colormap="plasma", expectation=None):
 
 
 print("########################################################")
-print("PLOTTING FAKE DATA-- as an example")
+print("PLOTTING FAKE DATA-- uncomment the following line to plot fake data -- line 655")
 print("########################################################")
-fig = all_plots(fake_data, t1_idx=0, colormap="plasma")
+#fig = all_plots(fake_data, t1_idx=0, colormap="plasma")
 print("########################################################")
 print("please proceed to simulating syntatic data")
 print("########################################################")
@@ -897,17 +908,30 @@ def simulate_chromosome_simple(
     return ts, df
 
 ### SIMULATE DATA
-pops = [{'name':'p0','Ne':1e4,'sample_size':10}, {'name':'p1','Ne':1e4,'sample_size':10},
-        {'name':'p2','Ne':1e4,'sample_size':10}, {'name':'p3','Ne':1e4,'sample_size':10},
-        {'name':'p4','Ne':1e4,'sample_size':10}]
+# Define populations including ancestral ones
+pops = [
+    {'name':'p0','Ne':1e4,'sample_size':10},  # Outgroup
+    {'name':'p1','Ne':1e4,'sample_size':10},  # Population 1
+    {'name':'p2','Ne':1e4,'sample_size':10},  # Population 2  
+    {'name':'p3','Ne':1e4,'sample_size':10},  # Population 3
+    {'name':'p4','Ne':1e4,'sample_size':10},  # Population 4
+    {'name':'p12','Ne':1e4,'sample_size':0},  # Ancestral of p1,p2
+    {'name':'p34','Ne':1e4,'sample_size':0},  # Ancestral of p3,p4
+    {'name':'anc','Ne':1e4,'sample_size':0},  # Root ancestor
+    {'name':'root','Ne':1e4,'sample_size':0}  # Ultimate root
+]
 
-# The splits are the population splits that we want to simulate, 
-# e.g.
-splits = [{'time':500,'derived':['p3','p4'],'ancestral':'p2'},
-          {'time':1000,'derived':['p1','p2'],'ancestral':'p0'}]
+# Splits from most recent to oldest (msprime expects this order)
+splits = [
+    {'time':500,'derived':['p3','p4'],'ancestral':'p34'},      # p3,p4 split from p34
+    {'time':1000,'derived':['p1','p2'],'ancestral':'p12'},    # p1,p2 split from p12  
+    {'time':1500,'derived':['p12','p34'],'ancestral':'anc'},  # p12,p34 split from anc
+    {'time':2000,'derived':['p0','anc'],'ancestral':'root'}   # p0,anc split from root
+]
 
-migration = {
-    'p1>p2': 1e-4,  # one-way p1 -> p2
+# Migration for chromosome simulation
+migration_chromosome = {
+    'p1>p2': 1e-2,  # one-way p1 -> p2
     'p2>p1': 1e-4,  # add this to make it symmetric
     'p3>p4': 5e-5,  # one-way p3 -> p4
     # no other routes will be used
@@ -917,18 +941,28 @@ migration = {
 ### UNCOMMENT THIS TO SIMULATE DATA
 # i guess we only wanna have loci mode, not chromosome.
 # notice that the df for chromome as an extra "Position" column that needs to e erased beforre plotting
-ts, df = simulate_chromosome_simple(pops, splits, return_weights=True, outgroup='p0') 
+print("Simulating chromosome data:")
+ts, df = simulate_chromosome_simple(pops, splits, migration_chromosome, return_weights=True, outgroup='p0') 
 
-df = df.drop(columns=['Position'])
+df_chromosome = df.drop(columns=['position'])
 
 # now we can plot the data
-all_plots(df, 0, colormap="plasma")
+all_plots(df_chromosome, 0, colormap="plasma", title="Chromosome Data")
+print("Chromosome data plotted")
+print("please proceed to simulating locus data")
+print("########################################################")
+##########################################################################################
+##########################################################################################
+# SIMULATING LOCI DATA
+##########################################################################################
+##########################################################################################
+
 
 # we can also plot the data in a ternary plot
-plot_ternary_projection(df, 0, 1, colormap="plasma")
+# plot_ternary_projection(df, 0, 1, colormap="plasma")
 ####################
 # LOCI MODE -- FINALLY!
-routes = [('p1','p2',1e-4), ('p3','p4',5e-5)]  # (source, dest, rate)
+routes = [('p1','p2',1e-4), ('p3','p4',5e-2)]  # (source, dest, rate)
 migration = {f'{src}>{dst}': rate for src, dst, rate in routes}
 
 
@@ -936,7 +970,7 @@ ts_iter = simulate_locus_simple(
     populations=pops,
     splits=splits,
     migration=migration,
-    n_loci=50,
+    n_loci=5000,
     locus_length=1,
     ploidy=1,
     seed=42,
@@ -947,13 +981,13 @@ ts_list = list(ts_iter)
 # IMPORTANT: outgroup must match population IDs inside the ts, which are strings '0','1',...
 # If unsure, pass outgroup=None (auto-picks the first sampled population).
 df = ts_to_twisst_weights(
-    ts_iter,
+    ts_list,  # Use ts_list instead of ts_iter
     outgroup=None,         # or '0' for the first pop
     verbose=True,
     twisst_verbose=False,
 )
 print(df.head())
 
-all_plots(df, 0, colormap="plasma")
+all_plots(df, 0, colormap="plasma", title="Locus Data")
 
-plot_ternary_projection(df, 0, 1, colormap="plasma")
+#plot_ternary_projection(df, 0, 1, colormap="plasma")
