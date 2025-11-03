@@ -23,6 +23,10 @@ Main Functions:
 """
 
 import sys
+import gzip
+import os
+import shutil
+import tempfile
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -41,6 +45,32 @@ from twisst import weightTrees, summary  # type: ignore
 
 # Import logger
 from twisstntern.logger import get_logger
+
+
+def _get_base_suffix(path: Path) -> Tuple[str, bool]:
+    """Return the primary suffix and whether the file is gzipped."""
+
+    suffixes = [s.lower() for s in path.suffixes]
+    is_gzipped = suffixes and suffixes[-1] == ".gz"
+
+    if is_gzipped:
+        if len(suffixes) < 2:
+            raise ValueError(
+                f"Gzipped file '{path}' must include an additional extension (e.g. '.trees.gz')."
+            )
+        suffix = suffixes[-2]
+    else:
+        suffix = path.suffix.lower()
+
+    return suffix, bool(is_gzipped)
+
+
+def _open_text_file(path: Path, is_gzipped: bool):
+    """Open a text file, handling gzip if needed."""
+
+    if is_gzipped:
+        return gzip.open(path, "rt")
+    return open(path, "r")
 
 
 def log_topologies(
@@ -164,73 +194,79 @@ def detect_and_read_trees(
         IOError: If file cannot be read
     """
     path = Path(file_path)
+    suffix, is_gzipped = _get_base_suffix(path)
 
-    # Case 1: TreeSequence files (.trees or .ts)
-    if path.suffix in [".trees", ".ts"]:
+    # Case 1: TreeSequence files (.trees or .ts, optionally gzipped)
+    if suffix in [".trees", ".ts"]:
         try:
-            ts = tskit.load(file_path)
+            if is_gzipped:
+                with gzip.open(file_path, "rb") as gz_file:
+                    with tempfile.NamedTemporaryFile(
+                        suffix=suffix, delete=False
+                    ) as tmp_file:
+                        shutil.copyfileobj(gz_file, tmp_file)
+                        tmp_name = tmp_file.name
+                try:
+                    ts = tskit.load(tmp_name)
+                finally:
+                    try:
+                        os.remove(tmp_name)
+                    except OSError:
+                        pass
+            else:
+                ts = tskit.load(file_path)
             print("✅ Detected format: TreeSequence (.ts/.trees)")
             return ts, "ts"
         except Exception as e:
             raise RuntimeError(f"Failed to load TreeSequence: {e}")
 
-    # Case 2: Newick files by extension
-    if path.suffix in [".newick", ".nwk", ".tree"]:
-        try:
-            with open(file_path, "r") as f:
-                newicks = [line.strip() for line in f if line.strip()]
-                print(f"✅ Detected format: Newick ({path.suffix})")
-                return newicks, "newick"
-        except Exception as e:
-            raise ValueError(
-                f"Failed to read Newick trees from {path.suffix} file: {e}"
-            )
-
-    # Case 3: Content-based detection for files without clear extensions
+    # Read textual content once for all remaining detections
     try:
-        with open(file_path, "r") as f:
-            first_line = f.readline()
-            if first_line is not None:
-                first_line = first_line.strip()
-            else:
-                first_line = ""
-            rest = f.read()
+        with _open_text_file(path, is_gzipped) as f:
+            content = f.read()
     except Exception as e:
         raise IOError(f"Could not read file: {e}")
 
-    # Case 3a: Nexus format detection
-    if first_line.upper().startswith("#NEXUS"):
-        try:
-            with open(file_path, "r") as f:
-                lines = f.readlines()
+    raw_lines = content.splitlines()
+    stripped_lines = [line.strip() for line in raw_lines if line.strip()]
+    first_non_empty = next((line.strip() for line in raw_lines if line.strip()), "")
 
-            # Extract tree definitions from Nexus file (lines starting with "tree")
+    # Case 2: Newick files by explicit extension
+    if suffix in [".newick", ".nwk", ".tree"]:
+        if not stripped_lines:
+            raise ValueError(
+                f"Failed to read Newick trees from {suffix} file: file appears to be empty"
+            )
+        print(f"✅ Detected format: Newick ({suffix})")
+        return stripped_lines, "newick"
+
+    # Case 3: Nexus format detection (by extension or header)
+    if suffix == ".nexus" or first_non_empty.upper().startswith("#NEXUS"):
+        try:
             newicks = []
-            for line in lines:
+            for line in raw_lines:
                 if line.strip().lower().startswith("tree"):
-                    # Parse tree definition: "tree name = (newick_string);"
                     newick = line.split("=", 1)[-1].strip()
-                    try:
-                        # Validate Newick string by parsing with ete3
-                        t = ete3.Tree(newick)
-                        newicks.append(t.write(format=0).strip())
-                    except Exception as e:
-                        raise ValueError(f"Invalid Newick tree in Nexus file: {e}")
+                    t = ete3.Tree(newick)
+                    newicks.append(t.write(format=0).strip())
+
+            if not newicks:
+                raise ValueError("No tree definitions found in Nexus file")
 
             print("✅ Detected format: Nexus → Converted to Newick")
             return newicks, "newick"
-
         except Exception as e:
             raise ValueError(f"Failed to parse Nexus file: {e}")
 
-    # Case 3b: Default to Newick format for unknown extensions
-    try:
-        with open(file_path, "r") as f:
-            newicks = [line.strip() for line in f if line.strip()]
-            print("✅ Detected format: Newick (unknown extension, treating as Newick)")
-            return newicks, "newick"
-    except Exception as e:
-        raise ValueError(f"Failed to read Newick trees: {e}")
+    # Case 4: Default to Newick format for unknown extensions
+    if stripped_lines:
+        print("✅ Detected format: Newick (unknown extension, treating as Newick)")
+        return stripped_lines, "newick"
+
+    raise ValueError(
+        "File did not contain recognizable tree data. Supported formats include "
+        "TreeSequence, Newick, and Nexus (optionally gzipped)."
+    )
 
 
 def simplify_topologies(weightsData):

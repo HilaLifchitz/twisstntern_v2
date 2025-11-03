@@ -907,6 +907,11 @@ def simulate_chromosome_simple(
     )
     return ts, df
 
+
+
+
+
+#####################################################################################################################
 ### SIMULATE DATA
 # Define populations including ancestral ones
 pops = [
@@ -941,14 +946,14 @@ migration_chromosome = {
 ### UNCOMMENT THIS TO SIMULATE DATA
 # i guess we only wanna have loci mode, not chromosome.
 # notice that the df for chromome as an extra "Position" column that needs to e erased beforre plotting
-print("Simulating chromosome data:")
-ts, df = simulate_chromosome_simple(pops, splits, migration_chromosome, return_weights=True, outgroup='p0') 
+#print("Simulating chromosome data:")
+#ts, df = simulate_chromosome_simple(pops, splits, migration_chromosome, return_weights=True, outgroup='p0') 
 
-df_chromosome = df.drop(columns=['position'])
+#df_chromosome = df.drop(columns=['position'])
 
 # now we can plot the data
-all_plots(df_chromosome, 0, colormap="plasma", title="Chromosome Data")
-print("Chromosome data plotted")
+#all_plots(df_chromosome, 0, colormap="plasma", title="Chromosome Data")
+#print("Chromosome data plotted")
 print("please proceed to simulating locus data")
 print("########################################################")
 ##########################################################################################

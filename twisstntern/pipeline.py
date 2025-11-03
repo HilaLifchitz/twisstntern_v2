@@ -36,14 +36,20 @@ def detect_file_type(file_path):
     tree_extensions = {".trees", ".ts", ".newick", ".nwk", ".tree", ".nexus"}
     csv_extensions = {".csv"}
 
-    if file_path.suffix.lower() in tree_extensions:
+    suffixes = [s.lower() for s in file_path.suffixes]
+    if suffixes and suffixes[-1] == ".gz":
+        suffixes = suffixes[:-1]
+
+    suffix = suffixes[-1] if suffixes else file_path.suffix.lower()
+
+    if suffix in tree_extensions:
         return "tree"
-    elif file_path.suffix.lower() in csv_extensions:
+    elif suffix in csv_extensions:
         return "csv"
     else:
         raise ValueError(
             f"Unsupported file format: {file_path.suffix}. "
-            f"Supported formats: {tree_extensions | csv_extensions}"
+            f"Supported formats (optionally gzipped): {tree_extensions | csv_extensions}"
         )
 
 

@@ -159,8 +159,12 @@ twisstntern-simulate -c config_template.yaml -o my_simulation
 - **Newick** (`.newick`, `.nwk`, `.tree`): Single or multiple Newick format trees  
 - **Nexus** (`.nexus`): Nexus format files
 
+All of the formats above can also be supplied as gzip-compressed files (append `.gz`, for example `dataset.trees.gz` or `weights.newick.gz`) and will be decompressed automatically.
+
 ### 📈 **Pre-computed Data**
 - **CSV** (`.csv`): Topology weights data (T1, T2, T3 columns)
+
+Like the tree formats, CSV inputs may be provided as `.csv.gz` files without any extra configuration.
 
 ---
 
