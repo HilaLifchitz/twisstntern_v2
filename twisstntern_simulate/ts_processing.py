@@ -205,17 +205,33 @@ def ts_chromosome_to_twisst_weights(
 
     # Save to file if requested
     if output_file:
-        # Create a new DataFrame with the simplified topologies as header row
+        output_path = Path(output_file)
+        with_position_path = output_path.with_name(
+            f"{output_path.stem}_with_position{output_path.suffix}"
+        )
+
         header_row = pd.DataFrame([simplified_topos], columns=columns)
 
-        # Concatenate the header and the weights
-        full_df = pd.concat([header_row, df], ignore_index=True)
+        if "position" in df.columns:
+            header_row_with_pos = header_row.copy()
+            header_row_with_pos.insert(0, "position", pd.NA)
+            full_df_with_pos = pd.concat([header_row_with_pos, df], ignore_index=True)
+        else:
+            full_df_with_pos = pd.concat([header_row, df], ignore_index=True)
 
-        # Save
-        full_df.to_csv(output_file, index=False, float_format="%.3f")
+        full_df_with_pos.to_csv(with_position_path, index=False, float_format="%.3f")
+
+        if "position" in df.columns:
+            df_no_pos = df.drop(columns=["position"]).copy()
+        else:
+            df_no_pos = df.copy()
+
+        full_df_no_pos = pd.concat([header_row, df_no_pos], ignore_index=True)
+        full_df_no_pos.to_csv(output_path, index=False, float_format="%.3f")
 
         if verbose:
-            print(f"Saved results to: {output_file}")
+            print(f"Saved results to: {output_path}")
+            print(f"Saved results with positions to: {with_position_path}")
 
     return df
 
@@ -463,17 +479,35 @@ def ts_to_twisst_weights(
 
     # Save to file if requested
     if output_file:
-        # Create header row with canonical simplified topologies
+        output_path = Path(output_file)
+        with_position_path = output_path.with_name(
+            f"{output_path.stem}_with_position{output_path.suffix}"
+        )
+
         header_row = pd.DataFrame([canonical_simplified_topos], columns=columns)
 
-        # Concatenate header and weights
-        full_df = pd.concat([header_row, combined_df], ignore_index=True)
+        if "position" in combined_df.columns:
+            header_row_with_pos = header_row.copy()
+            header_row_with_pos.insert(0, "position", pd.NA)
+            full_df_with_pos = pd.concat(
+                [header_row_with_pos, combined_df], ignore_index=True
+            )
+        else:
+            full_df_with_pos = pd.concat([header_row, combined_df], ignore_index=True)
 
-        # Save to CSV
-        full_df.to_csv(output_file, index=False, float_format="%.3f")
+        full_df_with_pos.to_csv(with_position_path, index=False, float_format="%.3f")
+
+        if "position" in combined_df.columns:
+            combined_no_pos = combined_df.drop(columns=["position"]).copy()
+        else:
+            combined_no_pos = combined_df.copy()
+
+        full_df_no_pos = pd.concat([header_row, combined_no_pos], ignore_index=True)
+        full_df_no_pos.to_csv(output_path, index=False, float_format="%.3f")
 
         if verbose:
-            print(f"  Saved results to: {output_file}")
+            print(f"  Saved results to: {output_path}")
+            print(f"  Saved results with positions to: {with_position_path}")
 
     return combined_df
 

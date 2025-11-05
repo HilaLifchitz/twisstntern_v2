@@ -155,16 +155,19 @@ twisstntern-simulate -c config_template.yaml -o my_simulation
 ## Input
 
 ### 📊 **Tree File Formats**
-- **TreeSequence** (`.trees`, `.ts`): TSKit tree sequence files
-- **Newick** (`.newick`, `.nwk`, `.tree`): Single or multiple Newick format trees  
-- **Nexus** (`.nexus`): Nexus format files
+- **TreeSequence** (`.trees`, `.ts`): TSKit tree sequence files  
+- **Newick** (`.newick`, `.tree`): Single or multiple Newick format trees  
+- **Nexus** (`.nexus`): Nexus format files  
 
-All of the formats above can also be supplied as gzip-compressed files (append `.gz`, for example `dataset.trees.gz` or `weights.newick.gz`) and will be decompressed automatically.
+All of the formats above can also be supplied as gzip-compressed files (append `.gz`, for example `dataset.trees.gz` or `weights.newick.gz`), which will be automatically decompressed during loading.
+
+---
 
 ### 📈 **Pre-computed Data**
-- **CSV** (`.csv`): Topology weights data (T1, T2, T3 columns)
+- **CSV** (`.csv`): Tabular topology-weight data containing the columns `T1`, `T2`, and `T3`.  
 
-Like the tree formats, CSV inputs may be provided as `.csv.gz` files without any extra configuration.
+As with tree inputs, CSV files may also be provided in gzip-compressed form (`.csv.gz`).
+
 
 ---
 
@@ -318,12 +321,13 @@ Customize ternary heatmap and radcount colors through the Python interface:
 - `[prefix]_triangle_analysis_[granularity].csv` - Triangle-based statistics
 - `twisstntern_YYYYMMDD_HHMMSS.log` - Detailed analysis log
 
-**📈 Visualizations:**
-- `[prefix]_fundamental_asymmetry.png` - Left vs right asymmetry bar chart
-- `[prefix]_analysis_granularity_[value].png` - Ternary plot with triangle coloring
-- `[prefix]_granuality_[value].png` - Main ternary plot with density visualization
-- `[prefix]_index_granularity_[value].png` - Triangle index boundaries
-- `[prefix]_heatmap.png` - **Ternary heatmap with customizable colormap**
+**📈 Visualizations (PDF):**
+- `[prefix]_fundamental_asymmetry.pdf` - Left vs right asymmetry bar chart
+- `[prefix]_analysis_granularity_[value].pdf` - Ternary plot with triangle coloring
+- `[prefix]_granuality_[value].pdf` - Main ternary plot with density visualization
+- `[prefix]_index_granularity_[value].pdf` - Triangle index boundaries
+- `[prefix]_heatmap.pdf` - **Ternary heatmap with customizable colormap**
+- `[prefix]_radcount.pdf` - Density-based ternary plot
 
 ### **File Naming Convention**
 
@@ -336,12 +340,12 @@ Customize ternary heatmap and radcount colors through the Python interface:
 Results_2025-07-03_14-30-25/
 ├── data_topology_weights.csv
 ├── data_triangle_analysis_0.1.csv
-├── data_fundamental_asymmetry.png
-├── data_analysis_granularity_0.1.png
-├── data_granuality_0.1.png
-├── data_index_granularity_0.1.png
-├── data_radcount.png       # 🎨 Customizable colormap
-├── data_heatmap.png        # 🎨 Customizable colormap
+├── data_fundamental_asymmetry.pdf
+├── data_analysis_granularity_0.1.pdf
+├── data_granuality_0.1.pdf
+├── data_index_granularity_0.1.pdf
+├── data_radcount.pdf       # 🎨 Customizable colormap
+├── data_heatmap.pdf        # 🎨 Customizable colormap
 └── twisstntern_20250703_143025.log
 ```
 

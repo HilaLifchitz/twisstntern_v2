@@ -178,6 +178,13 @@ mutation_rate: 0 # Mutation rate per base per generation (optional)
 #   - Topology Y will be plotted as T2 (bottom-left)
 #   - Topology Z will be plotted as T3 (bottom-right)
 topology_axis_order: ["Z", "X", "Y"]  # Must be exactly ["X", "Y", "Z"] in any order
+# comment- this is the order of the topologies in the csv file and the order of the axes in the plot
+# But, the .newick file uses the raw twisst ordering: X Y Zm and so one would need to reorder the topologies in the csv file to match the twisst ordering.
+# this can be done by mapping X --> p1
+#                             Y --> p2
+#                             Z --> p3
+# example, if "topology_axis_order: ["Z", "X", "Y"]" --> using --taxon-names O p3 p1 p2 --outgroup O 
+
 
 ###################################################################################
 # END OF CONFIGURATION
