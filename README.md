@@ -2,6 +2,10 @@
 
 <img src="images/logo.png" height="270pt" align="bottom">
 
+## Community Preprint
+
+We recently released a preprint! You can read it here: [TwisstNTern 2: Ternary analysis of topology weights from tree sequences](https://ecoevorxiv.org/repository/view/10743/).
+
 ## Table of Contents
 - [What does TWISSTNTERN do?](#what-does-twisstntern-do)
 - [Installation](#installation)

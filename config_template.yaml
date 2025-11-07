@@ -130,7 +130,7 @@ locus_length: 1 # Length of each locus in base pairs
 # corresponding to breaks in recombination, genomic length of the loci simulated
 # here will vary
 rec_rate: 1e-8 # Recombination rate per base per generation
-chromosome_length: 5e7 # Length of the chromosome to simulate (in base pairs)
+chromosome_length: 1e8 # Length of the chromosome to simulate (in base pairs)
 mutation_rate: 0 # Mutation rate per base per generation (optional)
 
 ###################################################################################
@@ -177,7 +177,7 @@ mutation_rate: 0 # Mutation rate per base per generation (optional)
 #   - Topology X will be plotted as T1 (top of triangle)
 #   - Topology Y will be plotted as T2 (bottom-left)
 #   - Topology Z will be plotted as T3 (bottom-right)
-topology_axis_order: ["Z", "X", "Y"]  # Must be exactly ["X", "Y", "Z"] in any order
+topology_axis_order: ["Z", "Y", "X"]  # Must be exactly ["X", "Y", "Z"] in any order
 # comment- this is the order of the topologies in the csv file and the order of the axes in the plot
 # But, the .newick file uses the raw twisst ordering: X Y Zm and so one would need to reorder the topologies in the csv file to match the twisst ordering.
 # this can be done by mapping X --> p1
