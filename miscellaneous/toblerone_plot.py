@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +14,12 @@ from matplotlib import cm
 from matplotlib.colors import Normalize
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_PATH = Path(__file__).resolve()
+REPO_ROOT = SCRIPT_PATH.parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from twisstntern.utils import cartizian
 TRI_HEIGHT = np.sqrt(3) / 2.0
 BASE_VERTICES = np.array(
     [
@@ -112,7 +118,9 @@ def load_weights(
 
 
 def barycentric_to_xy(weights: np.ndarray) -> np.ndarray:
-    return weights @ BASE_VERTICES
+    t1, t2, t3 = weights.T
+    x, y = cartizian(t1, t2, t3)
+    return np.column_stack((x, y))
 
 
 def draw_prism(ax, height: float) -> None:
